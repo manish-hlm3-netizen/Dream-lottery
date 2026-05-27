@@ -1,0 +1,39 @@
+name: lottery_app
+description: A lottery app for Android
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP client
+  dio: ^5.4.0
+
+  # State management
+  provider: ^6.1.1
+
+  # Secure storage for JWT
+  flutter_secure_storage: ^9.0.0
+
+  # UI helpers
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+  intl: ^0.19.0
+  fluttertoast: ^8.2.4
+
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true

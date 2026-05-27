@@ -1,0 +1,23 @@
+# Node.js dependencies
+**/node_modules/
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Next.js build outputs
+**/.next/
+**/out/
+
+# Flutter / Dart build outputs
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-preload-cache
+**/build/
+**/*.iml
+**/.idea/
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,278 @@
+const { validationResult } = require('express-validator');
+const User = require('../models/User');
+const Lottery = require('../models/Lottery');
+const Ticket = require('../models/Ticket');
+const Transaction = require('../models/Transaction');
+
+/**
+ * @desc    Get all active/upcoming lotteries
+ * @route   GET /api/lotteries
+ * @access  Private
+ */
+exports.getLotteries = async (req, res) => {
+  try {
+    const status = req.query.status || 'active';
+    const filter = {};
+
+    if (status === 'all') {
+      // Return all non-cancelled
+      filter.status = { $ne: 'cancelled' };
+    } else if (status === 'completed') {
+      filter.status = 'completed';
+    } else {
+      filter.status = { $in: ['upcoming', 'active'] };
+    }
+
+    const lotteries = await Lottery.find(filter)
+      .sort({ drawDate: 1 })
+      .select('-__v');
+
+    res.json({
+      success: true,
+      data: { lotteries }
+    });
+  } catch (error) {
+    console.error('Get lotteries error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get lottery details
+ * @route   GET /api/lotteries/:id
+ * @access  Private
+ */
+exports.getLotteryById = async (req, res) => {
+  try {
+    const lottery = await Lottery.findById(req.params.id);
+    if (!lottery) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lottery not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { lottery }
+    });
+  } catch (error) {
+    console.error('Get lottery error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Buy a lottery ticket
+ * @route   POST /api/lotteries/:id/buy
+ * @access  Private
+ */
+exports.buyTicket = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { selectedNumbers } = req.body;
+    const lotteryId = req.params.id;
+
+    // Get lottery
+    const lottery = await Lottery.findById(lotteryId);
+    if (!lottery) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lottery not found'
+      });
+    }
+
+    // Check lottery is active
+    if (!['upcoming', 'active'].includes(lottery.status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This lottery is no longer accepting tickets'
+      });
+    }
+
+    // Check draw date hasn't passed
+    if (new Date(lottery.drawDate) <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'This lottery draw date has passed'
+      });
+    }
+
+    // Validate selected numbers
+    if (!selectedNumbers || selectedNumbers.length !== lottery.pickCount) {
+      return res.status(400).json({
+        success: false,
+        message: `You must select exactly ${lottery.pickCount} numbers`
+      });
+    }
+
+    // Check numbers are valid (within range and unique)
+    const uniqueNums = new Set(selectedNumbers);
+    if (uniqueNums.size !== selectedNumbers.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'All selected numbers must be unique'
+      });
+    }
+
+    const invalidNums = selectedNumbers.filter(
+      n => !Number.isInteger(n) || n < 1 || n > lottery.maxNumber
+    );
+    if (invalidNums.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Numbers must be between 1 and ${lottery.maxNumber}`
+      });
+    }
+
+    // Check wallet balance
+    const user = await User.findById(req.user._id);
+    if (user.walletBalance < lottery.ticketPrice) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient balance. Ticket costs ₹${lottery.ticketPrice}. Your balance: ₹${user.walletBalance}`
+      });
+    }
+
+    // Deduct from wallet
+    user.walletBalance -= lottery.ticketPrice;
+    await user.save();
+
+    // Create ticket
+    const ticket = await Ticket.create({
+      userId: req.user._id,
+      lotteryId,
+      selectedNumbers: selectedNumbers.sort((a, b) => a - b)
+    });
+
+    // Update lottery stats
+    lottery.totalTicketsSold += 1;
+    lottery.totalRevenue += lottery.ticketPrice;
+    if (lottery.status === 'upcoming') {
+      lottery.status = 'active';
+    }
+    await lottery.save();
+
+    // Create transaction record
+    await Transaction.create({
+      userId: req.user._id,
+      type: 'ticket_purchase',
+      amount: lottery.ticketPrice,
+      status: 'approved',
+      description: `Ticket for ${lottery.name} - Numbers: ${ticket.selectedNumbers.join(', ')}`
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Ticket purchased successfully!',
+      data: {
+        ticket: {
+          id: ticket._id,
+          lotteryId: ticket.lotteryId,
+          selectedNumbers: ticket.selectedNumbers,
+          status: ticket.status,
+          purchasedAt: ticket.purchasedAt
+        },
+        newBalance: user.walletBalance
+      }
+    });
+  } catch (error) {
+    console.error('Buy ticket error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get user's tickets for a specific lottery
+ * @route   GET /api/lotteries/:id/my-tickets
+ * @access  Private
+ */
+exports.getMyTickets = async (req, res) => {
+  try {
+    const tickets = await Ticket.find({
+      userId: req.user._id,
+      lotteryId: req.params.id
+    }).populate('lotteryId', 'name drawDate status winningNumbers');
+
+    res.json({
+      success: true,
+      data: { tickets }
+    });
+  } catch (error) {
+    console.error('Get my tickets error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get all user's tickets
+ * @route   GET /api/tickets/my-tickets
+ * @access  Private
+ */
+exports.getAllMyTickets = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId: req.user._id };
+
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+
+    const [tickets, total] = await Promise.all([
+      Ticket.find(filter)
+        .populate('lotteryId', 'name drawDate status winningNumbers ticketPrice')
+        .sort({ purchasedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Ticket.countDocuments(filter)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        tickets,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get all my tickets error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get completed lotteries with results
+ * @route   GET /api/lotteries/results
+ * @access  Private
+ */
+exports.getResults = async (req, res) => {
+  try {
+    const lotteries = await Lottery.find({ status: 'completed' })
+      .sort({ drawDate: -1 })
+      .limit(20);
+
+    res.json({
+      success: true,
+      data: { lotteries }
+    });
+  } catch (error) {
+    console.error('Get results error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
