@@ -67,9 +67,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.bgPrimary,
-              Color(0xFF1A1040),
-              AppTheme.bgPrimary,
+              Colors.white,
+              Color(0xFFFFF1F1),
+              Colors.white,
             ],
           ),
         ),
@@ -85,43 +85,50 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 100,
-                        height: 100,
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(24),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.4),
+                              color: AppTheme.primaryColor.withOpacity(0.15),
                               blurRadius: 30,
                               spreadRadius: 5,
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Text('🎲',
-                              style: TextStyle(fontSize: 48)),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'assets/images/logo.jpg',
+                            width: 140,
+                            height: 140,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
                       ShaderMask(
                         shaderCallback: (bounds) =>
                             AppTheme.primaryGradient.createShader(bounds),
                         child: const Text(
-                          'LottoPlay',
+                          'Dream Lottery',
                           style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       const Text(
                         'Your luck starts here',
                         style: TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 14,
+                          color: AppTheme.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
