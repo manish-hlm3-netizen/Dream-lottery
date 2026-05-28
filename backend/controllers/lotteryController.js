@@ -309,6 +309,8 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
       success: true,
       data: {
         winningNumbers: lottery.winningNumbers,
+        name: lottery.name,
+        drawDate: lottery.drawDate,
         winners: winners.map(w => ({
           id: w._id,
           userName: w.userId ? w.userId.name : 'Unknown User',

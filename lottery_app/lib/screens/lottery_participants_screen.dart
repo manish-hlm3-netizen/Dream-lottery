@@ -24,6 +24,8 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
   List<dynamic> _winners = [];
   List<dynamic> _lost = [];
   List<int> _winningNumbers = [];
+  String _drawDate = '';
+  String _lotteryName = '';
   String? _error;
 
   @override
@@ -46,6 +48,8 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
           _winningNumbers = (data['winningNumbers'] as List?)?.cast<int>() ?? [];
           _winners = data['winners'] ?? [];
           _lost = data['lost'] ?? [];
+          _drawDate = data['drawDate'] ?? '';
+          _lotteryName = data['name'] ?? widget.lotteryName;
           _isLoading = false;
         });
       } else {
@@ -201,6 +205,21 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
     );
   }
 
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateStr).toLocal();
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final year = date.year;
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$day/$month/$year $hour:$minute';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   Widget _buildCombinedList(List<dynamic> items, String emptyMessage) {
     if (items.isEmpty) {
       return Center(
@@ -233,6 +252,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
         final selectedNumbers = (ticket['selectedNumbers'] as List?)?.cast<int>() ?? [];
         final matchedNumbers = (ticket['matchedNumbers'] as List?)?.cast<int>() ?? [];
         final isWinner = ticket['status'] == 'won' || prizeWon > 0;
+        final currentLang = Provider.of<LanguageProvider>(context, listen: false);
 
         return Card(
           elevation: 0,
@@ -320,6 +340,105 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                       ),
                     );
                   }).toList(),
+                ),
+                
+                const SizedBox(height: 14),
+                Divider(color: AppTheme.borderColor, height: 1),
+                const SizedBox(height: 12),
+                
+                // Metadata Grid
+                Row(
+                  children: [
+                    // Lottery Name
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentLang.translate('lottery_name_label'),
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _lotteryName.isNotEmpty ? _lotteryName : widget.lotteryName,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Draw Date
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentLang.translate('draw_date_label'),
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _formatDate(_drawDate),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 10),
+                
+                Row(
+                  children: [
+                    // Status tag
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentLang.translate('status_label'),
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            isWinner 
+                                ? currentLang.translate('status_winner')
+                                : currentLang.translate('status_participant'),
+                            style: TextStyle(
+                              fontSize: 12, 
+                              fontWeight: FontWeight.w800, 
+                              color: isWinner ? AppTheme.successColor : AppTheme.textSecondary
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Winnings
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentLang.translate('winnings_label'),
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '₹$prizeWon',
+                            style: TextStyle(
+                              fontSize: 12, 
+                              fontWeight: FontWeight.w900, 
+                              color: isWinner ? AppTheme.successColor : AppTheme.textPrimary
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
