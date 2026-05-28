@@ -37,7 +37,7 @@ const lotterySchema = new mongoose.Schema({
   pickCount: {
     type: Number,
     default: 6,
-    min: [3, 'Must pick at least 3 numbers'],
+    min: [1, 'Must pick at least 1 number'],
     max: [10, 'Cannot pick more than 10 numbers']
   },
   drawDate: {

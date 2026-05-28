@@ -136,7 +136,7 @@ export default function CreateLotteryPage() {
                 <input
                   type="number"
                   className="form-input"
-                  min="3"
+                  min="1"
                   max="10"
                   value={form.pickCount}
                   onChange={(e) => updateForm('pickCount', e.target.value)}
