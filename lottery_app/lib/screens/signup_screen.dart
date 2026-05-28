@@ -51,7 +51,11 @@ class _SignupScreenState extends State<SignupScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1040), AppTheme.bgPrimary],
+            colors: [
+              Colors.white,
+              Color(0xFFFFF5F5),
+              AppTheme.bgPrimary,
+            ],
           ),
         ),
         child: SafeArea(
@@ -62,21 +66,26 @@ class _SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          color: AppTheme.primaryColor.withOpacity(0.12),
                           blurRadius: 20,
                           spreadRadius: 3,
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Text('🎲', style: TextStyle(fontSize: 40)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/images/logo.jpg',
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
