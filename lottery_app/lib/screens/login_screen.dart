@@ -107,8 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: Image.asset(
                             'assets/images/logo.jpg',
-                            width: 90,
-                            height: 90,
+                            width: 130,
+                            height: 130,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
                               debugPrint('Error loading login logo: $error');

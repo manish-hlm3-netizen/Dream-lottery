@@ -101,8 +101,8 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             'assets/images/logo.jpg',
-                            width: 140,
-                            height: 140,
+                            width: 180,
+                            height: 180,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
                               debugPrint('Error loading splash logo: $error');

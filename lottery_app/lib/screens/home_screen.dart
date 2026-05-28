@@ -112,8 +112,8 @@ class _HomeTabState extends State<_HomeTab> {
                         ),
                       ),
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
