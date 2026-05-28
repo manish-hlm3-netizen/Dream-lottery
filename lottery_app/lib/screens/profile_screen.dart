@@ -119,7 +119,7 @@ class ProfileScreen extends StatelessWidget {
                 _ProfileMenuItem(
                   icon: Icons.history,
                   label: 'Transaction History',
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, '/wallet'),
                 ),
                 _ProfileMenuItem(
                   icon: Icons.campaign_outlined,

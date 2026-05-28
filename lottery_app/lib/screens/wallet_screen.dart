@@ -55,23 +55,26 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async {
-          await _loadTransactions();
-          if (mounted) context.read<AuthProvider>().refreshUser();
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
+    Widget content = RefreshIndicator(
+      onRefresh: () async {
+        await _loadTransactions();
+        if (mounted) context.read<AuthProvider>().refreshUser();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!canPop) ...[
               const Text(
                 'Wallet',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 20),
+            ],
 
               // Balance card
               Consumer<AuthProvider>(
@@ -111,26 +114,30 @@ class _WalletScreenState extends State<WalletScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: () => Navigator.pushNamed(context, '/deposit')
                                     .then((_) => _loadTransactions()),
-                                icon: const Icon(Icons.add, size: 18),
+                                icon: const Icon(Icons.add, size: 16),
                                 label: const Text('Deposit'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white.withOpacity(0.2),
                                   foregroundColor: Colors.white,
                                   elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () => Navigator.pushNamed(context, '/withdraw')
                                     .then((_) => _loadTransactions()),
-                                icon: const Icon(Icons.arrow_upward, size: 18),
+                                icon: const Icon(Icons.arrow_upward, size: 16),
                                 label: const Text('Withdraw'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white.withOpacity(0.2),
                                   foregroundColor: Colors.white,
                                   elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ),
@@ -242,7 +249,15 @@ class _WalletScreenState extends State<WalletScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
+
+      if (canPop) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('My Wallet')),
+          body: SafeArea(child: content),
+        );
+      }
+
+      return SafeArea(child: content);
   }
 }
