@@ -32,9 +32,9 @@ class LotteryApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LotteryProvider()),
       ],
       child: MaterialApp(
-        title: 'Lottery App',
+        title: 'Dream Lottery',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
+        theme: AppTheme.lightTheme,
         initialRoute: '/splash',
         routes: {
           '/splash': (context) => const SplashScreen(),

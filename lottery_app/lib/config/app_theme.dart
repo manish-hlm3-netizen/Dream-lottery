@@ -2,75 +2,76 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Colors
-  static const Color primaryColor = Color(0xFF6366F1);
-  static const Color primaryDark = Color(0xFF4F46E5);
-  static const Color secondaryColor = Color(0xFF8B5CF6);
-  static const Color accentColor = Color(0xFFA855F7);
+  // Colors (Dream Red & White Theme)
+  static const Color primaryColor = Color(0xFFD32F2F); // Premium Red
+  static const Color primaryDark = Color(0xFFB71C1C);
+  static const Color secondaryColor = Color(0xFFFFFFFF); // White
+  static const Color accentColor = Color(0xFFFF5252);
   
-  static const Color successColor = Color(0xFF10B981);
-  static const Color dangerColor = Color(0xFFEF4444);
-  static const Color warningColor = Color(0xFFF59E0B);
-  static const Color infoColor = Color(0xFF3B82F6);
+  static const Color successColor = Color(0xFF2E7D32); // Green
+  static const Color dangerColor = Color(0xFFC62828); // Red
+  static const Color warningColor = Color(0xFFF57C00); // Orange
+  static const Color infoColor = Color(0xFF1976D2); // Blue
 
-  static const Color bgPrimary = Color(0xFF0A0E1A);
-  static const Color bgSecondary = Color(0xFF111827);
-  static const Color bgCard = Color(0xFF1A1F2E);
-  static const Color bgSurface = Color(0xFF1E2536);
+  static const Color bgPrimary = Color(0xFFF5F5F5); // Light Gray Background
+  static const Color bgSecondary = Color(0xFFFFFFFF); // White
+  static const Color bgCard = Color(0xFFFFFFFF); // White Cards
+  static const Color bgSurface = Color(0xFFEEEEEE); // Input backgrounds
 
-  static const Color textPrimary = Color(0xFFF1F5F9);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textMuted = Color(0xFF64748B);
+  static const Color textPrimary = Color(0xFF212121); // Dark Gray Text
+  static const Color textSecondary = Color(0xFF757575); // Medium Text
+  static const Color textMuted = Color(0xFF9E9E9E); // Muted Text
 
-  static const Color borderColor = Color(0xFF2A3142);
+  static const Color borderColor = Color(0xFFE0E0E0); // Light Borders
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA855F7)],
+    colors: [Color(0xFFE53935), Color(0xFFD32F2F), Color(0xFFC62828)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient successGradient = LinearGradient(
-    colors: [Color(0xFF10B981), Color(0xFF34D399)],
+    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient goldGradient = LinearGradient(
-    colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+    colors: [Color(0xFFFFB300), Color(0xFFFFA000)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   // Theme Data
-  static ThemeData darkTheme = ThemeData(
+  static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     scaffoldBackgroundColor: bgPrimary,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: secondaryColor,
       surface: bgSecondary,
       error: dangerColor,
+      onPrimary: Colors.white,
     ),
     textTheme: GoogleFonts.interTextTheme(
-      ThemeData.dark().textTheme,
+      ThemeData.light().textTheme,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: bgSecondary,
-      elevation: 0,
+      backgroundColor: primaryColor,
+      elevation: 2,
       centerTitle: true,
       titleTextStyle: GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: textPrimary,
+        color: Colors.white,
       ),
-      iconTheme: const IconThemeData(color: textPrimary),
+      iconTheme: const IconThemeData(color: Colors.white),
     ),
     cardTheme: CardThemeData(
       color: bgCard,
-      elevation: 0,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: borderColor, width: 1),
@@ -78,6 +79,8 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
@@ -85,7 +88,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: bgSurface,
+      fillColor: bgSecondary,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: borderColor),
@@ -105,9 +108,9 @@ class AppTheme {
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: bgSecondary,
       selectedItemColor: primaryColor,
-      unselectedItemColor: textMuted,
+      unselectedItemColor: textSecondary,
       type: BottomNavigationBarType.fixed,
-      elevation: 0,
+      elevation: 8,
     ),
   );
 }
