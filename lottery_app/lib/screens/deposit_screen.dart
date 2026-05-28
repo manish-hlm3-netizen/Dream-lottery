@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -84,6 +85,51 @@ class _DepositScreenState extends State<DepositScreen> {
     setState(() => _loading = false);
   }
 
+  Future<void> _launchUPIApp() async {
+    final amountText = _amountController.text.trim();
+    if (amountText.isEmpty) {
+      setState(() {
+        _success = false;
+        _message = 'Please enter the deposit amount first';
+      });
+      return;
+    }
+    
+    final amount = double.tryParse(amountText);
+    if (amount == null || amount < 10) {
+      setState(() {
+        _success = false;
+        _message = 'Please enter a valid amount (minimum ₹10)';
+      });
+      return;
+    }
+
+    final Uri uri = Uri.parse(
+      'upi://pay?pa=$_upiId&pn=Lottery&am=${amount.toStringAsFixed(2)}&cu=INR&tn=Lottery%20Deposit'
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        setState(() {
+          _message = 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
+          _success = true;
+        });
+      } else {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        setState(() {
+          _message = 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
+          _success = true;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _success = false;
+        _message = 'Could not launch UPI Apps. Please manually pay on the UPI ID above.';
+      });
+    }
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -154,6 +200,27 @@ class _DepositScreenState extends State<DepositScreen> {
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _launchUPIApp,
+                          icon: const Icon(Icons.flash_on, color: Colors.white, size: 20),
+                          label: const Text(
+                            '⚡ Pay with UPI App',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
                           ),
                         ),
                       ],
