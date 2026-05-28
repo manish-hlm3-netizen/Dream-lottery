@@ -8,6 +8,12 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
+  // Edit states
+  const [selectedUserForWallet, setSelectedUserForWallet] = useState(null);
+  const [walletBalanceInput, setWalletBalanceInput] = useState('');
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState(null);
+  const [passwordInput, setPasswordInput] = useState('');
+
   useEffect(() => {
     const timer = setTimeout(() => loadUsers(), 300);
     return () => clearTimeout(timer);
@@ -37,6 +43,56 @@ export default function UsersPage() {
     }
   };
 
+  const handleUpdateWallet = async (e) => {
+    e.preventDefault();
+    if (!selectedUserForWallet) return;
+    try {
+      const balance = parseFloat(walletBalanceInput);
+      if (isNaN(balance) || balance < 0) {
+        showToast('Please enter a valid positive number', 'error');
+        return;
+      }
+      const data = await api.updateUserWallet(selectedUserForWallet._id, balance);
+      if (data.success) {
+        showToast(data.message, 'success');
+        setSelectedUserForWallet(null);
+        loadUsers();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (!selectedUserForPassword) return;
+    try {
+      if (passwordInput.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+      }
+      const data = await api.changeUserPassword(selectedUserForPassword._id, passwordInput);
+      if (data.success) {
+        showToast(data.message, 'success');
+        setSelectedUserForPassword(null);
+        setPasswordInput('');
+        loadUsers();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const openWalletModal = (user) => {
+    setSelectedUserForWallet(user);
+    setWalletBalanceInput(user.walletBalance.toString());
+  };
+
+  const openPasswordModal = (user) => {
+    setSelectedUserForPassword(user);
+    setPasswordInput(user.plainPassword || '');
+  };
+
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -52,7 +108,7 @@ export default function UsersPage() {
     <>
       <div className="page-header">
         <h2>User Management</h2>
-        <p>View and manage registered users</p>
+        <p>View and manage registered users, update wallets, and reset passwords</p>
       </div>
 
       <div className="filter-bar">
@@ -79,9 +135,10 @@ export default function UsersPage() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>User ID</th>
                 <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
+                <th>Email / Phone</th>
+                <th>Plain Password</th>
                 <th>Wallet Balance</th>
                 <th>Status</th>
                 <th>Joined</th>
@@ -91,10 +148,30 @@ export default function UsersPage() {
             <tbody>
               {users.map((user) => (
                 <tr key={user._id}>
+                  <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{user._id}</td>
                   <td style={{ fontWeight: 500 }}>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.phone}</td>
-                  <td className="amount positive">₹{user.walletBalance?.toLocaleString()}</td>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>{user.email}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{user.phone}</div>
+                  </td>
+                  <td>
+                    <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
+                      {user.plainPassword || 'Encrypted'}
+                    </span>
+                  </td>
+                  <td className="amount positive">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>₹{user.walletBalance?.toLocaleString()}</span>
+                      <button 
+                        className="btn btn-sm" 
+                        style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.08)' }} 
+                        onClick={() => openWalletModal(user)}
+                        title="Edit Wallet Balance"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  </td>
                   <td>
                     <span className={`badge-status ${user.isActive ? 'approved' : 'rejected'}`}>
                       {user.isActive ? 'Active' : 'Blocked'}
@@ -102,12 +179,21 @@ export default function UsersPage() {
                   </td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatDate(user.createdAt)}</td>
                   <td>
-                    <button
-                      className={`btn btn-sm ${user.isActive ? 'btn-danger' : 'btn-success'}`}
-                      onClick={() => handleToggle(user._id)}
-                    >
-                      {user.isActive ? '🚫 Block' : '✓ Activate'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className={`btn btn-sm ${user.isActive ? 'btn-danger' : 'btn-success'}`}
+                        onClick={() => handleToggle(user._id)}
+                      >
+                        {user.isActive ? '🚫 Block' : '✓ Activate'}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#5bc0de', color: '#fff' }}
+                        onClick={() => openPasswordModal(user)}
+                      >
+                        🔑 Password
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -115,6 +201,68 @@ export default function UsersPage() {
           </table>
         )}
       </div>
+
+      {/* Wallet Edit Modal */}
+      {selectedUserForWallet && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', padding: '24px', position: 'relative' }}>
+            <h3>Edit Wallet Balance</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+              Updating balance for <strong>{selectedUserForWallet.name}</strong>
+            </p>
+            <form onSubmit={handleUpdateWallet}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Wallet Balance (₹)</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff' }}
+                  value={walletBalanceInput}
+                  onChange={(e) => setWalletBalanceInput(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'end', gap: '12px' }}>
+                <button type="button" className="btn btn-sm" style={{ background: '#888' }} onClick={() => setSelectedUserForWallet(null)}>Cancel</button>
+                <button type="submit" className="btn btn-sm btn-primary">Save Balance</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {selectedUserForPassword && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', padding: '24px', position: 'relative' }}>
+            <h3>Reset User Password</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+              Resetting password for <strong>{selectedUserForPassword.name}</strong>
+            </p>
+            <form onSubmit={handleUpdatePassword}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>New Password</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff' }}
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter at least 6 characters"
+                  required
+                  minLength="6"
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'end', gap: '12px' }}>
+                <button type="button" className="btn btn-sm" style={{ background: '#888' }} onClick={() => setSelectedUserForPassword(null)}>Cancel</button>
+                <button type="submit" className="btn btn-sm btn-primary">Change Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
     </>

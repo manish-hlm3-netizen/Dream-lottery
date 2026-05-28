@@ -25,4 +25,7 @@ class ApiConfig {
 
   // Tickets
   static const String allMyTickets = '/tickets/my-tickets';
+
+  // Announcements
+  static const String announcements = '/auth/announcements';
 }

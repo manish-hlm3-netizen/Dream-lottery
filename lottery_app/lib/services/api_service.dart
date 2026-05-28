@@ -159,4 +159,9 @@ class ApiService {
     final response = await _dio.get(ApiConfig.lotteryResults);
     return response.data;
   }
+
+  Future<Map<String, dynamic>> getAnnouncements() async {
+    final response = await _dio.get(ApiConfig.announcements);
+    return response.data;
+  }
 }

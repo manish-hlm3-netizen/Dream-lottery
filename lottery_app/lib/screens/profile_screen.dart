@@ -121,6 +121,11 @@ class ProfileScreen extends StatelessWidget {
                   label: 'Transaction History',
                   onTap: () {},
                 ),
+                _ProfileMenuItem(
+                  icon: Icons.campaign_outlined,
+                  label: 'Announcements',
+                  onTap: () => Navigator.pushNamed(context, '/announcements'),
+                ),
                 const SizedBox(height: 24),
 
                 // Logout
