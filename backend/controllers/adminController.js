@@ -516,7 +516,15 @@ exports.drawLottery = async (req, res) => {
         winningNumbers
       );
 
-      const prizeWon = determinePrize(matchCount, lottery.prizes);
+      let prizeWon = determinePrize(matchCount, lottery.prizes);
+
+      // Fail-safe fallback: If they matched 100% of the numbers (Jackpot) but prizeWon is 0 (due to admin setup mismatch)
+      if (prizeWon === 0 && matchCount > 0 && matchCount === lottery.pickCount) {
+        if (lottery.prizes && lottery.prizes.length > 0) {
+          const sortedPrizes = [...lottery.prizes].sort((a, b) => b.amount - a.amount);
+          prizeWon = sortedPrizes[0].amount;
+        }
+      }
 
       ticket.matchedNumbers = matchedNumbers;
       ticket.matchCount = matchCount;
