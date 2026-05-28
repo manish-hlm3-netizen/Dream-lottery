@@ -12,6 +12,7 @@ export default function Sidebar({ stats, onLogout }) {
     { href: '/lotteries', icon: '🎰', label: 'Lotteries' },
     { href: '/users', icon: '👥', label: 'Users' },
     { href: '/announcements', icon: '📢', label: 'Announcements' },
+    { href: '/settings', icon: '⚙️', label: 'Settings' },
   ];
 
   return (
