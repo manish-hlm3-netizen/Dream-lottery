@@ -104,6 +104,12 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 140,
                             height: 140,
                             fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('Error loading splash logo: $error');
+                              return const Center(
+                                child: Text('🏆', style: TextStyle(fontSize: 48)),
+                              );
+                            },
                           ),
                         ),
                       ),

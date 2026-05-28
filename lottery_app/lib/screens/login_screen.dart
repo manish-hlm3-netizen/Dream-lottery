@@ -80,6 +80,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 90,
                         height: 90,
                         fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          debugPrint('Error loading login logo: $error');
+                          return const Center(
+                            child: Text('🏆', style: TextStyle(fontSize: 32)),
+                          );
+                        },
                       ),
                     ),
                   ),
