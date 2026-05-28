@@ -285,3 +285,52 @@ exports.getResults = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+/**
+ * @desc    Get all winning and losing participants of a completed lottery
+ * @route   GET /api/lotteries/:id/winners-lost
+ * @access  Private
+ */
+exports.getLotteryWinnersAndLost = async (req, res) => {
+  try {
+    const lottery = await Lottery.findById(req.params.id);
+    if (!lottery) {
+      return res.status(404).json({ success: false, message: 'Lottery not found' });
+    }
+
+    const tickets = await Ticket.find({ lotteryId: req.params.id })
+      .populate('userId', 'name phone email')
+      .sort({ status: 1 }); // 'won' before 'lost'
+
+    const winners = tickets.filter(t => t.status === 'won');
+    const lost = tickets.filter(t => t.status === 'lost');
+
+    res.json({
+      success: true,
+      data: {
+        winningNumbers: lottery.winningNumbers,
+        winners: winners.map(w => ({
+          id: w._id,
+          userName: w.userId ? w.userId.name : 'Unknown User',
+          phone: w.userId ? w.userId.phone : '',
+          selectedNumbers: w.selectedNumbers,
+          matchedNumbers: w.matchedNumbers,
+          prizeWon: w.prizeWon,
+          status: w.status
+        })),
+        lost: lost.map(l => ({
+          id: l._id,
+          userName: l.userId ? l.userId.name : 'Unknown User',
+          phone: l.userId ? l.userId.phone : '',
+          selectedNumbers: l.selectedNumbers,
+          matchedNumbers: l.matchedNumbers,
+          prizeWon: l.prizeWon,
+          status: l.status
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Get lottery winners and lost users error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

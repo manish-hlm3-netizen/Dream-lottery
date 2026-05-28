@@ -22,6 +22,7 @@ class ApiConfig {
   static String lotteryDetail(String id) => '/lotteries/$id';
   static String buyTicket(String id) => '/lotteries/$id/buy';
   static String myTicketsForLottery(String id) => '/lotteries/$id/my-tickets';
+  static String lotteryWinnersLost(String id) => '/lotteries/$id/winners-lost';
 
   // Tickets
   static const String allMyTickets = '/tickets/my-tickets';

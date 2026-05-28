@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/lottery_provider.dart';
+import '../providers/language_provider.dart';
 
 class MyTicketsScreen extends StatefulWidget {
   const MyTicketsScreen({super.key});
@@ -348,6 +349,46 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                   ),
                                 ],
                               ),
+                              if (status == 'won' || status == 'lost') ...[
+                                const SizedBox(height: 14),
+                                const Divider(color: AppTheme.borderColor, height: 1),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      if (lottery != null && lottery['_id'] != null) {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/lottery-participants',
+                                          arguments: {
+                                            'lotteryId': lottery['_id'],
+                                            'lotteryName': lottery['name'] ?? 'Result',
+                                          },
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    icon: const Icon(Icons.emoji_events, size: 16),
+                                    label: Text(
+                                      Provider.of<LanguageProvider>(context, listen: false)
+                                          .translate('view_winners_results'),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

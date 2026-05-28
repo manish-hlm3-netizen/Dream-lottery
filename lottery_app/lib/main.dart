@@ -17,6 +17,7 @@ import 'screens/profile_screen.dart';
 import 'screens/announcements_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/referrals_screen.dart';
+import 'screens/lottery_participants_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,15 @@ class LotteryApp extends StatelessWidget {
             final lottery = settings.arguments as Map<String, dynamic>;
             return MaterialPageRoute(
               builder: (context) => BuyTicketScreen(lottery: lottery),
+            );
+          }
+          if (settings.name == '/lottery-participants') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (context) => LotteryParticipantsScreen(
+                lotteryId: args['lotteryId'],
+                lotteryName: args['lotteryName'],
+              ),
             );
           }
           return null;

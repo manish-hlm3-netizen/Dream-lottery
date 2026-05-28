@@ -26,6 +26,9 @@ router.post('/:id/buy', [
 // @route   GET /api/lotteries/:id/my-tickets
 router.get('/:id/my-tickets', lotteryController.getMyTickets);
 
+// @route   GET /api/lotteries/:id/winners-lost
+router.get('/:id/winners-lost', lotteryController.getLotteryWinnersAndLost);
+
 // @route   GET /api/tickets/my-tickets (all tickets across lotteries)
 // Mounted separately in server.js as /api/tickets/my-tickets
 

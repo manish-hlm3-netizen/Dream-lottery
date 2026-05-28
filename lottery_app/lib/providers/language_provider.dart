@@ -65,6 +65,12 @@ class LanguageProvider with ChangeNotifier {
       'hindi': 'Hindi',
       'luck_starts': 'Your luck starts here',
       'referral_code_opt': 'Referral Code (Optional)',
+      'winning_numbers': 'Winning Numbers',
+      'winners': 'Winners 🏆',
+      'lost_participants': 'Participants 👥',
+      'view_winners_results': 'View Winners & Results',
+      'no_winners': 'No winners for this draw',
+      'no_lost': 'No other participants',
     },
     'hi': {
       'welcome_back': 'आपका स्वागत है',
@@ -92,6 +98,12 @@ class LanguageProvider with ChangeNotifier {
       'hindi': 'हिंदी',
       'luck_starts': 'आपकी किस्मत यहाँ से शुरू होती है',
       'referral_code_opt': 'रेफरल कोड (वैकल्पिक)',
+      'winning_numbers': 'विजेता नंबर',
+      'winners': 'विजेता 🏆',
+      'lost_participants': 'प्रतिभागी 👥',
+      'view_winners_results': 'विजेता और परिणाम देखें',
+      'no_winners': 'इस ड्रा के लिए कोई विजेता नहीं है',
+      'no_lost': 'कोई अन्य प्रतिभागी नहीं',
     }
   };
 

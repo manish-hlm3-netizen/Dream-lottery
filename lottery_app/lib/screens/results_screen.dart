@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/lottery_provider.dart';
+import '../providers/language_provider.dart';
 
 class ResultsScreen extends StatefulWidget {
   const ResultsScreen({super.key});
@@ -19,8 +20,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Results 🏆')),
+      appBar: AppBar(title: Text('${lang.translate('results')} 🏆')),
       body: Consumer<LotteryProvider>(
         builder: (context, prov, _) {
           if (prov.isLoading) {
@@ -30,14 +33,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
           }
 
           if (prov.results.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('🏆', style: TextStyle(fontSize: 48)),
-                  SizedBox(height: 12),
-                  Text('No results yet',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
+                  const Text('🏆', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 12),
+                  Text(
+                    lang.translate('no_winners'),
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                  ),
                 ],
               ),
             );
@@ -60,6 +65,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     color: AppTheme.bgCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppTheme.borderColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,8 +83,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             child: Text(
                               lottery['name'] ?? '',
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
                               ),
                             ),
                           ),
@@ -81,27 +94,29 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             style: const TextStyle(
                               color: AppTheme.textMuted,
                               fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Winning Numbers',
-                        style: TextStyle(
+                      Text(
+                        lang.translate('winning_numbers'),
+                        style: const TextStyle(
                           color: AppTheme.textMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: winningNumbers.map((num) {
                           return Container(
-                            width: 44,
-                            height: 44,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
                               gradient: AppTheme.primaryGradient,
                               shape: BoxShape.circle,
@@ -109,35 +124,71 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                 BoxShadow(
                                   color: AppTheme.primaryColor.withOpacity(0.3),
                                   blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             child: Center(
                               child: Text(
-                                '$num',
+                                num.toString().padLeft(2, '0'),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
                                 ),
                               ),
                             ),
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
+                      const Divider(color: AppTheme.borderColor, height: 1),
+                      const SizedBox(height: 14),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _ResultInfo(
-                            label: 'Tickets',
+                            label: 'Tickets Sold',
                             value: '${lottery['totalTicketsSold'] ?? 0}',
                           ),
-                          const SizedBox(width: 24),
                           _ResultInfo(
                             label: 'Prize Pool',
                             value: '₹${lottery['totalPrizesPaid'] ?? 0}',
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/lottery-participants',
+                              arguments: {
+                                'lotteryId': lottery['_id'],
+                                'lotteryName': lottery['name'] ?? 'Result',
+                              },
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.emoji_events, size: 16),
+                          label: Text(
+                            lang.translate('view_winners_results'),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -163,10 +214,11 @@ class _ResultInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 2),
         Text(value,
             style: const TextStyle(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 fontSize: 14,
                 color: AppTheme.textPrimary)),
       ],
