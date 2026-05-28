@@ -18,9 +18,9 @@ const ticketSchema = new mongoose.Schema({
     required: [true, 'Selected numbers are required'],
     validate: {
       validator: function(arr) {
-        return arr.length >= 3 && arr.length <= 10;
+        return arr.length >= 1 && arr.length <= 10;
       },
-      message: 'Must select between 3 and 10 numbers'
+      message: 'Must select between 1 and 10 numbers'
     }
   },
   matchedNumbers: {
