@@ -18,10 +18,8 @@ class LotteryParticipantsScreen extends StatefulWidget {
   State<LotteryParticipantsScreen> createState() => _LotteryParticipantsScreenState();
 }
 
-class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
-    with SingleTickerProviderStateMixin {
+class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
   final ApiService _api = ApiService();
-  late TabController _tabController;
   bool _isLoading = true;
   List<dynamic> _winners = [];
   List<dynamic> _lost = [];
@@ -31,14 +29,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadParticipants();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadParticipants() async {
@@ -177,39 +168,32 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
                       ),
                     ),
 
-                    // Tab Selector
+                    // List Header
                     Container(
                       color: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.bgPrimary,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.borderColor),
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicatorColor: AppTheme.primaryColor,
-                          labelColor: AppTheme.primaryColor,
-                          unselectedLabelColor: AppTheme.textMuted,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          dividerHeight: 0,
-                          tabs: [
-                            Tab(text: lang.translate('winners')),
-                            Tab(text: lang.translate('lost_participants')),
-                          ],
-                        ),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.people_outline, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            lang.translate('winners_and_participants'),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
-                    // Tab list views
+                    // Combined Roster List
                     Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildParticipantList(_winners, true, lang.translate('no_winners')),
-                          _buildParticipantList(_lost, false, lang.translate('no_lost')),
-                        ],
+                      child: _buildCombinedList(
+                        [..._winners, ..._lost],
+                        lang.translate('no_participants'),
                       ),
                     ),
                   ],
@@ -217,13 +201,13 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
     );
   }
 
-  Widget _buildParticipantList(List<dynamic> items, bool isWinner, String emptyMessage) {
+  Widget _buildCombinedList(List<dynamic> items, String emptyMessage) {
     if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(isWinner ? '🏆' : '👥', style: const TextStyle(fontSize: 40)),
+            const Text('👥', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 12),
             Text(
               emptyMessage,
@@ -239,7 +223,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
       physics: const BouncingScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -248,6 +232,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
         final prizeWon = ticket['prizeWon'] ?? 0;
         final selectedNumbers = (ticket['selectedNumbers'] as List?)?.cast<int>() ?? [];
         final matchedNumbers = (ticket['matchedNumbers'] as List?)?.cast<int>() ?? [];
+        final isWinner = ticket['status'] == 'won' || prizeWon > 0;
 
         return Card(
           elevation: 0,
@@ -256,9 +241,9 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: isWinner 
-                  ? AppTheme.successColor.withOpacity(0.3) 
+                  ? AppTheme.successColor.withOpacity(0.4) 
                   : AppTheme.borderColor,
-              width: isWinner ? 1.5 : 1,
+              width: isWinner ? 1.8 : 1,
             ),
           ),
           child: Padding(
@@ -270,13 +255,22 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                          color: AppTheme.textPrimary,
-                        ),
+                      child: Row(
+                        children: [
+                          if (isWinner) ...[
+                            const Text('🏆 ', style: TextStyle(fontSize: 16)),
+                          ],
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: isWinner ? AppTheme.primaryColor : AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (isWinner && prizeWon > 0)
