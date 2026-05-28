@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
@@ -11,10 +12,38 @@ class LotteryListScreen extends StatefulWidget {
 }
 
 class _LotteryListScreenState extends State<LotteryListScreen> {
+  Timer? _countdownTimer;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => context.read<LotteryProvider>().loadActiveLotteries());
+    // Start periodic timer to refresh countdown live every second!
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  String _formatCountdown(Duration duration) {
+    if (duration.isNegative) return 'Draw closed';
+    final days = duration.inDays;
+    final hours = duration.inHours % 24;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m ${seconds}s';
+    } else {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
   }
 
   @override
@@ -30,11 +59,15 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Lotteries 🎰',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                  const Row(
+                    children: [
+                      Text(
+                        'Lotteries 🎰',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   const Text(
                     'Pick your numbers and try your luck!',
                     style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
@@ -72,6 +105,13 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                     ...prov.activeLotteries.map((lottery) {
                       final drawDate = DateTime.tryParse(lottery['drawDate'] ?? '') ?? DateTime.now();
                       final timeLeft = drawDate.difference(DateTime.now());
+
+                      // Urgency metrics (Left Ticket)
+                      final int totalSold = lottery['totalTicketsSold'] ?? 0;
+                      final int maxTickets = 100; // Premium draw limit of 100 tickets
+                      final int ticketsLeft = (maxTickets - totalSold).clamp(0, maxTickets);
+                      final double progress = (ticketsLeft / maxTickets).clamp(0.0, 1.0);
+
                       final jackpot = (lottery['prizes'] as List?)
                           ?.firstWhere((p) => p['match'] == lottery['pickCount'],
                               orElse: () => {'amount': 0})['amount'] ?? 0;
@@ -80,13 +120,21 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                         onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
                         child: Container(
                           width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: const EdgeInsets.only(bottom: 20),
                           decoration: BoxDecoration(
                             color: AppTheme.bgCard,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: AppTheme.borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.02),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              )
+                            ]
                           ),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Header with gradient
                               Container(
@@ -95,13 +143,13 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      AppTheme.primaryColor.withOpacity(0.15),
+                                      AppTheme.primaryColor.withOpacity(0.08),
                                       Colors.transparent,
                                     ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -114,7 +162,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                             lottery['name'] ?? '',
                                             style: const TextStyle(
                                               fontSize: 18,
-                                              fontWeight: FontWeight.w700,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.textPrimary,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -122,7 +171,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                             'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
                                             style: const TextStyle(
                                               color: AppTheme.textSecondary,
-                                              fontSize: 13,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
                                         ],
@@ -131,23 +181,156 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
-                                        gradient: AppTheme.goldGradient,
-                                        borderRadius: BorderRadius.circular(20),
+                                        gradient: AppTheme.primaryGradient,
+                                        borderRadius: BorderRadius.circular(30),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.primaryColor.withOpacity(0.3),
+                                            blurRadius: 10,
+                                          )
+                                        ],
                                       ),
                                       child: Text(
                                         '₹${lottery['ticketPrice']}',
                                         style: const TextStyle(
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              // Body
+
+                              // Urgency Progress Bar (Left Ticket)
                               Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.confirmation_number_outlined, 
+                                                size: 14, color: AppTheme.primaryColor),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '$ticketsLeft Tickets Left',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppTheme.primaryColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '${((1 - progress) * 100).toInt()}% Filled',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: LinearProgressIndicator(
+                                        value: 1 - progress,
+                                        minHeight: 6,
+                                        backgroundColor: AppTheme.borderColor,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Winners Pricing matching tiers
+                              if (lottery['prizes'] != null && (lottery['prizes'] as List).isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Divider(color: AppTheme.borderColor, height: 1),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.emoji_events, 
+                                              color: AppTheme.warningColor.withOpacity(0.9), size: 15),
+                                          const SizedBox(width: 6),
+                                          const Text(
+                                            'Winners Pricing (Prize Pool Distribution)',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textSecondary,
+                                              letterSpacing: 0.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: (lottery['prizes'] as List).map<Widget>((p) {
+                                          final isTop = p['match'] == lottery['pickCount'];
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              gradient: isTop ? AppTheme.goldGradient : null,
+                                              color: isTop ? null : AppTheme.bgSurface,
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: isTop 
+                                                    ? AppTheme.warningColor.withOpacity(0.3) 
+                                                    : AppTheme.borderColor,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  '${p['label']}: ',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isTop ? Colors.black87 : AppTheme.textSecondary,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '₹${p['amount']}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: isTop ? Colors.black87 : AppTheme.primaryColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                      const SizedBox(height: 14),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              // Footer (Jackpot & Live Countdown Timer)
+                              Container(
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.bgPrimary,
+                                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+                                ),
                                 padding: const EdgeInsets.all(20),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,59 +338,54 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Jackpot',
+                                        const Text('Jackpot Pool',
                                             style: TextStyle(
-                                              color: AppTheme.textMuted,
-                                              fontSize: 11)),
+                                                color: AppTheme.textMuted,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 2),
                                         Text(
                                           '₹${jackpot.toString()}',
                                           style: const TextStyle(
                                             fontSize: 20,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppTheme.warningColor,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppTheme.primaryColor,
                                           ),
                                         ),
                                       ],
                                     ),
                                     Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        const Text('Time Left',
-                                            style: TextStyle(
-                                              color: AppTheme.textMuted,
-                                              fontSize: 11)),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.green,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Text('Live Timer',
+                                                style: TextStyle(
+                                                    color: AppTheme.textMuted,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
                                         Text(
-                                          timeLeft.isNegative
-                                              ? 'Draw soon'
-                                              : '${timeLeft.inDays}d ${timeLeft.inHours % 24}h',
+                                          _formatCountdown(timeLeft),
                                           style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppTheme.infoColor,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.textPrimary,
+                                            fontFamily: 'monospace',
                                           ),
                                         ),
                                       ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        gradient: AppTheme.primaryGradient,
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.primaryColor.withOpacity(0.3),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Text(
-                                        'Play Now',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
                                     ),
                                   ],
                                 ),
