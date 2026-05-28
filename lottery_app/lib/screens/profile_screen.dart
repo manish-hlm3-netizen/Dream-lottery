@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -87,9 +90,11 @@ class ProfileScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Wallet Balance',
-                              style: TextStyle(
-                                  color: AppTheme.textMuted, fontSize: 12)),
+                          Text(
+                            lang.translate('wallet_balance'),
+                            style: const TextStyle(
+                                color: AppTheme.textMuted, fontSize: 12),
+                          ),
                           Text(
                             '₹${auth.walletBalance.toStringAsFixed(0)}',
                             style: const TextStyle(
@@ -108,28 +113,33 @@ class ProfileScreen extends StatelessWidget {
                 // Menu items
                 _ProfileMenuItem(
                   icon: Icons.confirmation_number_outlined,
-                  label: 'My Tickets',
+                  label: lang.translate('my_tickets'),
                   onTap: () => Navigator.pushNamed(context, '/my-tickets'),
                 ),
                 _ProfileMenuItem(
                   icon: Icons.emoji_events_outlined,
-                  label: 'Results',
+                  label: lang.translate('results'),
                   onTap: () => Navigator.pushNamed(context, '/results'),
                 ),
                 _ProfileMenuItem(
                   icon: Icons.history,
-                  label: 'Transaction History',
+                  label: lang.translate('txn_history'),
                   onTap: () => Navigator.pushNamed(context, '/wallet'),
                 ),
                 _ProfileMenuItem(
                   icon: Icons.campaign_outlined,
-                  label: 'Announcements',
+                  label: lang.translate('announcements'),
                   onTap: () => Navigator.pushNamed(context, '/announcements'),
                 ),
                 _ProfileMenuItem(
                   icon: Icons.card_giftcard_outlined,
-                  label: 'Refer & Earn 🎁',
+                  label: '${lang.translate('refer_earn')} 🎁',
                   onTap: () => Navigator.pushNamed(context, '/referrals'),
+                ),
+                _ProfileMenuItem(
+                  icon: Icons.translate,
+                  label: '${lang.translate('change_language')} (${lang.isHindi ? 'हिंदी' : 'English'})',
+                  onTap: () => lang.toggleLanguage(),
                 ),
                 const SizedBox(height: 24),
 
@@ -145,9 +155,9 @@ class ProfileScreen extends StatelessWidget {
                       }
                     },
                     icon: const Icon(Icons.logout, color: AppTheme.dangerColor),
-                    label: const Text(
-                      'Logout',
-                      style: TextStyle(
+                    label: Text(
+                      lang.translate('logout'),
+                      style: const TextStyle(
                         color: AppTheme.dangerColor,
                         fontWeight: FontWeight.w600,
                       ),
