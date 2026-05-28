@@ -225,7 +225,7 @@ exports.getAnnouncements = async (req, res) => {
     const announcements = await Announcement.find({ isActive: true }).sort({ createdAt: -1 });
     res.json({
       success: true,
-      data: { announcements }
+      data: announcements
     });
   } catch (error) {
     console.error('Get announcements error:', error);
