@@ -29,20 +29,23 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!canPop) ...[
                 const Text(
                   'My Tickets 🎫',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
+              ],
                 Container(
                   decoration: BoxDecoration(
                     color: AppTheme.bgCard,
@@ -238,7 +241,18 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
             ),
           ),
         ],
-      ),
-    );
+      );
+
+      if (canPop) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('My Tickets 🎫')),
+          body: SafeArea(child: content),
+        );
+      }
+
+      return Material(
+        color: Colors.transparent,
+        child: SafeArea(child: content),
+      );
   }
 }
