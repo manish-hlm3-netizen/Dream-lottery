@@ -40,5 +40,8 @@ router.put('/profile', auth, authController.updateProfile);
 // @route   GET /api/auth/announcements
 router.get('/announcements', auth, authController.getAnnouncements);
 
+// @route   GET /api/auth/settings/upi
+router.get('/settings/upi', auth, authController.getUPISettings);
+
 module.exports = router;
 

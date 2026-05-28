@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Announcement = require('../models/Announcement');
+const Settings = require('../models/Settings');
 
 
 // Generate JWT token
@@ -233,6 +234,31 @@ exports.getAnnouncements = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+/**
+ * @desc    Get current UPI payment settings for mobile users
+ * @route   GET /api/auth/settings/upi
+ * @access  Private
+ */
+exports.getUPISettings = async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ key: 'upi_settings' });
+    if (!settings) {
+      settings = await Settings.create({
+        key: 'upi_settings',
+        upiId: 'pay@upi',
+        qrCodeUrl: ''
+      });
+    }
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Get mobile UPI settings error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

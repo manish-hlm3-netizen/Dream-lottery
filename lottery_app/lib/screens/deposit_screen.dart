@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
@@ -19,7 +21,38 @@ class _DepositScreenState extends State<DepositScreen> {
   String? _message;
   bool _success = false;
 
+  // Dynamic UPI settings
+  String _upiId = 'lottery@upi';
+  Uint8List? _qrBytes;
+  bool _fetchingSettings = true;
+
   final List<int> _quickAmounts = [100, 500, 1000, 2000, 5000];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUPISettings();
+  }
+
+  Future<void> _loadUPISettings() async {
+    try {
+      final res = await ApiService().getUPISettings();
+      if (res['success'] == true && res['data'] != null) {
+        setState(() {
+          _upiId = res['data']['upiId'] ?? 'lottery@upi';
+          final String? qr = res['data']['qrCodeUrl'];
+          if (qr != null && qr.startsWith('data:image')) {
+            final base64String = qr.split(',').last;
+            _qrBytes = base64Decode(base64String);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Load UPI Settings error: $e');
+    } finally {
+      setState(() => _fetchingSettings = false);
+    }
+  }
 
   Future<void> _handleDeposit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -64,51 +97,69 @@ class _DepositScreenState extends State<DepositScreen> {
       appBar: AppBar(
         title: const Text('Deposit Money'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // UPI Info Card
-            Container(
-              width: double.infinity,
+      body: _fetchingSettings
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppTheme.goldGradient,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('💳', style: TextStyle(fontSize: 36)),
-                  SizedBox(height: 12),
-                  Text(
-                    'Pay via UPI',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  // UPI Info Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.goldGradient,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('💳', style: TextStyle(fontSize: 36)),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Pay via UPI',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Scan the QR code or pay on the UPI ID below,\nthen paste your transaction ID here',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                        ),
+                        if (_qrBytes != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.memory(
+                              _qrBytes!,
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Text(
+                          _upiId,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Send money to our UPI ID below,\nthen paste your transaction ID here',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54, fontSize: 13),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'lottery@upi',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
             // Message
             if (_message != null)

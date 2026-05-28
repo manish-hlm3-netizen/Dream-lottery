@@ -164,4 +164,9 @@ class ApiService {
     final response = await _dio.get(ApiConfig.announcements);
     return response.data;
   }
+
+  Future<Map<String, dynamic>> getUPISettings() async {
+    final response = await _dio.get(ApiConfig.upiSettings);
+    return response.data;
+  }
 }

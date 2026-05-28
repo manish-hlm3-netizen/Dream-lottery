@@ -4,6 +4,7 @@ const Lottery = require('../models/Lottery');
 const Ticket = require('../models/Ticket');
 const Withdrawal = require('../models/Withdrawal');
 const Announcement = require('../models/Announcement');
+const Settings = require('../models/Settings');
 const { generateWinningNumbers, calculateMatches, determinePrize } = require('../utils/drawEngine');
 
 
@@ -748,6 +749,69 @@ exports.deleteAnnouncement = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete announcement error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get current UPI payment settings
+ * @route   GET /api/admin/settings/upi
+ * @access  Admin
+ */
+exports.getUPISettings = async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ key: 'upi_settings' });
+    if (!settings) {
+      settings = await Settings.create({
+        key: 'upi_settings',
+        upiId: 'pay@upi',
+        qrCodeUrl: ''
+      });
+    }
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Get UPI settings error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Update UPI payment settings
+ * @route   PUT /api/admin/settings/upi
+ * @access  Admin
+ */
+exports.updateUPISettings = async (req, res) => {
+  try {
+    const { upiId, qrCodeUrl } = req.body;
+    if (!upiId) {
+      return res.status(400).json({
+        success: false,
+        message: 'UPI ID is required'
+      });
+    }
+
+    let settings = await Settings.findOne({ key: 'upi_settings' });
+    if (!settings) {
+      settings = new Settings({ key: 'upi_settings' });
+    }
+
+    settings.upiId = upiId;
+    if (qrCodeUrl !== undefined) {
+      settings.qrCodeUrl = qrCodeUrl;
+    }
+    
+    await settings.save();
+
+    res.json({
+      success: true,
+      message: 'UPI payment settings updated successfully',
+      data: settings
+    });
+  } catch (error) {
+    console.error('Update UPI settings error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -36,5 +36,9 @@ router.get('/announcements', adminController.getAdminAnnouncements);
 router.post('/announcements', adminController.createAnnouncement);
 router.delete('/announcements/:id', adminController.deleteAnnouncement);
 
+// Settings
+router.get('/settings/upi', adminController.getUPISettings);
+router.put('/settings/upi', adminController.updateUPISettings);
+
 module.exports = router;
 

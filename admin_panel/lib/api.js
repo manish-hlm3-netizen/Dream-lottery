@@ -176,6 +176,18 @@ class ApiClient {
       method: 'DELETE'
     });
   }
+
+  // UPI Settings
+  async getUPISettings() {
+    return this.request('/admin/settings/upi');
+  }
+
+  async updateUPISettings(upiData) {
+    return this.request('/admin/settings/upi', {
+      method: 'PUT',
+      body: JSON.stringify(upiData)
+    });
+  }
 }
 
 const api = new ApiClient();

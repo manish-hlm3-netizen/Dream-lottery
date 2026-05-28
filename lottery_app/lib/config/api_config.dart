@@ -28,4 +28,7 @@ class ApiConfig {
 
   // Announcements
   static const String announcements = '/auth/announcements';
+
+  // Settings
+  static const String upiSettings = '/auth/settings/upi';
 }
