@@ -462,8 +462,41 @@ exports.drawLottery = async (req, res) => {
       });
     }
 
-    // Generate winning numbers
-    const winningNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
+    let winningNumbers;
+
+    if (req.body.winningNumbers) {
+      const customNumbers = req.body.winningNumbers.map(n => parseInt(n));
+      if (!Array.isArray(customNumbers) || customNumbers.length !== lottery.pickCount) {
+        return res.status(400).json({
+          success: false,
+          message: `Winning numbers must be an array of exactly ${lottery.pickCount} numbers.`
+        });
+      }
+
+      // Check unique and range
+      const uniqueNums = new Set(customNumbers);
+      if (uniqueNums.size !== customNumbers.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'All winning numbers must be unique.'
+        });
+      }
+
+      const invalidNums = customNumbers.filter(
+        n => isNaN(n) || !Number.isInteger(n) || n < 1 || n > lottery.maxNumber
+      );
+      if (invalidNums.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Winning numbers must be between 1 and ${lottery.maxNumber}.`
+        });
+      }
+
+      winningNumbers = customNumbers.sort((a, b) => a - b);
+    } else {
+      // Generate winning numbers randomly
+      winningNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
+    }
 
     // Update lottery
     lottery.winningNumbers = winningNumbers;

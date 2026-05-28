@@ -13,6 +13,11 @@ export default function LotteryDetailPage({ params }) {
   const [drawResult, setDrawResult] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Custom Draw state
+  const [showDrawModal, setShowDrawModal] = useState(false);
+  const [drawMode, setDrawMode] = useState('random'); // 'random' or 'manual'
+  const [manualNumbers, setManualNumbers] = useState([]);
+
   useEffect(() => {
     loadLottery();
   }, [id]);
@@ -31,11 +36,39 @@ export default function LotteryDetailPage({ params }) {
     }
   };
 
-  const handleDraw = async () => {
+  const handleDrawClick = () => {
+    setManualNumbers(Array(lottery.pickCount).fill(''));
+    setDrawMode('random');
+    setShowDrawModal(true);
+  };
+
+  const handleDrawSubmit = async (e) => {
+    e.preventDefault();
+    
+    let numbersToSend = null;
+    if (drawMode === 'manual') {
+      const parsedNums = manualNumbers.map(n => parseInt(n));
+      const invalid = parsedNums.some(n => isNaN(n) || n < 1 || n > lottery.maxNumber);
+      if (invalid) {
+        showToast(`All numbers must be valid integers between 1 and ${lottery.maxNumber}`, 'error');
+        return;
+      }
+      
+      const unique = new Set(parsedNums);
+      if (unique.size !== parsedNums.length) {
+        showToast('All numbers must be unique', 'error');
+        return;
+      }
+      
+      numbersToSend = parsedNums;
+    }
+
     if (!confirm('Are you sure you want to conduct the draw? This action cannot be undone.')) return;
+    
     setDrawing(true);
+    setShowDrawModal(false);
     try {
-      const data = await api.drawLottery(id);
+      const data = await api.drawLottery(id, numbersToSend);
       if (data.success) {
         setDrawResult(data.data);
         showToast('Draw completed successfully!', 'success');
@@ -84,7 +117,7 @@ export default function LotteryDetailPage({ params }) {
           {['upcoming', 'active'].includes(lottery.status) && (
             <button
               className="btn btn-primary"
-              onClick={handleDraw}
+              onClick={handleDrawClick}
               disabled={drawing}
             >
               {drawing ? '🎲 Drawing...' : '🎲 Conduct Draw'}
@@ -253,6 +286,89 @@ export default function LotteryDetailPage({ params }) {
           </table>
         )}
       </div>
+
+      {/* Conduct Draw Modal */}
+      {showDrawModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '500px', padding: '24px', position: 'relative' }}>
+            <h3>Conduct Lottery Draw</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+              Choose draw method for <strong>{lottery.name}</strong>
+            </p>
+            
+            <form onSubmit={handleDrawSubmit}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Draw Mode</label>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="drawMode"
+                      value="random"
+                      checked={drawMode === 'random'}
+                      onChange={() => setDrawMode('random')}
+                    />
+                    <span>Random Draw (Generate Auto)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="drawMode"
+                      value="manual"
+                      checked={drawMode === 'manual'}
+                      onChange={() => setDrawMode('manual')}
+                    />
+                    <span>Self Select Numbers</span>
+                  </label>
+                </div>
+              </div>
+
+              {drawMode === 'manual' && (
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                    Enter {lottery.pickCount} winning numbers (range 1-{lottery.maxNumber}):
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {manualNumbers.map((val, idx) => (
+                      <input
+                        key={idx}
+                        type="number"
+                        min="1"
+                        max={lottery.maxNumber}
+                        required
+                        style={{
+                          width: '60px',
+                          padding: '10px',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '6px',
+                          color: '#fff',
+                          textAlign: 'center'
+                        }}
+                        value={val}
+                        onChange={(e) => {
+                          const updated = [...manualNumbers];
+                          updated[idx] = e.target.value;
+                          setManualNumbers(updated);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'end', gap: '12px', marginTop: '24px' }}>
+                <button type="button" className="btn btn-sm" style={{ background: '#888' }} onClick={() => setShowDrawModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-sm btn-primary">
+                  Draw Now
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
     </>

@@ -98,6 +98,15 @@ exports.buyTicket = async (req, res) => {
       });
     }
 
+    // Check if user already bought a ticket for this lottery
+    const existingTicket = await Ticket.findOne({ userId: req.user._id, lotteryId });
+    if (existingTicket) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already purchased a ticket for this lottery. Only one ticket is allowed per user.'
+      });
+    }
+
     // Check draw date hasn't passed
     if (new Date(lottery.drawDate) <= new Date()) {
       return res.status(400).json({

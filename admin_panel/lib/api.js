@@ -137,9 +137,10 @@ class ApiClient {
     });
   }
 
-  async drawLottery(id) {
+  async drawLottery(id, winningNumbers = null) {
     return this.request(`/admin/lotteries/${id}/draw`, {
-      method: 'POST'
+      method: 'POST',
+      ...(winningNumbers && { body: JSON.stringify({ winningNumbers }) })
     });
   }
 
