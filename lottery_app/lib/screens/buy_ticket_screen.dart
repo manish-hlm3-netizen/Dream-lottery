@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/lottery_provider.dart';
+import '../providers/language_provider.dart';
 
 class BuyTicketScreen extends StatefulWidget {
   final Map<String, dynamic> lottery;
@@ -24,9 +25,12 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
   int get _ticketPrice => widget.lottery['ticketPrice'] ?? 50;
 
   Future<void> _buyTicket() async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (_selectedNumbers.length != _pickCount) {
       setState(() {
-        _message = 'Please select exactly $_pickCount numbers';
+        _message = lang.isHindi 
+            ? 'कृपया ठीक $_pickCount नंबर चुनें' 
+            : 'Please select exactly $_pickCount numbers';
         _success = false;
       });
       return;
@@ -50,8 +54,8 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       context.read<AuthProvider>().refreshUser();
       // Show success and go back
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎫 Ticket purchased successfully!'),
+        SnackBar(
+          content: Text(lang.isHindi ? '🎫 टिकट सफलतापूर्वक खरीदा गया!' : '🎫 Ticket purchased successfully!'),
           backgroundColor: AppTheme.successColor,
         ),
       );
@@ -70,9 +74,10 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.lottery['name'] ?? 'Buy Ticket'),
+        title: Text(widget.lottery['name'] ?? (lang.isHindi ? 'टिकट खरीदें' : 'Buy Ticket')),
       ),
       body: Column(
         children: [
@@ -99,7 +104,9 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'Pick $_pickCount numbers from 1 to $_maxNumber',
+                          lang.isHindi 
+                              ? '1 से $_maxNumber में से $_pickCount नंबर चुनें' 
+                              : 'Pick $_pickCount numbers from 1 to $_maxNumber',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -107,7 +114,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Ticket Price: ₹$_ticketPrice',
+                          lang.isHindi ? 'टिकट की कीमत: ₹$_ticketPrice' : 'Ticket Price: ₹$_ticketPrice',
                           style: const TextStyle(
                             color: AppTheme.warningColor,
                             fontSize: 18,
@@ -116,7 +123,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Selected: ${_selectedNumbers.length}/$_pickCount',
+                          '${lang.isHindi ? "चयनित" : "Selected"}: ${_selectedNumbers.length}/$_pickCount',
                           style: const TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 13,
@@ -281,8 +288,8 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                             strokeWidth: 2, color: Colors.white))
                       : Text(
                           _selectedNumbers.length == _pickCount
-                              ? 'Buy Ticket — ₹$_ticketPrice'
-                              : 'Select $_pickCount Numbers',
+                              ? (lang.isHindi ? 'टिकट खरीदें — ₹$_ticketPrice' : 'Buy Ticket — ₹$_ticketPrice')
+                              : (lang.isHindi ? '$_pickCount नंबर चुनें' : 'Select $_pickCount Numbers'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

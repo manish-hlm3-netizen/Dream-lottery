@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../providers/language_provider.dart';
 
 class DepositScreen extends StatefulWidget {
   const DepositScreen({super.key});
@@ -57,6 +58,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
   Future<void> _handleDeposit() async {
     if (!_formKey.currentState!.validate()) return;
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     setState(() { _loading = true; _message = null; });
 
@@ -68,7 +70,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
       setState(() {
         _success = res['success'] == true;
-        _message = res['message'] ?? 'Request submitted';
+        _message = res['message'] ?? (lang.isHindi ? 'अनुरोध सबमिट किया गया' : 'Request submitted');
       });
 
       if (_success) {
@@ -78,7 +80,7 @@ class _DepositScreenState extends State<DepositScreen> {
     } catch (e) {
       setState(() {
         _success = false;
-        _message = 'Failed to submit deposit';
+        _message = lang.isHindi ? 'जमा सबमिट करने में विफल' : 'Failed to submit deposit';
       });
     }
 
@@ -86,11 +88,14 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Future<void> _launchUPIApp() async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     final amountText = _amountController.text.trim();
     if (amountText.isEmpty) {
       setState(() {
         _success = false;
-        _message = 'Please enter the deposit amount first';
+        _message = lang.isHindi 
+            ? 'कृपया पहले जमा राशि दर्ज करें' 
+            : 'Please enter the deposit amount first';
       });
       return;
     }
@@ -99,7 +104,9 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amount == null || amount < 10) {
       setState(() {
         _success = false;
-        _message = 'Please enter a valid amount (minimum ₹10)';
+        _message = lang.isHindi 
+            ? 'कृपया एक मान्य राशि दर्ज करें (न्यूनतम ₹10)' 
+            : 'Please enter a valid amount (minimum ₹10)';
       });
       return;
     }
@@ -112,20 +119,26 @@ class _DepositScreenState extends State<DepositScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         setState(() {
-          _message = 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
+          _message = lang.isHindi 
+              ? 'कृपया भुगतान के बाद UPI ट्रांजैक्शन ID कॉपी करें और सबमिट करने के लिए नीचे पेस्ट करें!' 
+              : 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
           _success = true;
         });
       } else {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         setState(() {
-          _message = 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
+          _message = lang.isHindi 
+              ? 'कृपया भुगतान के बाद UPI ट्रांजैक्शन ID कॉपी करें और सबमिट करने के लिए नीचे पेस्ट करें!' 
+              : 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
           _success = true;
         });
       }
     } catch (e) {
       setState(() {
         _success = false;
-        _message = 'Could not launch UPI Apps. Please manually pay on the UPI ID above.';
+        _message = lang.isHindi 
+            ? 'UPI ऐप्स लॉन्च नहीं किए जा सके। कृपया ऊपर दी गई UPI ID पर मैन्युअल रूप से भुगतान करें।' 
+            : 'Could not launch UPI Apps. Please manually pay on the UPI ID above.';
       });
     }
   }
@@ -139,9 +152,10 @@ class _DepositScreenState extends State<DepositScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Deposit Money'),
+        title: Text(lang.isHindi ? 'पैसे जमा करें' : 'Deposit Money'),
       ),
       body: _fetchingSettings
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
@@ -162,19 +176,21 @@ class _DepositScreenState extends State<DepositScreen> {
                       children: [
                         const Text('💳', style: TextStyle(fontSize: 36)),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Pay via UPI',
-                          style: TextStyle(
+                        Text(
+                          lang.isHindi ? "UPI के माध्यम से भुगतान" : "Pay via UPI",
+                          style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Scan the QR code or pay on the UPI ID below,\nthen paste your transaction ID here',
+                        Text(
+                          lang.isHindi 
+                              ? "QR कोड स्कैन करें या नीचे दिए गए UPI ID पर भुगतान करें,\nफिर अपनी ट्रांजैक्शन ID यहां पेस्ट करें" 
+                              : "Scan the QR code or pay on the UPI ID below,\nthen paste your transaction ID here",
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                          style: const TextStyle(color: Colors.black54, fontSize: 13),
                         ),
                         if (_qrBytes != null) ...[
                           const SizedBox(height: 16),
@@ -203,12 +219,12 @@ class _DepositScreenState extends State<DepositScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton.icon(
+                         ElevatedButton.icon(
                           onPressed: _launchUPIApp,
                           icon: const Icon(Icons.flash_on, color: Colors.white, size: 20),
-                          label: const Text(
-                            '⚡ Pay with UPI App',
-                            style: TextStyle(
+                          label: Text(
+                            lang.isHindi ? '⚡ UPI ऐप से भुगतान करें' : '⚡ Pay with UPI App',
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
@@ -256,9 +272,9 @@ class _DepositScreenState extends State<DepositScreen> {
               ),
 
             // Quick amounts
-            const Text(
-              'Quick Amount',
-              style: TextStyle(
+             Text(
+              lang.isHindi ? "त्वरित राशि" : "Quick Amount",
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
                 color: AppTheme.textSecondary,
@@ -296,36 +312,36 @@ class _DepositScreenState extends State<DepositScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
+                   TextFormField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount (₹)',
-                      prefixIcon: Icon(Icons.currency_rupee, color: AppTheme.textMuted),
+                    decoration: InputDecoration(
+                      labelText: lang.isHindi ? 'राशि (₹)' : 'Amount (₹)',
+                      prefixIcon: const Icon(Icons.currency_rupee, color: AppTheme.textMuted),
                     ),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Enter amount';
+                      if (val == null || val.isEmpty) return lang.isHindi ? 'राशि दर्ज करें' : 'Enter amount';
                       final amount = double.tryParse(val);
-                      if (amount == null || amount < 10) return 'Minimum ₹10';
+                      if (amount == null || amount < 10) return lang.isHindi ? 'न्यूनतम ₹10' : 'Minimum ₹10';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _upiTxnController,
-                    decoration: const InputDecoration(
-                      labelText: 'UPI Transaction ID',
-                      prefixIcon: Icon(Icons.receipt_long, color: AppTheme.textMuted),
-                      hintText: 'Paste your UPI txn ID here',
+                    decoration: InputDecoration(
+                      labelText: lang.isHindi ? 'UPI ट्रांजैक्शन ID' : 'UPI Transaction ID',
+                      prefixIcon: const Icon(Icons.receipt_long, color: AppTheme.textMuted),
+                      hintText: lang.isHindi ? 'यहां अपनी UPI txn ID पेस्ट करें' : 'Paste your UPI txn ID here',
                     ),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Enter UPI transaction ID';
-                      if (val.length < 5) return 'Invalid transaction ID';
+                      if (val == null || val.isEmpty) return lang.isHindi ? 'UPI ट्रांजैक्शन ID दर्ज करें' : 'Enter UPI transaction ID';
+                      if (val.length < 5) return lang.isHindi ? 'अमान्य ट्रांजैक्शन ID' : 'Invalid transaction ID';
                       return null;
                     },
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
+                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
@@ -340,9 +356,10 @@ class _DepositScreenState extends State<DepositScreen> {
                           ? const SizedBox(
                               width: 22, height: 22,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                          : const Text('Submit Deposit Request',
-                              style: TextStyle(
+                                  strokeWidth: 2, color: Colors.white))
+                          : Text(
+                              lang.isHindi ? 'जमा अनुरोध सबमिट करें' : 'Submit Deposit Request',
+                              style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -350,9 +367,11 @@ class _DepositScreenState extends State<DepositScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '⏳ Your deposit will be credited after admin verification',
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            Text(
+              lang.isHindi 
+                  ? '⏳ व्यवस्थापक सत्यापन के बाद आपका जमा क्रेडिट किया जाएगा' 
+                  : '⏳ Your deposit will be credited after admin verification',
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/lottery_provider.dart';
+import '../providers/language_provider.dart';
 import 'wallet_screen.dart';
 import 'lottery_list_screen.dart';
 import 'my_tickets_screen.dart';
@@ -71,6 +72,7 @@ class _HomeTabState extends State<_HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: () async {
@@ -83,24 +85,51 @@ class _HomeTabState extends State<_HomeTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting
+              // Greeting Row with Logo
               Consumer<AuthProvider>(
                 builder: (context, auth, _) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Hello, ${auth.userName} 👋',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              lang.isHindi ? "नमस्ते, ${auth.userName} 👋" : "Hello, ${auth.userName} 👋",
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              lang.translate('ready_try_luck'),
+                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Ready to try your luck today?',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(color: AppTheme.borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/logo.jpg'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ],
                   );
@@ -128,9 +157,9 @@ class _HomeTabState extends State<_HomeTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Wallet Balance',
-                          style: TextStyle(
+                        Text(
+                          lang.translate('wallet_balance'),
+                          style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -151,7 +180,7 @@ class _HomeTabState extends State<_HomeTab> {
                             Expanded(
                               child: _WalletButton(
                                 icon: Icons.add,
-                                label: 'Deposit',
+                                label: lang.translate('deposit'),
                                 onTap: () => Navigator.pushNamed(context, '/deposit'),
                               ),
                             ),
@@ -159,7 +188,7 @@ class _HomeTabState extends State<_HomeTab> {
                             Expanded(
                               child: _WalletButton(
                                 icon: Icons.arrow_upward,
-                                label: 'Withdraw',
+                                label: lang.translate('withdraw'),
                                 onTap: () => Navigator.pushNamed(context, '/withdraw'),
                               ),
                             ),
@@ -173,9 +202,9 @@ class _HomeTabState extends State<_HomeTab> {
               const SizedBox(height: 28),
 
               // Quick Actions
-              const Text(
-                'Quick Actions',
-                style: TextStyle(
+              Text(
+                lang.translate('quick_actions'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary,
@@ -186,7 +215,7 @@ class _HomeTabState extends State<_HomeTab> {
                 children: [
                   _QuickAction(
                     icon: Icons.casino,
-                    label: 'Play\nLottery',
+                    label: lang.translate('play_lottery_action'),
                     color: AppTheme.primaryColor,
                     onTap: () {
                       // Switch to lotteries tab
@@ -195,14 +224,14 @@ class _HomeTabState extends State<_HomeTab> {
                   const SizedBox(width: 12),
                   _QuickAction(
                     icon: Icons.emoji_events,
-                    label: 'View\nResults',
+                    label: lang.translate('view_results_action'),
                     color: AppTheme.warningColor,
                     onTap: () => Navigator.pushNamed(context, '/results'),
                   ),
                   const SizedBox(width: 12),
                   _QuickAction(
                     icon: Icons.confirmation_number,
-                    label: 'My\nTickets',
+                    label: lang.translate('my_tickets_action'),
                     color: AppTheme.successColor,
                     onTap: () => Navigator.pushNamed(context, '/my-tickets'),
                   ),
@@ -214,9 +243,9 @@ class _HomeTabState extends State<_HomeTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Active Lotteries 🎰',
-                    style: TextStyle(
+                  Text(
+                    lang.translate('active_lotteries'),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -224,9 +253,9 @@ class _HomeTabState extends State<_HomeTab> {
                   ),
                   GestureDetector(
                     onTap: () {},
-                    child: const Text(
-                      'See All →',
-                      style: TextStyle(
+                    child: Text(
+                      lang.translate('see_all'),
+                      style: const TextStyle(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.w500,
                         fontSize: 13,
@@ -257,13 +286,13 @@ class _HomeTabState extends State<_HomeTab> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppTheme.borderColor),
                       ),
-                      child: const Column(
+                      child: Column(
                         children: [
-                          Text('🎰', style: TextStyle(fontSize: 40)),
-                          SizedBox(height: 12),
+                          const Text('🎰', style: TextStyle(fontSize: 40)),
+                          const SizedBox(height: 12),
                           Text(
-                            'No active lotteries right now',
-                            style: TextStyle(color: AppTheme.textSecondary),
+                            lang.translate('no_active_lotteries'),
+                            style: const TextStyle(color: AppTheme.textSecondary),
                           ),
                         ],
                       ),
@@ -379,6 +408,7 @@ class _LotteryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     final drawDate = DateTime.tryParse(lottery['drawDate'] ?? '') ?? DateTime.now();
     final timeLeft = drawDate.difference(DateTime.now());
 
@@ -431,14 +461,18 @@ class _LotteryCard extends StatelessWidget {
               children: [
                 _InfoChip(
                   icon: Icons.grid_view,
-                  text: 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
+                  text: lang.isHindi 
+                      ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
+                      : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
                 ),
                 const SizedBox(width: 12),
                 _InfoChip(
                   icon: Icons.timer,
                   text: timeLeft.isNegative
-                      ? 'Draw soon'
-                      : '${timeLeft.inDays}d ${timeLeft.inHours % 24}h left',
+                      ? lang.translate('draw_soon')
+                      : (lang.isHindi 
+                          ? '${timeLeft.inDays} दिन ${timeLeft.inHours % 24} घंटे बचे' 
+                          : '${timeLeft.inDays}d ${timeLeft.inHours % 24}h left'),
                 ),
               ],
             ),
@@ -447,7 +481,7 @@ class _LotteryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${lottery['totalTicketsSold'] ?? 0} tickets sold',
+                  '${lottery['totalTicketsSold'] ?? 0} ${lang.translate('tickets_sold')}',
                   style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
                 ),
                 Container(
@@ -456,9 +490,9 @@ class _LotteryCard extends StatelessWidget {
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Play Now →',
-                    style: TextStyle(
+                  child: Text(
+                    lang.translate('play_now'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../providers/language_provider.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -56,6 +57,7 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final lang = Provider.of<LanguageProvider>(context);
 
     Widget content = RefreshIndicator(
       onRefresh: () async {
@@ -69,9 +71,9 @@ class _WalletScreenState extends State<WalletScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!canPop) ...[
-              const Text(
-                'Wallet',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+              Text(
+                lang.translate('wallet'),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 20),
             ],
@@ -96,8 +98,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Available Balance',
-                            style: TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text(lang.translate('available_balance'),
+                            style: const TextStyle(color: Colors.white70, fontSize: 14)),
                         const SizedBox(height: 8),
                         Text(
                           '₹${auth.walletBalance.toStringAsFixed(0)}',
@@ -115,7 +117,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                 onPressed: () => Navigator.pushNamed(context, '/deposit')
                                     .then((_) => _loadTransactions()),
                                 icon: const Icon(Icons.add, size: 16),
-                                label: const Text('Deposit'),
+                                label: Text(lang.translate('deposit')),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white.withOpacity(0.2),
                                   foregroundColor: Colors.white,
@@ -131,7 +133,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                 onPressed: () => Navigator.pushNamed(context, '/withdraw')
                                     .then((_) => _loadTransactions()),
                                 icon: const Icon(Icons.arrow_upward, size: 16),
-                                label: const Text('Withdraw'),
+                                label: Text(lang.translate('withdraw')),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white.withOpacity(0.2),
                                   foregroundColor: Colors.white,
@@ -151,9 +153,9 @@ class _WalletScreenState extends State<WalletScreen> {
               const SizedBox(height: 28),
 
               // Transaction history
-              const Text(
-                'Transaction History',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              Text(
+                lang.translate('transaction_history'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
 
@@ -173,12 +175,12 @@ class _WalletScreenState extends State<WalletScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.borderColor),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Text('📭', style: TextStyle(fontSize: 40)),
-                      SizedBox(height: 12),
-                      Text('No transactions yet',
-                          style: TextStyle(color: AppTheme.textSecondary)),
+                      const Text('📭', style: TextStyle(fontSize: 40)),
+                      const SizedBox(height: 12),
+                      Text(lang.translate('no_transactions'),
+                          style: const TextStyle(color: AppTheme.textSecondary)),
                     ],
                   ),
                 )
@@ -253,7 +255,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
       if (canPop) {
         return Scaffold(
-          appBar: AppBar(title: const Text('My Wallet')),
+          appBar: AppBar(title: Text(lang.translate('wallet'))),
           body: SafeArea(child: content),
         );
       }

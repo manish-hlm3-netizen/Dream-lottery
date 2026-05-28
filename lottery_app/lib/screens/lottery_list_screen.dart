@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/lottery_provider.dart';
+import '../providers/language_provider.dart';
 
 class LotteryListScreen extends StatefulWidget {
   const LotteryListScreen({super.key});
@@ -32,15 +33,17 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
     super.dispose();
   }
 
-  String _formatCountdown(Duration duration) {
-    if (duration.isNegative) return 'Draw closed';
+  String _formatCountdown(Duration duration, LanguageProvider lang) {
+    if (duration.isNegative) return lang.translate('draw_closed');
     final days = duration.inDays;
     final hours = duration.inHours % 24;
     final minutes = duration.inMinutes % 60;
     final seconds = duration.inSeconds % 60;
 
     if (days > 0) {
-      return '${days}d ${hours}h ${minutes}m ${seconds}s';
+      return lang.isHindi 
+          ? '${days}दि ${hours}घं ${minutes}मि ${seconds}से'
+          : '${days}d ${hours}h ${minutes}m ${seconds}s';
     } else {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
@@ -48,6 +51,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: () => context.read<LotteryProvider>().loadActiveLotteries(),
@@ -59,18 +64,18 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Text(
-                        'Lotteries 🎰',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                        lang.translate('lotteries'),
+                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Pick your numbers and try your luck!',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                  Text(
+                    lang.translate('pick_numbers_luck'),
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 24),
 
@@ -85,18 +90,18 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(40),
-                        child: const Column(
+                        child: Column(
                           children: [
-                            Text('🎰', style: TextStyle(fontSize: 48)),
-                            SizedBox(height: 16),
-                            Text('No active lotteries',
-                                style: TextStyle(
+                            const Text('🎰', style: TextStyle(fontSize: 48)),
+                            const SizedBox(height: 16),
+                            Text(lang.translate('no_active_lotteries'),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: AppTheme.textSecondary)),
-                            SizedBox(height: 4),
-                            Text('Check back soon for new draws!',
-                                style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                            const SizedBox(height: 4),
+                            Text(lang.translate('check_back_soon'),
+                                style: const TextStyle(color: AppTheme.textMuted, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -168,7 +173,9 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
+                                            lang.isHindi 
+                                                 ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
+                                                 : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
                                             style: const TextStyle(
                                               color: AppTheme.textSecondary,
                                               fontSize: 12,
@@ -218,7 +225,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                 size: 14, color: AppTheme.primaryColor),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '$ticketsLeft Tickets Left',
+                                              '$ticketsLeft ${lang.translate('tickets_left')}',
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
@@ -228,7 +235,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                           ],
                                         ),
                                         Text(
-                                          '${((1 - progress) * 100).toInt()}% Filled',
+                                          '${((1 - progress) * 100).toInt()}% ${lang.translate('filled')}',
                                           style: const TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
@@ -266,9 +273,9 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                           Icon(Icons.emoji_events, 
                                               color: AppTheme.warningColor.withOpacity(0.9), size: 15),
                                           const SizedBox(width: 6),
-                                          const Text(
-                                            'Winners Pricing (Prize Pool Distribution)',
-                                            style: TextStyle(
+                                          Text(
+                                            lang.translate('winners_pricing'),
+                                            style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w700,
                                               color: AppTheme.textSecondary,
@@ -338,8 +345,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Jackpot Pool',
-                                            style: TextStyle(
+                                        Text(lang.translate('jackpot_pool'),
+                                            style: const TextStyle(
                                                 color: AppTheme.textMuted,
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600)),
@@ -368,8 +375,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 4),
-                                            const Text('Live Timer',
-                                                style: TextStyle(
+                                            Text(lang.translate('live_timer'),
+                                                style: const TextStyle(
                                                     color: AppTheme.textMuted,
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w600)),
@@ -377,7 +384,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          _formatCountdown(timeLeft),
+                                          _formatCountdown(timeLeft, lang),
                                           style: const TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w700,

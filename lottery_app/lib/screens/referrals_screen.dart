@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
+import '../providers/language_provider.dart';
 
 class ReferralsScreen extends StatefulWidget {
   const ReferralsScreen({super.key});
@@ -80,13 +82,14 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inviteMessage = "Hey! 🎲 Join me on Dream Lottery, the ultimate premium fantasy lottery platform! "
-        "Use my referral code: $_referralCode to get a ₹20 signup bonus instantly. "
-        "Download now and let's play together!";
+    final lang = Provider.of<LanguageProvider>(context);
+    final inviteMessage = lang.isHindi 
+        ? "नमस्ते! 🎲 ड्रीम लॉटरी पर मेरे साथ जुड़ें, सबसे बेहतरीन प्रीमियम फंतासी लॉटरी प्लेटफॉर्म! मेरे रेफरल कोड: $_referralCode का उपयोग करके तुरंत ₹20 का साइनअप बोनस प्राप्त करें। अभी डाउनलोड करें और साथ में खेलें!"
+        : "Hey! 🎲 Join me on Dream Lottery, the ultimate premium fantasy lottery platform! Use my referral code: $_referralCode to get a ₹20 signup bonus instantly. Download now and let's play together!";
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Refer & Earn'),
+        title: Text(lang.translate('refer_earn')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -167,21 +170,22 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            const Text(
-                              'Invite Friends & Earn ₹50!',
-                              style: TextStyle(
-                                fontSize: 22,
+                            Text(
+                              lang.translate('invite_friends_earn'),
+                              style: const TextStyle(
+                                fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 color: AppTheme.textPrimary,
                                 letterSpacing: 0.5,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                'Get ₹50 free wallet balance for every friend who registers. Plus, they get ₹20 instantly to play!',
-                                style: TextStyle(
+                                lang.translate('referral_desc'),
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: AppTheme.textSecondary,
                                   height: 1.4,
@@ -214,9 +218,9 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                 padding: const EdgeInsets.all(20),
                                 child: Column(
                                   children: [
-                                    const Text(
-                                      'YOUR REFERRAL CODE',
-                                      style: TextStyle(
+                                    Text(
+                                      lang.translate('your_referral_code'),
+                                      style: const TextStyle(
                                         color: AppTheme.textMuted,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
@@ -253,7 +257,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                                 ? null
                                                 : () => _copyToClipboard(
                                                     _referralCode,
-                                                    'Referral code copied!'),
+                                                    lang.translate('copied')),
                                             style: OutlinedButton.styleFrom(
                                               padding: const EdgeInsets.symmetric(
                                                   vertical: 14),
@@ -266,9 +270,9 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                             ),
                                             icon: const Icon(Icons.copy_rounded,
                                                 color: AppTheme.primaryColor),
-                                            label: const Text(
-                                              'Copy Code',
-                                              style: TextStyle(
+                                            label: Text(
+                                              lang.translate('copy_code'),
+                                              style: const TextStyle(
                                                 color: AppTheme.primaryColor,
                                                 fontWeight: FontWeight.w700,
                                               ),
@@ -282,7 +286,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                                 ? null
                                                 : () => _copyToClipboard(
                                                     inviteMessage,
-                                                    'Invitation text copied!'),
+                                                    lang.translate('copied')),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
                                                   AppTheme.primaryColor,
@@ -295,9 +299,9 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                               ),
                                             ),
                                             icon: const Icon(Icons.share_rounded),
-                                            label: const Text(
-                                              'Share Invite',
-                                              style: TextStyle(
+                                            label: Text(
+                                              lang.translate('share_invite'),
+                                              style: const TextStyle(
                                                   fontWeight: FontWeight.w700),
                                             ),
                                           ),
@@ -315,7 +319,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                               children: [
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Referred Friends',
+                                    lang.translate('referred_friends'),
                                     _referredCount.toString(),
                                     Icons.people_alt_rounded,
                                   ),
@@ -323,7 +327,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildStatCard(
-                                    'Earnings',
+                                    lang.translate('earnings'),
                                     '₹${_referralEarnings.toStringAsFixed(0)}',
                                     Icons.account_balance_wallet_rounded,
                                   ),
@@ -333,9 +337,9 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                             const SizedBox(height: 32),
 
                             // Friends List Title
-                            const Text(
-                              'Referred Friends List',
-                              style: TextStyle(
+                            Text(
+                              lang.translate('referred_friends_list'),
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: AppTheme.textPrimary,
@@ -352,28 +356,28 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                       side: const BorderSide(
                                           color: AppTheme.borderColor),
                                     ),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(28),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(28),
                                       child: Center(
                                         child: Column(
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               Icons.group_add_rounded,
                                               size: 40,
                                               color: AppTheme.textMuted,
                                             ),
-                                            SizedBox(height: 8),
+                                            const SizedBox(height: 8),
                                             Text(
-                                              'No friends referred yet',
-                                              style: TextStyle(
+                                              lang.translate('no_friends_referred'),
+                                              style: const TextStyle(
                                                 color: AppTheme.textSecondary,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            SizedBox(height: 4),
+                                            const SizedBox(height: 4),
                                             Text(
-                                              'Share your code above to get started!',
-                                              style: TextStyle(
+                                              lang.translate('share_code_started'),
+                                              style: const TextStyle(
                                                 color: AppTheme.textMuted,
                                                 fontSize: 12,
                                               ),

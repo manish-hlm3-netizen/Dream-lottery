@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../providers/language_provider.dart';
 
 class WithdrawScreen extends StatefulWidget {
   const WithdrawScreen({super.key});
@@ -25,10 +26,13 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     final auth = context.read<AuthProvider>();
     final amount = double.parse(_amountController.text);
 
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (amount > auth.walletBalance) {
       setState(() {
         _success = false;
-        _message = 'Insufficient balance. Available: ₹${auth.walletBalance.toStringAsFixed(0)}';
+        _message = lang.isHindi 
+            ? 'अपर्याप्त बैलेंस। उपलब्ध: ₹${auth.walletBalance.toStringAsFixed(0)}'
+            : 'Insufficient balance. Available: ₹${auth.walletBalance.toStringAsFixed(0)}';
       });
       return;
     }
@@ -43,7 +47,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
       setState(() {
         _success = res['success'] == true;
-        _message = res['message'] ?? 'Request submitted';
+        _message = res['message'] ?? (lang.isHindi ? 'अनुरोध सबमिट किया गया' : 'Request submitted');
       });
 
       if (_success) {
@@ -54,7 +58,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     } catch (e) {
       setState(() {
         _success = false;
-        _message = 'Failed to submit withdrawal';
+        _message = lang.isHindi ? 'निकासी सबमिट करने में विफल' : 'Failed to submit withdrawal';
       });
     }
 
@@ -70,8 +74,9 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Withdraw Money')),
+      appBar: AppBar(title: Text(lang.isHindi ? 'पैसे निकालें' : 'Withdraw Money')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -100,11 +105,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             color: AppTheme.primaryColor),
                       ),
                       const SizedBox(width: 16),
-                      Column(
+                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Available Balance',
-                              style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                          Text(lang.translate('available_balance'),
+                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
                           Text(
                             '₹${auth.walletBalance.toStringAsFixed(0)}',
                             style: const TextStyle(
@@ -146,35 +151,35 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
+                   TextFormField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount (₹)',
-                      prefixIcon: Icon(Icons.currency_rupee, color: AppTheme.textMuted),
+                    decoration: InputDecoration(
+                      labelText: lang.isHindi ? 'राशि (₹)' : 'Amount (₹)',
+                      prefixIcon: const Icon(Icons.currency_rupee, color: AppTheme.textMuted),
                     ),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Enter amount';
+                      if (val == null || val.isEmpty) return lang.isHindi ? 'राशि दर्ज करें' : 'Enter amount';
                       final amount = double.tryParse(val);
-                      if (amount == null || amount < 10) return 'Minimum ₹10';
+                      if (amount == null || amount < 10) return lang.isHindi ? 'न्यूनतम ₹10' : 'Minimum ₹10';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _upiIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Your UPI ID',
-                      prefixIcon: Icon(Icons.payment, color: AppTheme.textMuted),
-                      hintText: 'e.g., yourname@upi',
+                    decoration: InputDecoration(
+                      labelText: lang.isHindi ? 'आपका UPI ID' : 'Your UPI ID',
+                      prefixIcon: const Icon(Icons.payment, color: AppTheme.textMuted),
+                      hintText: lang.isHindi ? 'जैसे, yourname@upi' : 'e.g., yourname@upi',
                     ),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Enter your UPI ID';
+                      if (val == null || val.isEmpty) return lang.isHindi ? 'अपनी UPI ID दर्ज करें' : 'Enter your UPI ID';
                       return null;
                     },
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
+                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
@@ -190,8 +195,9 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               width: 22, height: 22,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                          : const Text('Submit Withdrawal Request',
-                              style: TextStyle(
+                          : Text(
+                              lang.isHindi ? 'निकासी अनुरोध सबमिट करें' : 'Submit Withdrawal Request',
+                              style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -199,9 +205,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '⏳ Amount will be held from your wallet until admin processes the request',
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+             Text(
+              lang.isHindi 
+                  ? '⏳ व्यवस्थापक द्वारा अनुरोध संसाधित किए जाने तक राशि आपके वॉलेट से रोकी जाएगी' 
+                  : '⏳ Amount will be held from your wallet until admin processes the request',
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],
