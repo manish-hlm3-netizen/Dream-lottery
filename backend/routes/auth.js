@@ -37,4 +37,8 @@ router.get('/me', auth, authController.getMe);
 // @route   PUT /api/auth/profile
 router.put('/profile', auth, authController.updateProfile);
 
+// @route   GET /api/auth/announcements
+router.get('/announcements', auth, authController.getAnnouncements);
+
 module.exports = router;
+

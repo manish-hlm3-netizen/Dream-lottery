@@ -3,7 +3,9 @@ const Transaction = require('../models/Transaction');
 const Lottery = require('../models/Lottery');
 const Ticket = require('../models/Ticket');
 const Withdrawal = require('../models/Withdrawal');
+const Announcement = require('../models/Announcement');
 const { generateWinningNumbers, calculateMatches, determinePrize } = require('../utils/drawEngine');
+
 
 /**
  * @desc    Get admin dashboard stats
@@ -562,3 +564,158 @@ exports.getLotteryDetail = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+/**
+ * @desc    Update a user's wallet balance directly
+ * @route   PUT /api/admin/users/:id/wallet
+ * @access  Admin
+ */
+exports.updateUserWallet = async (req, res) => {
+  try {
+    const { balance } = req.body;
+    if (balance === undefined || isNaN(balance) || balance < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid wallet balance (minimum 0)'
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user || user.role === 'admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const oldBalance = user.walletBalance;
+    user.walletBalance = balance;
+    await user.save();
+
+    // Create a transaction log for manual adjustments
+    await Transaction.create({
+      userId: user._id,
+      type: 'deposit',
+      amount: Math.abs(balance - oldBalance),
+      status: 'approved',
+      description: `Manual wallet adjustment by Admin from ₹${oldBalance} to ₹${balance}`
+    });
+
+    res.json({
+      success: true,
+      message: 'Wallet balance updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Update wallet error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Change user's password directly
+ * @route   PUT /api/admin/users/:id/password
+ * @access  Admin
+ */
+exports.changeUserPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user || user.role === 'admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.password = password;
+    await user.save(); // Triggers pre('save') to set plainPassword and hash it!
+
+    res.json({
+      success: true,
+      message: 'User password updated successfully'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get all announcements
+ * @route   GET /api/admin/announcements
+ * @access  Admin
+ */
+exports.getAdminAnnouncements = async (req, res) => {
+  try {
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: { announcements }
+    });
+  } catch (error) {
+    console.error('Get announcements error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Create a new announcement
+ * @route   POST /api/admin/announcements
+ * @access  Admin
+ */
+exports.createAnnouncement = async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required'
+      });
+    }
+
+    const announcement = await Announcement.create({ title, content });
+    res.status(201).json({
+      success: true,
+      message: 'Announcement created successfully',
+      data: { announcement }
+    });
+  } catch (error) {
+    console.error('Create announcement error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Delete an announcement
+ * @route   DELETE /api/admin/announcements/:id
+ * @access  Admin
+ */
+exports.deleteAnnouncement = async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id);
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        message: 'Announcement not found'
+      });
+    }
+
+    await announcement.deleteOne();
+    res.json({
+      success: true,
+      message: 'Announcement deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete announcement error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

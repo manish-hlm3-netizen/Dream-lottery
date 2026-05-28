@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
+const Announcement = require('../models/Announcement');
+
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -212,3 +214,25 @@ exports.updateProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Get active public announcements
+ * @route   GET /api/auth/announcements
+ * @access  Private
+ */
+exports.getAnnouncements = async (req, res) => {
+  try {
+    const announcements = await Announcement.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: { announcements }
+    });
+  } catch (error) {
+    console.error('Get announcements error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+

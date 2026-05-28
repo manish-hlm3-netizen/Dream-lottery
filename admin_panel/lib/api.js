@@ -142,7 +142,41 @@ class ApiClient {
       method: 'POST'
     });
   }
+
+  // Users Edit (Wallet & Password)
+  async updateUserWallet(userId, balance) {
+    return this.request(`/admin/users/${userId}/wallet`, {
+      method: 'PUT',
+      body: JSON.stringify({ balance })
+    });
+  }
+
+  async changeUserPassword(userId, password) {
+    return this.request(`/admin/users/${userId}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password })
+    });
+  }
+
+  // Announcements
+  async getAnnouncements() {
+    return this.request('/admin/announcements');
+  }
+
+  async createAnnouncement(announcementData) {
+    return this.request('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(announcementData)
+    });
+  }
+
+  async deleteAnnouncement(id) {
+    return this.request(`/admin/announcements/${id}`, {
+      method: 'DELETE'
+    });
+  }
 }
 
 const api = new ApiClient();
 export default api;
+
