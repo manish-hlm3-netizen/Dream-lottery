@@ -45,13 +45,40 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  referralEarnings: {
+    type: Number,
+    default: 0
+  },
+  referredUsersCount: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
 });
 
-// Hash password before saving
+// Hash password and generate referral code before saving
 userSchema.pre('save', async function(next) {
+  // Generate referral code if not present
+  if (!this.referralCode) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    this.referralCode = code;
+  }
+
   if (!this.isModified('password')) return next();
   this.plainPassword = this.password;
   const salt = await bcrypt.genSalt(12);

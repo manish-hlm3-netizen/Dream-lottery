@@ -126,6 +126,11 @@ class ProfileScreen extends StatelessWidget {
                   label: 'Announcements',
                   onTap: () => Navigator.pushNamed(context, '/announcements'),
                 ),
+                _ProfileMenuItem(
+                  icon: Icons.card_giftcard_outlined,
+                  label: 'Refer & Earn 🎁',
+                  onTap: () => Navigator.pushNamed(context, '/referrals'),
+                ),
                 const SizedBox(height: 24),
 
                 // Logout

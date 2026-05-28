@@ -16,6 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _referralCodeController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
@@ -24,6 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -36,6 +38,7 @@ class _SignupScreenState extends State<SignupScreen> {
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
       password: _passwordController.text,
+      referralCode: _referralCodeController.text.trim(),
     );
 
     if (success && mounted) {
@@ -207,6 +210,16 @@ class _SignupScreenState extends State<SignupScreen> {
                             if (val.length < 6) return 'Min 6 characters';
                             return null;
                           },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _referralCodeController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(
+                            labelText: 'Referral Code (Optional)',
+                            prefixIcon: Icon(Icons.card_giftcard,
+                                color: AppTheme.textMuted),
+                          ),
                         ),
                         const SizedBox(height: 32),
                         Consumer<AuthProvider>(

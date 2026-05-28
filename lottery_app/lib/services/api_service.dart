@@ -42,12 +42,14 @@ class ApiService {
     required String email,
     required String phone,
     required String password,
+    String? referralCode,
   }) async {
     final response = await _dio.post(ApiConfig.register, data: {
       'name': name,
       'email': email,
       'phone': phone,
       'password': password,
+      if (referralCode != null && referralCode.isNotEmpty) 'referralCode': referralCode,
     });
     return response.data;
   }
@@ -167,6 +169,11 @@ class ApiService {
 
   Future<Map<String, dynamic>> getUPISettings() async {
     final response = await _dio.get(ApiConfig.upiSettings);
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> getReferrals() async {
+    final response = await _dio.get(ApiConfig.referrals);
     return response.data;
   }
 }

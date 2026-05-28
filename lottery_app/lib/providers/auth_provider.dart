@@ -42,6 +42,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String phone,
     required String password,
+    String? referralCode,
   }) async {
     _isLoading = true;
     _error = null;
@@ -53,6 +54,7 @@ class AuthProvider with ChangeNotifier {
         email: email,
         phone: phone,
         password: password,
+        referralCode: referralCode,
       );
       if (res['success'] == true) {
         await StorageService.saveToken(res['data']['token']);

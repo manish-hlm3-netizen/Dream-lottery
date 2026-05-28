@@ -149,10 +149,29 @@ export default function UsersPage() {
               {users.map((user) => (
                 <tr key={user._id}>
                   <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{user._id}</td>
-                  <td style={{ fontWeight: 500 }}>{user.name}</td>
+                  <td style={{ fontWeight: 500 }}>
+                    <div>{user.name}</div>
+                    {user.referredUsersCount > 0 && (
+                      <div style={{ fontSize: '11px', fontWeight: 'normal', color: '#10B981', marginTop: '2px' }}>
+                        🎁 Referred: {user.referredUsersCount} (Earned: ₹{user.referralEarnings || 0})
+                      </div>
+                    )}
+                  </td>
                   <td>
                     <div style={{ fontWeight: 500 }}>{user.email}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{user.phone}</div>
+                    {user.referralCode && (
+                      <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                        <span style={{ background: 'rgba(229, 45, 39, 0.1)', color: '#E52D27', padding: '2px 5px', borderRadius: '4px', fontWeight: 600 }}>
+                          Ref Code: {user.referralCode}
+                        </span>
+                      </div>
+                    )}
+                    {user.referredBy && (
+                      <div style={{ fontSize: '10px', marginTop: '4px', color: 'var(--text-muted)' }}>
+                        Referred By: <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '1px 3px', borderRadius: '3px' }}>{user.referredBy}</span>
+                      </div>
+                    )}
                   </td>
                   <td>
                     <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>

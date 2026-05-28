@@ -15,6 +15,7 @@ import 'screens/my_tickets_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/announcements_screen.dart';
 import 'screens/wallet_screen.dart';
+import 'screens/referrals_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +49,7 @@ class LotteryApp extends StatelessWidget {
           '/profile': (context) => const ProfileScreen(),
           '/announcements': (context) => const AnnouncementsScreen(),
           '/wallet': (context) => const WalletScreen(),
+          '/referrals': (context) => const ReferralsScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/buy-ticket') {

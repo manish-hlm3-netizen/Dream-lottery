@@ -31,4 +31,7 @@ class ApiConfig {
 
   // Settings
   static const String upiSettings = '/auth/settings/upi';
+
+  // Referrals
+  static const String referrals = '/auth/referrals';
 }

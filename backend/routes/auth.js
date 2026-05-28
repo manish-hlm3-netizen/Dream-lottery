@@ -43,5 +43,8 @@ router.get('/announcements', auth, authController.getAnnouncements);
 // @route   GET /api/auth/settings/upi
 router.get('/settings/upi', auth, authController.getUPISettings);
 
+// @route   GET /api/auth/referrals
+router.get('/referrals', auth, authController.getReferralStats);
+
 module.exports = router;
 

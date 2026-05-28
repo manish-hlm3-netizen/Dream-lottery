@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Announcement = require('../models/Announcement');
 const Settings = require('../models/Settings');
+const Transaction = require('../models/Transaction');
 
 
 // Generate JWT token
@@ -28,7 +29,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, referralCode } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -43,13 +44,51 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Resolve referredBy using referralCode
+    let referredBy = null;
+    let referrer = null;
+    if (referralCode) {
+      referrer = await User.findOne({ referralCode: referralCode.toUpperCase().trim() });
+      if (referrer) {
+        referredBy = referrer._id;
+      }
+    }
+
     // Create user
     const user = await User.create({
       name,
       email,
       phone,
-      password
+      password,
+      referredBy,
+      walletBalance: referredBy ? 20 : 0
     });
+
+    // Reward referrer if found
+    if (referrer) {
+      referrer.walletBalance += 50;
+      referrer.referralEarnings += 50;
+      referrer.referredUsersCount += 1;
+      await referrer.save();
+
+      // Create referrer transaction
+      await Transaction.create({
+        userId: referrer._id,
+        type: 'referral',
+        amount: 50,
+        status: 'approved',
+        description: `Referral Bonus for inviting ${user.name}`
+      });
+
+      // Create referred user transaction
+      await Transaction.create({
+        userId: user._id,
+        type: 'referral',
+        amount: 20,
+        status: 'approved',
+        description: `Signup Referral Bonus (Referred by ${referrer.name})`
+      });
+    }
 
     // Generate token
     const token = generateToken(user._id);
@@ -65,7 +104,8 @@ exports.register = async (req, res) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          walletBalance: user.walletBalance
+          walletBalance: user.walletBalance,
+          referralCode: user.referralCode
         }
       }
     });
@@ -258,6 +298,38 @@ exports.getUPISettings = async (req, res) => {
     });
   } catch (error) {
     console.error('Get mobile UPI settings error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get referral stats and referred users list
+ * @route   GET /api/auth/referrals
+ * @access  Private
+ */
+exports.getReferralStats = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const referredFriends = await User.find(
+      { referredBy: user._id },
+      'name email phone createdAt'
+    ).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        referralCode: user.referralCode,
+        referralEarnings: user.referralEarnings || 0,
+        referredUsersCount: user.referredUsersCount || 0,
+        referredFriends
+      }
+    });
+  } catch (error) {
+    console.error('Get referral stats error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
