@@ -124,12 +124,12 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                       final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 22),
+                        margin: const EdgeInsets.only(bottom: 24),
                         child: PhysicalShape(
-                          clipper: const TicketClipper(punchY: 85.0, punchRadius: 10.0),
+                          clipper: const TicketClipper(),
                           color: AppTheme.bgCard,
-                          shadowColor: cardTheme.primaryColor.withOpacity(0.18),
-                          elevation: 6.0,
+                          shadowColor: cardTheme.primaryColor.withOpacity(0.2),
+                          elevation: 7.0,
                           child: GestureDetector(
                             onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
                             child: Container(
@@ -138,7 +138,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header with premium gradient and security texture
+                                  // Header with premium gradient, safety pattern, vintage border & corner stars
                                   Container(
                                     height: 85,
                                     width: double.infinity,
@@ -147,6 +147,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     ),
                                     child: Stack(
                                       children: [
+                                        // Diagonal pattern
                                         Positioned.fill(
                                           child: CustomPaint(
                                             painter: TicketPatternPainter(
@@ -154,8 +155,39 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                             ),
                                           ),
                                         ),
+                                        // Vintage inner border outline with indented corners!
+                                        Positioned.fill(
+                                          child: CustomPaint(
+                                            painter: TicketInnerBorderPainter(
+                                              color: Colors.white.withOpacity(0.25),
+                                              padding: 8,
+                                              cornerIndent: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        // 4 Corner Stars inside the indented outline corners!
+                                        Positioned(
+                                          left: 11,
+                                          top: 11,
+                                          child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
+                                        ),
+                                        Positioned(
+                                          right: 11,
+                                          top: 11,
+                                          child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
+                                        ),
+                                        Positioned(
+                                          left: 11,
+                                          bottom: 11,
+                                          child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
+                                        ),
+                                        Positioned(
+                                          right: 11,
+                                          bottom: 11,
+                                          child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
+                                        ),
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
@@ -179,11 +211,9 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(width: 6),
-                                                        const Text('⭐', style: TextStyle(fontSize: 13)),
                                                       ],
                                                     ),
-                                                    const SizedBox(height: 4),
+                                                    const SizedBox(height: 2),
                                                     Text(
                                                       lang.isHindi 
                                                            ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
@@ -226,25 +256,38 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     ),
                                   ),
 
-                                  // Perforated line align with notches
+                                  // Row of circular perforation punches (like the reference image!)
                                   Container(
-                                    height: 1,
+                                    height: 10,
                                     width: double.infinity,
                                     color: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    child: CustomPaint(
-                                      painter: DashedLinePainter(
-                                        color: AppTheme.borderColor.withOpacity(0.8),
-                                        strokeWidth: 1.5,
-                                        dashWidth: 6,
-                                        dashSpace: 4,
-                                      ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        const double holeRadius = 3.5;
+                                        const double spacing = 6.0;
+                                        final count = (constraints.maxWidth / (holeRadius * 2 + spacing)).floor();
+                                        return Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: List.generate(
+                                            count,
+                                            (index) => Container(
+                                              width: holeRadius * 2,
+                                              height: holeRadius * 2,
+                                              decoration: const BoxDecoration(
+                                                color: AppTheme.bgPrimary, // cuts through card to back color!
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
 
                                   // Urgency Progress Bar (Left Ticket)
                                   Padding(
-                                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -368,7 +411,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     ),
                                   ],
 
-                                  // Footer stub (Jackpot & Live Countdown Timer in ultra-premium dark slate)
+                                  // Footer stub with framed barcode coupon layout matching reference image!
                                   Container(
                                     decoration: const BoxDecoration(
                                       color: Color(0xFF0F172A),
@@ -377,65 +420,117 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              lang.translate('jackpot_pool').toUpperCase(),
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(0.6),
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 0.5,
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                lang.translate('jackpot_pool').toUpperCase(),
+                                                style: TextStyle(
+                                                  color: Colors.white.withOpacity(0.6),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '₹${jackpot.toString()}',
-                                              style: const TextStyle(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFFFBBF24), // Gold Pool
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '₹${jackpot.toString()}',
+                                                style: const TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFFFBBF24), // Gold Pool
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    width: 6,
+                                                    height: 6,
+                                                    decoration: const BoxDecoration(
+                                                      color: Color(0xFF34D399), // Fluorescent Green
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    _formatCountdown(timeLeft, lang),
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: Color(0xFF34D399), // Fluorescent Digital Green
+                                                      fontFamily: 'monospace',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  decoration: const BoxDecoration(
-                                                    color: Color(0xFF34D399), // Fluorescent Green
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  lang.translate('live_timer').toUpperCase(),
-                                                  style: TextStyle(
-                                                    color: Colors.white.withOpacity(0.6),
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                    letterSpacing: 0.5,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              _formatCountdown(timeLeft, lang),
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w800,
-                                                color: Color(0xFF34D399), // Fluorescent Digital Green
-                                                fontFamily: 'monospace',
+                                        // Framed Barcode Box with corner stars from the reference image!
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.04),
+                                            border: Border.all(color: Colors.white.withOpacity(0.15)),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              Positioned(
+                                                left: 2,
+                                                top: 2,
+                                                child: Icon(Icons.star, size: 6, color: Colors.white.withOpacity(0.5)),
                                               ),
-                                            ),
-                                          ],
+                                              Positioned(
+                                                right: 2,
+                                                top: 2,
+                                                child: Icon(Icons.star, size: 6, color: Colors.white.withOpacity(0.5)),
+                                              ),
+                                              Positioned(
+                                                left: 2,
+                                                bottom: 2,
+                                                child: Icon(Icons.star, size: 6, color: Colors.white.withOpacity(0.5)),
+                                              ),
+                                              Positioned(
+                                                right: 2,
+                                                bottom: 2,
+                                                child: Icon(Icons.star, size: 6, color: Colors.white.withOpacity(0.5)),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.all(6),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    // Barcode lines
+                                                    Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: List.generate(14, (idx) {
+                                                        return Container(
+                                                          width: idx % 3 == 0 ? 3 : 1.5,
+                                                          height: 18,
+                                                          margin: const EdgeInsets.only(right: 1.5),
+                                                          color: Colors.white.withOpacity(0.85),
+                                                        );
+                                                      }),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'TKT-${lottery['_id'].toString().substring(0, 6).toUpperCase()}',
+                                                      style: TextStyle(
+                                                        color: Colors.white.withOpacity(0.5),
+                                                        fontSize: 8,
+                                                        fontWeight: FontWeight.w700,
+                                                        fontFamily: 'monospace',
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),

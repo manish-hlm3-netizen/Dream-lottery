@@ -211,57 +211,96 @@ class AppTheme {
 }
 
 class TicketClipper extends CustomClipper<Path> {
-  final double punchRadius;
-  final double punchY;
+  final double cornerRadius;
+  final double scallopRadius;
 
-  const TicketClipper({this.punchRadius = 8.0, this.punchY = 85.0});
+  const TicketClipper({
+    this.cornerRadius = 14.0,
+    this.scallopRadius = 4.0,
+    // Keep parameters for backward compatibility
+    double punchRadius = 8.0,
+    double punchY = 85.0,
+  });
 
   @override
   Path getClip(Size size) {
     final path = Path();
     
-    // Top-left corner
-    path.moveTo(0.0, 16.0);
-    path.quadraticBezierTo(0.0, 0.0, 16.0, 0.0);
+    // Start at top-left corner after curve
+    path.moveTo(cornerRadius, 0.0);
     
-    // Top line
-    path.lineTo(size.width - 16.0, 0.0);
+    // Top border
+    path.lineTo(size.width - cornerRadius, 0.0);
     
-    // Top-right corner
-    path.quadraticBezierTo(size.width, 0.0, size.width, 16.0);
-    
-    // Right side top down to notch
-    path.lineTo(size.width, punchY - punchRadius);
-    
-    // Right notch (inward curve)
-    path.quadraticBezierTo(
-      size.width - punchRadius,
-      punchY,
-      size.width,
-      punchY + punchRadius,
+    // Top-right corner (concave)
+    path.arcToPoint(
+      Offset(size.width, cornerRadius),
+      radius: Radius.circular(cornerRadius),
+      clockwise: false,
     );
     
-    // Right side down to bottom
-    path.lineTo(size.width, size.height - 16.0);
+    // Right side with scallops
+    double usableHeight = size.height - 2 * cornerRadius;
+    double scallopDiameter = scallopRadius * 2;
+    double spacing = 6.0;
+    int scallopCount = (usableHeight / (scallopDiameter + spacing)).floor();
+    double actualSpacing = (usableHeight - (scallopCount * scallopDiameter)) / (scallopCount + 1);
     
-    // Bottom-right corner
-    path.quadraticBezierTo(size.width, size.height, size.width - 16.0, size.height);
+    for (int i = 0; i < scallopCount; i++) {
+      double scallopCenterY = cornerRadius + actualSpacing + scallopRadius + i * (scallopDiameter + actualSpacing);
+      
+      // Line to scallop start
+      path.lineTo(size.width, scallopCenterY - scallopRadius);
+      // Scallop cutout (inward curve)
+      path.quadraticBezierTo(
+        size.width - scallopRadius,
+        scallopCenterY,
+        size.width,
+        scallopCenterY + scallopRadius,
+      );
+    }
     
-    // Bottom line
-    path.lineTo(16.0, size.height);
+    // Line to bottom-right corner
+    path.lineTo(size.width, size.height - cornerRadius);
     
-    // Bottom-left corner
-    path.quadraticBezierTo(0.0, size.height, 0.0, size.height - 16.0);
+    // Bottom-right corner (concave)
+    path.arcToPoint(
+      Offset(size.width - cornerRadius, size.height),
+      radius: Radius.circular(cornerRadius),
+      clockwise: false,
+    );
     
-    // Left side bottom up to notch
-    path.lineTo(0.0, punchY + punchRadius);
+    // Bottom border
+    path.lineTo(cornerRadius, size.height);
     
-    // Left notch (inward curve)
-    path.quadraticBezierTo(
-      punchRadius,
-      punchY,
-      0.0,
-      punchY - punchRadius,
+    // Bottom-left corner (concave)
+    path.arcToPoint(
+      Offset(0.0, size.height - cornerRadius),
+      radius: Radius.circular(cornerRadius),
+      clockwise: false,
+    );
+    
+    // Left side with scallops (bottom to top)
+    for (int i = scallopCount - 1; i >= 0; i--) {
+      double scallopCenterY = cornerRadius + actualSpacing + scallopRadius + i * (scallopDiameter + actualSpacing);
+      
+      path.lineTo(0.0, scallopCenterY + scallopRadius);
+      path.quadraticBezierTo(
+        scallopRadius,
+        scallopCenterY,
+        0.0,
+        scallopCenterY - scallopRadius,
+      );
+    }
+    
+    // Line to top-left corner
+    path.lineTo(0.0, cornerRadius);
+    
+    // Top-left corner (concave)
+    path.arcToPoint(
+      Offset(cornerRadius, 0.0),
+      radius: Radius.circular(cornerRadius),
+      clockwise: false,
     );
     
     path.close();
@@ -269,7 +308,7 @@ class TicketClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class TicketPatternPainter extends CustomPainter {
@@ -324,4 +363,66 @@ class DashedLinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+class TicketInnerBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double padding;
+  final double cornerIndent;
+
+  const TicketInnerBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.0,
+    this.padding = 8.0,
+    this.cornerIndent = 12.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final path = Path();
+    
+    // Top-left indent start
+    path.moveTo(padding + cornerIndent, padding);
+    
+    // Top line
+    path.lineTo(size.width - padding - cornerIndent, padding);
+    
+    // Top-right corner indent
+    path.lineTo(size.width - padding - cornerIndent, padding + cornerIndent);
+    path.lineTo(size.width - padding, padding + cornerIndent);
+    
+    // Right line
+    path.lineTo(size.width - padding, size.height - padding - cornerIndent);
+    
+    // Bottom-right corner indent
+    path.lineTo(size.width - padding - cornerIndent, size.height - padding - cornerIndent);
+    path.lineTo(size.width - padding - cornerIndent, size.height - padding);
+    
+    // Bottom line
+    path.lineTo(padding + cornerIndent, size.height - padding);
+    
+    // Bottom-left corner indent
+    path.lineTo(padding + cornerIndent, size.height - padding - cornerIndent);
+    path.lineTo(padding, size.height - padding - cornerIndent);
+    
+    // Left line
+    path.lineTo(padding, padding + cornerIndent);
+    
+    // Top-left corner indent
+    path.lineTo(padding + cornerIndent, padding + cornerIndent);
+    path.lineTo(padding + cornerIndent, padding);
+    
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 
