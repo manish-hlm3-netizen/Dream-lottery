@@ -19,6 +19,7 @@ class ApiConfig {
   // Lottery endpoints
   static const String lotteries = '/lotteries';
   static const String lotteryResults = '/lotteries/results';
+  static const String recentWinners = '/lotteries/recent-winners';
   static String lotteryDetail(String id) => '/lotteries/$id';
   static String buyTicket(String id) => '/lotteries/$id/buy';
   static String myTicketsForLottery(String id) => '/lotteries/$id/my-tickets';

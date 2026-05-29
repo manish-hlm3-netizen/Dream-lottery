@@ -11,6 +11,9 @@ router.use(auth);
 // Note: This must come before /:id to avoid 'results' being treated as an ID
 router.get('/results', lotteryController.getResults);
 
+// @route   GET /api/lotteries/recent-winners
+router.get('/recent-winners', lotteryController.getRecentWinners);
+
 // @route   GET /api/lotteries
 router.get('/', lotteryController.getLotteries);
 

@@ -66,6 +66,7 @@ class _HomeTabState extends State<_HomeTab> {
     super.initState();
     Future.microtask(() {
       context.read<LotteryProvider>().loadActiveLotteries();
+      context.read<LotteryProvider>().loadRecentWinners();
       context.read<AuthProvider>().refreshUser();
     });
   }
@@ -77,6 +78,7 @@ class _HomeTabState extends State<_HomeTab> {
       child: RefreshIndicator(
         onRefresh: () async {
           await context.read<LotteryProvider>().loadActiveLotteries();
+          await context.read<LotteryProvider>().loadRecentWinners();
           await context.read<AuthProvider>().refreshUser();
         },
         child: SingleChildScrollView(
@@ -238,6 +240,146 @@ class _HomeTabState extends State<_HomeTab> {
                 ],
               ),
               const SizedBox(height: 28),
+
+              // Recent Winners
+              Consumer<LotteryProvider>(
+                builder: (context, lotteryProv, _) {
+                  final winners = lotteryProv.recentWinners;
+                  if (winners.isEmpty) return const SizedBox.shrink();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.stars, color: AppTheme.warningColor, size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            lang.isHindi ? "हाल ही के विजेता 🏆" : "Recent Winners 🏆",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 110,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: winners.length,
+                          itemBuilder: (context, idx) {
+                            final w = winners[idx];
+                            final name = w['userName'] ?? 'Player';
+                            final lotteryName = w['lotteryName'] ?? 'Lottery';
+                            final prizeWon = w['prizeWon'] ?? 0;
+                            final theme = AppTheme.getLotteryTheme(lotteryName);
+
+                            return Container(
+                              width: 220,
+                              margin: const EdgeInsets.only(right: 14, bottom: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppTheme.borderColor),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.primaryColor.withOpacity(0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      left: BorderSide(
+                                        color: theme.primaryColor,
+                                        width: 5,
+                                      ),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text('👑 ', style: TextStyle(fontSize: 13)),
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14,
+                                                color: AppTheme.textPrimary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        lotteryName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '₹${prizeWon.toString()}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: theme.textIconColor,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.successColor.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              lang.isHindi ? 'जीता!' : 'WON!',
+                                              style: const TextStyle(
+                                                color: AppTheme.successColor,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 9,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                },
+              ),
 
               // Active Lotteries
               Row(

@@ -336,3 +336,37 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+/**
+ * @desc    Get all recent winning tickets across all lotteries
+ * @route   GET /api/lotteries/recent-winners
+ * @access  Private
+ */
+exports.getRecentWinners = async (req, res) => {
+  try {
+    const winningTickets = await Ticket.find({ status: 'won' })
+      .populate('userId', 'name')
+      .populate('lotteryId', 'name drawDate')
+      .sort({ updatedAt: -1 })
+      .limit(10);
+
+    const winners = winningTickets.map(t => ({
+      ticketId: t._id,
+      userName: t.userId ? t.userId.name : 'Unknown User',
+      lotteryName: t.lotteryId ? t.lotteryId.name : 'Completed Lottery',
+      drawDate: t.lotteryId ? t.lotteryId.drawDate : t.updatedAt,
+      prizeWon: t.prizeWon,
+      selectedNumbers: t.selectedNumbers,
+      matchedNumbers: t.matchedNumbers,
+    }));
+
+    res.json({
+      success: true,
+      data: { winners }
+    });
+  } catch (error) {
+    console.error('Get recent winners error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

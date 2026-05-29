@@ -7,12 +7,14 @@ class LotteryProvider with ChangeNotifier {
   List<dynamic> _activeLotteries = [];
   List<dynamic> _results = [];
   List<dynamic> _myTickets = [];
+  List<dynamic> _recentWinners = [];
   bool _isLoading = false;
   String? _error;
 
   List<dynamic> get activeLotteries => _activeLotteries;
   List<dynamic> get results => _results;
   List<dynamic> get myTickets => _myTickets;
+  List<dynamic> get recentWinners => _recentWinners;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -94,6 +96,23 @@ class LotteryProvider with ChangeNotifier {
       }
       return {'success': false, 'message': 'Network error'};
     }
+  }
+
+  Future<void> loadRecentWinners() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final res = await _api.getRecentWinners();
+      if (res['success'] == true) {
+        _recentWinners = res['data']['winners'] ?? [];
+      }
+    } catch (e) {
+      _error = 'Failed to load recent winners';
+    }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   void clearError() {
