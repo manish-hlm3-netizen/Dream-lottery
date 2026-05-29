@@ -121,6 +121,8 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                           ?.firstWhere((p) => p['match'] == lottery['pickCount'],
                               orElse: () => {'amount': 0})['amount'] ?? 0;
 
+                      final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
+
                       return GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
                         child: Container(
@@ -132,7 +134,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                             border: Border.all(color: AppTheme.borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
+                                color: cardTheme.primaryColor.withOpacity(0.04),
                                 blurRadius: 16,
                                 offset: const Offset(0, 8),
                               )
@@ -148,7 +150,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      AppTheme.primaryColor.withOpacity(0.08),
+                                      cardTheme.primaryColor.withOpacity(0.12),
                                       Colors.transparent,
                                     ],
                                     begin: Alignment.topLeft,
@@ -188,11 +190,11 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
-                                        gradient: AppTheme.primaryGradient,
+                                        gradient: cardTheme.gradient,
                                         borderRadius: BorderRadius.circular(30),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppTheme.primaryColor.withOpacity(0.3),
+                                            color: cardTheme.primaryColor.withOpacity(0.3),
                                             blurRadius: 10,
                                           )
                                         ],
@@ -221,15 +223,15 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                       children: [
                                         Row(
                                           children: [
-                                            const Icon(Icons.confirmation_number_outlined, 
-                                                size: 14, color: AppTheme.primaryColor),
+                                            Icon(Icons.confirmation_number_outlined, 
+                                                size: 14, color: cardTheme.textIconColor),
                                             const SizedBox(width: 4),
                                             Text(
                                               '$ticketsLeft ${lang.translate('tickets_left')}',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
-                                                color: AppTheme.primaryColor,
+                                                color: cardTheme.textIconColor,
                                               ),
                                             ),
                                           ],
@@ -251,7 +253,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         value: 1 - progress,
                                         minHeight: 6,
                                         backgroundColor: AppTheme.borderColor,
-                                        color: AppTheme.primaryColor,
+                                        color: cardTheme.primaryColor,
                                       ),
                                     ),
                                   ],
@@ -318,7 +320,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                   style: TextStyle(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w800,
-                                                    color: isTop ? Colors.black87 : AppTheme.primaryColor,
+                                                    color: isTop ? Colors.black87 : cardTheme.textIconColor,
                                                   ),
                                                 ),
                                               ],
@@ -353,10 +355,10 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         const SizedBox(height: 2),
                                         Text(
                                           '₹${jackpot.toString()}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w900,
-                                            color: AppTheme.primaryColor,
+                                            color: cardTheme.textIconColor,
                                           ),
                                         ),
                                       ],

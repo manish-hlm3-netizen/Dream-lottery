@@ -411,6 +411,7 @@ class _LotteryCard extends StatelessWidget {
     final lang = Provider.of<LanguageProvider>(context);
     final drawDate = DateTime.tryParse(lottery['drawDate'] ?? '') ?? DateTime.now();
     final timeLeft = drawDate.difference(DateTime.now());
+    final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
@@ -422,6 +423,13 @@ class _LotteryCard extends StatelessWidget {
           color: AppTheme.bgCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: cardTheme.primaryColor.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +442,7 @@ class _LotteryCard extends StatelessWidget {
                     lottery['name'] ?? 'Lottery',
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
                       color: AppTheme.textPrimary,
                     ),
                   ),
@@ -442,13 +450,13 @@ class _LotteryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withOpacity(0.1),
+                    color: cardTheme.primaryColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '₹${lottery['ticketPrice']}',
-                    style: const TextStyle(
-                      color: AppTheme.warningColor,
+                    style: TextStyle(
+                      color: cardTheme.textIconColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
@@ -461,6 +469,7 @@ class _LotteryCard extends StatelessWidget {
               children: [
                 _InfoChip(
                   icon: Icons.grid_view,
+                  iconColor: cardTheme.textIconColor,
                   text: lang.isHindi 
                       ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
                       : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
@@ -468,6 +477,7 @@ class _LotteryCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 _InfoChip(
                   icon: Icons.timer,
+                  iconColor: cardTheme.textIconColor,
                   text: timeLeft.isNegative
                       ? lang.translate('draw_soon')
                       : (lang.isHindi 
@@ -487,15 +497,22 @@ class _LotteryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
+                    gradient: cardTheme.gradient,
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cardTheme.primaryColor.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
                   child: Text(
                     lang.translate('play_now'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -511,15 +528,20 @@ class _LotteryCard extends StatelessWidget {
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String text;
+  final Color? iconColor;
 
-  const _InfoChip({required this.icon, required this.text});
+  const _InfoChip({
+    required this.icon, 
+    required this.text,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppTheme.textMuted),
+        Icon(icon, size: 14, color: iconColor ?? AppTheme.textMuted),
         const SizedBox(width: 4),
         Text(
           text,

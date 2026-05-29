@@ -1,7 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class LotteryCardTheme {
+  final Color primaryColor;
+  final Color textIconColor;
+  final Color overlayColor;
+  final LinearGradient gradient;
+
+  const LotteryCardTheme({
+    required this.primaryColor,
+    required this.textIconColor,
+    required this.overlayColor,
+    required this.gradient,
+  });
+}
+
 class AppTheme {
+  // Dynamic Lottery Themes
+  static const List<LotteryCardTheme> lotteryThemes = [
+    LotteryCardTheme(
+      primaryColor: Color(0xFFE52D27),
+      textIconColor: Color(0xFFE52D27),
+      overlayColor: Color(0xFFFDE8E8),
+      gradient: LinearGradient(
+        colors: [Color(0xFFF71E1E), Color(0xFFE52D27), Color(0xFFB31217)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    LotteryCardTheme(
+      primaryColor: Color(0xFF2563EB),
+      textIconColor: Color(0xFF2563EB),
+      overlayColor: Color(0xFFEFF6FF),
+      gradient: LinearGradient(
+        colors: [Color(0xFF60A5FA), Color(0xFF2563EB), Color(0xFF1E3A8A)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    LotteryCardTheme(
+      primaryColor: Color(0xFF10B981),
+      textIconColor: Color(0xFF047857),
+      overlayColor: Color(0xFFECFDF5),
+      gradient: LinearGradient(
+        colors: [Color(0xFF34D399), Color(0xFF10B981), Color(0xFF047857)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    LotteryCardTheme(
+      primaryColor: Color(0xFF7C3AED),
+      textIconColor: Color(0xFF7C3AED),
+      overlayColor: Color(0xFFF5F3FF),
+      gradient: LinearGradient(
+        colors: [Color(0xFFA78BFA), Color(0xFF7C3AED), Color(0xFF5B21B6)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    LotteryCardTheme(
+      primaryColor: Color(0xFFD97706),
+      textIconColor: Color(0xFFB45309),
+      overlayColor: Color(0xFFFEF3C7),
+      gradient: LinearGradient(
+        colors: [Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFB45309)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    LotteryCardTheme(
+      primaryColor: Color(0xFFDB2777),
+      textIconColor: Color(0xFFDB2777),
+      overlayColor: Color(0xFFFDF2F8),
+      gradient: LinearGradient(
+        colors: [Color(0xFFF472B6), Color(0xFFDB2777), Color(0xFF9D174D)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+  ];
+
+  static LotteryCardTheme getLotteryTheme(String? name) {
+    if (name == null || name.isEmpty) return lotteryThemes[0];
+    int hash = 0;
+    for (int i = 0; i < name.length; i++) {
+      hash = name.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    final index = hash.abs() % lotteryThemes.length;
+    return lotteryThemes[index];
+  }
+
   // Colors (Luxury Red & White Theme)
   static const Color primaryColor = Color(0xFFE52D27); // Luxury Vibrant Scarlet Red
   static const Color primaryDark = Color(0xFFB31217); // Rich Crimson Dark

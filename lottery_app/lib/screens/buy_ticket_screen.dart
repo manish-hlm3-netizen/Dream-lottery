@@ -75,9 +75,13 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
+    final cardTheme = AppTheme.getLotteryTheme(widget.lottery['name']);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.lottery['name'] ?? (lang.isHindi ? 'टिकट खरीदें' : 'Buy Ticket')),
+        backgroundColor: cardTheme.primaryColor,
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -94,7 +98,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primaryColor.withOpacity(0.15),
+                          cardTheme.primaryColor.withOpacity(0.15),
                           AppTheme.bgCard,
                         ],
                       ),
@@ -149,11 +153,11 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
+                              gradient: cardTheme.gradient,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.4),
+                                  color: cardTheme.primaryColor.withOpacity(0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -214,19 +218,19 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
-                            gradient: isSelected ? AppTheme.primaryGradient : null,
+                            gradient: isSelected ? cardTheme.gradient : null,
                             color: isSelected ? null : AppTheme.bgSurface,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected
-                                  ? AppTheme.primaryColor
+                                  ? cardTheme.primaryColor
                                   : AppTheme.borderColor,
                               width: isSelected ? 2 : 1,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                      color: cardTheme.primaryColor.withOpacity(0.3),
                                       blurRadius: 8,
                                     ),
                                   ]
@@ -275,7 +279,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                       ? null
                       : _buyTicket,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: cardTheme.primaryColor,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: AppTheme.bgSurface,
                     shape: RoundedRectangleBorder(
