@@ -49,25 +49,69 @@ const processAutomaticDraw = async (lottery) => {
       return prizeTier ? prizeTier.amount : 0;
     };
 
-    // Process each ticket
-    for (let i = 0; i < tickets.length; i++) {
-      const ticket = tickets[i];
+    // Determine initial ranks and prize tiers for all tickets in memory
+    const ticketResults = [];
+    for (const ticket of tickets) {
       const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
-      const rank = shuffledIndex + 1; // 1-based rank
+      
+      let rank = 0;
+      if (shuffledIndex >= 0 && shuffledIndex < 10) {
+        rank = shuffledIndex + 1;
+      } else {
+        // Check if it shares identical selected numbers with any of the primary winners
+        const ticketNumsStr = ticket.selectedNumbers.join(',');
+        for (let idx = 0; idx < Math.min(10, shuffledTickets.length); idx++) {
+          if (shuffledTickets[idx].selectedNumbers.join(',') === ticketNumsStr) {
+            rank = idx + 1;
+            break;
+          }
+        }
+      }
 
-      let prizeWon = 0;
+      let initialPrize = 0;
       let matchedNumbers = [];
       let matchCount = 0;
 
-      if (rank <= 10) {
-        prizeWon = getPrizeByRank(rank, lottery.prizes);
+      if (rank > 0) {
+        initialPrize = getPrizeByRank(rank, lottery.prizes);
         matchedNumbers = ticket.selectedNumbers;
         matchCount = ticket.selectedNumbers.length; // 100% matched for winning tickets
-      } else {
-        prizeWon = 0;
-        matchedNumbers = [];
-        matchCount = 0;
       }
+
+      ticketResults.push({
+        ticket,
+        rank,
+        initialPrize,
+        matchedNumbers,
+        matchCount
+      });
+    }
+
+    // Group winning tickets by their exact selectedNumbers string to calculate splits
+    const groupCounts = {};
+    for (const res of ticketResults) {
+      if (res.initialPrize > 0) {
+        const numsStr = res.ticket.selectedNumbers.join(',');
+        groupCounts[numsStr] = (groupCounts[numsStr] || 0) + 1;
+      }
+    }
+
+    // Apply the split division to final prizeWon and process tickets
+    for (const res of ticketResults) {
+      let finalPrize = res.initialPrize;
+      let splitCount = 1;
+      if (res.initialPrize > 0) {
+        const numsStr = res.ticket.selectedNumbers.join(',');
+        splitCount = groupCounts[numsStr] || 1;
+        if (splitCount > 1) {
+          finalPrize = Math.round((res.initialPrize / splitCount) * 100) / 100;
+        }
+      }
+
+      const ticket = res.ticket;
+      const prizeWon = finalPrize;
+      const matchedNumbers = res.matchedNumbers;
+      const matchCount = res.matchCount;
 
       ticket.matchedNumbers = matchedNumbers;
       ticket.matchCount = matchCount;
@@ -82,12 +126,15 @@ const processAutomaticDraw = async (lottery) => {
         });
 
         // Create transaction
+        const splitDesc = splitCount > 1 
+          ? ` (Split among ${splitCount} winners with identical numbers)` 
+          : '';
         await Transaction.create({
           userId: ticket.userId,
           type: 'winnings',
           amount: prizeWon,
           status: 'approved',
-          description: `Won ₹${prizeWon} in ${lottery.name} (matched ${matchCount} numbers)`
+          description: `Won ₹${prizeWon} in ${lottery.name} (matched ${matchCount} numbers)${splitDesc}`
         });
 
         totalPrizesPaid += prizeWon;
