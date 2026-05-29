@@ -562,8 +562,8 @@ exports.drawLottery = async (req, res) => {
         }
       }
       
-      // 2. If no rank matched yet, fall back to standard raffle rank
-      if (rank === 0) {
+      // 2. If no rank matched yet, fall back to standard raffle rank ONLY if no custom ranks were supplied
+      if (rank === 0 && !req.body.rankWinningNumbers) {
         const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
         if (shuffledIndex >= 0 && shuffledIndex < 10) {
           rank = shuffledIndex + 1;
