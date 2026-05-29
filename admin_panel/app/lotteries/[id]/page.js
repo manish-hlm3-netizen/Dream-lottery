@@ -19,17 +19,8 @@ export default function LotteryDetailPage({ params }) {
   const [manualNumbers, setManualNumbers] = useState([]);
 
   // Custom Rank Selections
-  const [rank1Selection, setRank1Selection] = useState('');
-  const [rank1Custom, setRank1Custom] = useState([]);
-  
-  const [rank2Selection, setRank2Selection] = useState('');
-  const [rank2Custom, setRank2Custom] = useState([]);
-
-  const [rank3Selection, setRank3Selection] = useState('');
-  const [rank3Custom, setRank3Custom] = useState([]);
-
-  const [rank4Selection, setRank4Selection] = useState('');
-  const [rank4Custom, setRank4Custom] = useState([]);
+  const [rankSelections, setRankSelections] = useState(Array(10).fill(''));
+  const [rankCustoms, setRankCustoms] = useState(Array(10).fill([]));
 
   useEffect(() => {
     loadLottery();
@@ -51,19 +42,28 @@ export default function LotteryDetailPage({ params }) {
 
   const handleDrawClick = () => {
     setManualNumbers(Array(lottery.pickCount).fill(''));
-    
-    setRank1Selection('');
-    setRank2Selection('');
-    setRank3Selection('');
-    setRank4Selection('');
-
-    setRank1Custom(Array(lottery.pickCount).fill(''));
-    setRank2Custom(Array(lottery.pickCount).fill(''));
-    setRank3Custom(Array(lottery.pickCount).fill(''));
-    setRank4Custom(Array(lottery.pickCount).fill(''));
-
+    setRankSelections(Array(10).fill(''));
+    setRankCustoms(Array(10).fill(Array(lottery.pickCount).fill('')));
     setDrawMode('random');
     setShowDrawModal(true);
+  };
+
+  const updateRankSelection = (rankIdx, value) => {
+    setRankSelections(prev => {
+      const copy = [...prev];
+      copy[rankIdx] = value;
+      return copy;
+    });
+  };
+
+  const updateRankCustom = (rankIdx, numIdx, value) => {
+    setRankCustoms(prev => {
+      const copy = [...prev];
+      const customCopy = [...copy[rankIdx]];
+      customCopy[numIdx] = value;
+      copy[rankIdx] = customCopy;
+      return copy;
+    });
   };
 
   const getRankNumbers = (selection, customNums) => {
@@ -90,20 +90,24 @@ export default function LotteryDetailPage({ params }) {
     let drawData = {};
     if (drawMode === 'manual') {
       try {
-        const nums1 = getRankNumbers(rank1Selection, rank1Custom);
-        const nums2 = getRankNumbers(rank2Selection, rank2Custom);
-        const nums3 = getRankNumbers(rank3Selection, rank3Custom);
-        const nums4 = getRankNumbers(rank4Selection, rank4Custom);
+        const rankWinningNumbers = [];
+        let hasAnySelection = false;
 
-        if (nums1) drawData.winningNumbers1 = nums1;
-        if (nums2) drawData.winningNumbers2 = nums2;
-        if (nums3) drawData.winningNumbers3 = nums3;
-        if (nums4) drawData.winningNumbers4 = nums4;
-        
-        if (!nums1 && !nums2 && !nums3 && !nums4) {
+        for (let i = 0; i < 10; i++) {
+          const selection = rankSelections[i];
+          const customVal = rankCustoms[i];
+          
+          const nums = getRankNumbers(selection, customVal);
+          rankWinningNumbers.push(nums);
+          if (nums) hasAnySelection = true;
+        }
+
+        if (!hasAnySelection) {
           showToast('Please select/enter at least one winner rank combination or use Random Draw.', 'error');
           return;
         }
+
+        drawData.rankWinningNumbers = rankWinningNumbers;
       } catch (err) {
         showToast(err.message, 'error');
         return;
@@ -387,8 +391,16 @@ export default function LotteryDetailPage({ params }) {
                       }
                     }
 
-                    const renderRankField = (rankNum, label, selection, setSelection, customVal, setCustomVal) => {
-                      return (
+                    const fields = [];
+                    for (let rankNum = 1; rankNum <= 10; rankNum++) {
+                      const rankIdx = rankNum - 1;
+                      const selection = rankSelections[rankIdx] || '';
+                      const customVal = rankCustoms[rankIdx] || [];
+
+                      const rankEmoji = rankNum === 1 ? '🏆' : rankNum === 2 ? '🥈' : rankNum === 3 ? '🥉' : '🎟️';
+                      const label = `${rankEmoji} Rank ${rankNum} Winner${rankNum >= 4 ? ' (4-10 Tier)' : ''}`;
+
+                      fields.push(
                         <div key={rankNum} className="form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                           <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', marginBottom: '8px', color: 'var(--accent-warning)' }}>
                             {label}
@@ -397,7 +409,7 @@ export default function LotteryDetailPage({ params }) {
                             className="form-input"
                             style={{ width: '100%', marginBottom: selection === 'custom' ? '10px' : '0' }}
                             value={selection}
-                            onChange={(e) => setSelection(e.target.value)}
+                            onChange={(e) => updateRankSelection(rankIdx, e.target.value)}
                           >
                             <option value="">-- Random / Raffle Shuffled --</option>
                             <option value="custom">✍️ Custom Combination</option>
@@ -410,7 +422,7 @@ export default function LotteryDetailPage({ params }) {
 
                           {selection === 'custom' && (
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                              {customVal.map((v, i) => (
+                              {Array(lottery.pickCount).fill(0).map((_, i) => (
                                 <input
                                   key={i}
                                   type="number"
@@ -427,26 +439,16 @@ export default function LotteryDetailPage({ params }) {
                                     textAlign: 'center',
                                     fontSize: '12px'
                                   }}
-                                  value={v}
-                                  onChange={(e) => {
-                                    const updated = [...customVal];
-                                    updated[i] = e.target.value;
-                                    setCustomVal(updated);
-                                  }}
+                                  value={customVal[i] || ''}
+                                  onChange={(e) => updateRankCustom(rankIdx, i, e.target.value)}
                                 />
                               ))}
                             </div>
                           )}
                         </div>
                       );
-                    };
-
-                    return [
-                      renderRankField(1, '🏆 1st Winner (Rank 1)', rank1Selection, setRank1Selection, rank1Custom, setRank1Custom),
-                      renderRankField(2, '🥈 2nd Winner (Rank 2)', rank2Selection, setRank2Selection, rank2Custom, setRank2Custom),
-                      renderRankField(3, '🥉 3rd Winner (Rank 3)', rank3Selection, setRank3Selection, rank3Custom, setRank3Custom),
-                      renderRankField(4, '🎟️ 4th to 10th Winner (Rank 4)', rank4Selection, setRank4Selection, rank4Custom, setRank4Custom)
-                    ];
+                    }
+                    return fields;
                   })()}
                 </div>
               )}

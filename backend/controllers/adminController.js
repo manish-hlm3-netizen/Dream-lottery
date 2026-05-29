@@ -482,14 +482,18 @@ exports.drawLottery = async (req, res) => {
     };
 
     let winningNumbers;
-    let winningNumbers1, winningNumbers2, winningNumbers3, winningNumbers4;
+    const validatedRankWinningNumbers = Array(10).fill(null);
 
     try {
-      if (req.body.winningNumbers1) winningNumbers1 = validateNumbers(req.body.winningNumbers1, 'Rank 1 numbers');
-      if (req.body.winningNumbers2) winningNumbers2 = validateNumbers(req.body.winningNumbers2, 'Rank 2 numbers');
-      if (req.body.winningNumbers3) winningNumbers3 = validateNumbers(req.body.winningNumbers3, 'Rank 3 numbers');
-      if (req.body.winningNumbers4) winningNumbers4 = validateNumbers(req.body.winningNumbers4, 'Rank 4 numbers');
-      
+      if (req.body.rankWinningNumbers && Array.isArray(req.body.rankWinningNumbers)) {
+        for (let i = 0; i < Math.min(10, req.body.rankWinningNumbers.length); i++) {
+          const combo = req.body.rankWinningNumbers[i];
+          if (combo) {
+            validatedRankWinningNumbers[i] = validateNumbers(combo, `Rank ${i + 1} numbers`);
+          }
+        }
+      }
+
       if (req.body.winningNumbers) {
         winningNumbers = validateNumbers(req.body.winningNumbers, 'Winning numbers');
       }
@@ -513,9 +517,9 @@ exports.drawLottery = async (req, res) => {
     // Determine final lottery winning numbers
     if (winningNumbers) {
       // Use explicit custom numbers
-    } else if (winningNumbers1) {
+    } else if (validatedRankWinningNumbers[0]) {
       // Use Rank 1 custom numbers
-      winningNumbers = winningNumbers1;
+      winningNumbers = validatedRankWinningNumbers[0];
     } else if (shuffledTickets.length > 0) {
       // Otherwise, match 1st winner's selectedNumbers
       winningNumbers = shuffledTickets[0].selectedNumbers;
@@ -550,14 +554,12 @@ exports.drawLottery = async (req, res) => {
       let rank = 0;
       
       // 1. Check if this ticket matches any of the admin's custom rank winning combinations
-      if (winningNumbers1 && ticketNumsStr === winningNumbers1.join(',')) {
-        rank = 1;
-      } else if (winningNumbers2 && ticketNumsStr === winningNumbers2.join(',')) {
-        rank = 2;
-      } else if (winningNumbers3 && ticketNumsStr === winningNumbers3.join(',')) {
-        rank = 3;
-      } else if (winningNumbers4 && ticketNumsStr === winningNumbers4.join(',')) {
-        rank = 4;
+      for (let r = 1; r <= 10; r++) {
+        const customCombo = validatedRankWinningNumbers[r - 1];
+        if (customCombo && ticketNumsStr === customCombo.join(',')) {
+          rank = r;
+          break;
+        }
       }
       
       // 2. If no rank matched yet, fall back to standard raffle rank
