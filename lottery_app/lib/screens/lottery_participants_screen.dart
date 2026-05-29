@@ -254,197 +254,275 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
         final isWinner = ticket['status'] == 'won' || prizeWon > 0;
         final currentLang = Provider.of<LanguageProvider>(context, listen: false);
 
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: isWinner ? const Color(0xFFF0FDF4) : Colors.white, // Very soft green tint for winners
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
               color: isWinner 
                   ? AppTheme.successColor.withOpacity(0.4) 
                   : AppTheme.borderColor,
-              width: isWinner ? 1.8 : 1,
+              width: isWinner ? 1.5 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: isWinner 
+                    ? AppTheme.successColor.withOpacity(0.08) 
+                    : Colors.black.withOpacity(0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(19),
+            child: Container(
+              // Draw the vertical left color accent bar
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: isWinner ? AppTheme.successColor : AppTheme.borderColor,
+                    width: 6,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          if (isWinner) ...[
-                            const Text('🏆 ', style: TextStyle(fontSize: 16)),
-                          ],
-                          Flexible(
-                            child: Text(
-                              name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                                color: isWinner ? AppTheme.primaryColor : AppTheme.textPrimary,
+                    // Header Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              if (isWinner) ...[
+                                const Text('🏆 ', style: TextStyle(fontSize: 18)),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                    color: isWinner ? AppTheme.successColor : AppTheme.textPrimary,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Status Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isWinner 
+                                ? AppTheme.successColor.withOpacity(0.1) 
+                                : AppTheme.bgSurface,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: isWinner 
+                                  ? AppTheme.successColor.withOpacity(0.3) 
+                                  : AppTheme.borderColor,
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    if (isWinner && prizeWon > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.goldGradient,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '₹$prizeWon',
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isWinner ? Icons.emoji_events : Icons.person_outline,
+                                size: 12,
+                                color: isWinner ? AppTheme.successColor : AppTheme.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isWinner 
+                                    ? currentLang.translate('status_winner').toUpperCase()
+                                    : currentLang.translate('status_participant').toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: isWinner ? AppTheme.successColor : AppTheme.textSecondary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // Numbers
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: selectedNumbers.map((num) {
-                    final isMatched = matchedNumbers.contains(num);
-                    return Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        gradient: isMatched ? AppTheme.successGradient : null,
-                        color: isMatched ? null : AppTheme.bgSurface,
-                        shape: BoxShape.circle,
-                        border: isMatched ? null : Border.all(color: AppTheme.borderColor),
-                      ),
-                      child: Center(
-                        child: Text(
-                          num.toString().padLeft(2, '0'),
-                          style: TextStyle(
-                            color: isMatched ? Colors.white : AppTheme.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                
-                const SizedBox(height: 14),
-                Divider(color: AppTheme.borderColor, height: 1),
-                const SizedBox(height: 12),
-                
-                // Metadata Grid
-                Row(
-                  children: [
-                    // Lottery Name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currentLang.translate('lottery_name_label'),
-                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            _lotteryName.isNotEmpty ? _lotteryName : widget.lotteryName,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                     
-                    // Draw Date
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currentLang.translate('draw_date_label'),
-                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    const SizedBox(height: 14),
+                    Divider(color: isWinner ? AppTheme.successColor.withOpacity(0.15) : AppTheme.borderColor, height: 1),
+                    const SizedBox(height: 14),
+
+                    // Metadata Details Grid (Premium 2-column layout)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Col 1: Lottery & Draw Date
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Lottery
+                              _buildMetadataItem(
+                                currentLang.translate('lottery_name_label'),
+                                _lotteryName.isNotEmpty ? _lotteryName : widget.lotteryName,
+                                Icons.casino_outlined,
+                                isWinner,
+                              ),
+                              const SizedBox(height: 14),
+                              // Draw Date
+                              _buildMetadataItem(
+                                currentLang.translate('draw_date_label'),
+                                _formatDate(_drawDate),
+                                Icons.calendar_month_outlined,
+                                isWinner,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            _formatDate(_drawDate),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.textSecondary),
+                        ),
+                        
+                        // Col 2: Numbers & Winnings
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Winnings
+                              _buildMetadataItem(
+                                currentLang.translate('winnings_label'),
+                                isWinner ? '₹$prizeWon' : '₹0',
+                                Icons.monetization_on_outlined,
+                                isWinner,
+                                isHighlight: isWinner,
+                              ),
+                              const SizedBox(height: 14),
+                              // Numbers Label
+                              Text(
+                                currentLang.translate('selected_numbers_label').toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: AppTheme.textMuted,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // Wrap numbers here
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
+                                children: selectedNumbers.map((num) {
+                                  final isMatched = matchedNumbers.contains(num);
+                                  return Container(
+                                    width: 26,
+                                    height: 26,
+                                    decoration: BoxDecoration(
+                                      gradient: isMatched 
+                                          ? AppTheme.successGradient 
+                                          : const LinearGradient(
+                                              colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: isMatched 
+                                              ? AppTheme.successColor.withOpacity(0.3) 
+                                              : Colors.black.withOpacity(0.04),
+                                          blurRadius: 3,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                      border: isMatched ? null : Border.all(color: AppTheme.borderColor),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        num.toString().padLeft(2, '0'),
+                                        style: TextStyle(
+                                          color: isMatched ? Colors.white : AppTheme.textPrimary,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 10),
-                
-                Row(
-                  children: [
-                    // Status tag
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currentLang.translate('status_label'),
-                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            isWinner 
-                                ? currentLang.translate('status_winner')
-                                : currentLang.translate('status_participant'),
-                            style: TextStyle(
-                              fontSize: 12, 
-                              fontWeight: FontWeight.w800, 
-                              color: isWinner ? AppTheme.successColor : AppTheme.textSecondary
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Winnings
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currentLang.translate('winnings_label'),
-                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '₹$prizeWon',
-                            style: TextStyle(
-                              fontSize: 12, 
-                              fontWeight: FontWeight.w900, 
-                              color: isWinner ? AppTheme.successColor : AppTheme.textPrimary
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMetadataItem(String label, String value, IconData icon, bool isWinner, {bool isHighlight = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isWinner 
+                ? AppTheme.successColor.withOpacity(0.08) 
+                : AppTheme.bgSurface,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 14,
+            color: isHighlight 
+                ? AppTheme.successColor 
+                : (isWinner ? AppTheme.successColor.withOpacity(0.8) : AppTheme.textSecondary),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 9,
+                  color: AppTheme.textMuted,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isHighlight ? FontWeight.w900 : FontWeight.w800,
+                  color: isHighlight 
+                      ? AppTheme.successColor 
+                      : AppTheme.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -78,6 +78,7 @@ class LanguageProvider with ChangeNotifier {
       'status_winner': 'Winner 🏆',
       'status_participant': 'Participant 👥',
       'winnings_label': 'Winnings',
+      'selected_numbers_label': 'Picked Numbers',
       // Home & General Lotteries EN
       'wallet': 'Wallet',
       'available_balance': 'Available Balance',
@@ -153,6 +154,7 @@ class LanguageProvider with ChangeNotifier {
       'status_winner': 'विजेता 🏆',
       'status_participant': 'प्रतिभागी 👥',
       'winnings_label': 'जीत की राशि',
+      'selected_numbers_label': 'चुने गए नंबर',
       // Home & General Lotteries HI
       'wallet': 'वॉलेट',
       'available_balance': 'उपलब्ध बैलेंस',
