@@ -186,4 +186,17 @@ class ApiService {
     final response = await _dio.get(ApiConfig.recentWinners);
     return response.data;
   }
+
+  // Support Chat
+  Future<Map<String, dynamic>> getChatMessages() async {
+    final response = await _dio.get(ApiConfig.chatMessages);
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> sendChatMessage(String text) async {
+    final response = await _dio.post(ApiConfig.chatMessages, data: {
+      'text': text,
+    });
+    return response.data;
+  }
 }

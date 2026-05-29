@@ -196,6 +196,22 @@ class ApiClient {
       body: JSON.stringify(upiData)
     });
   }
+
+  // Support Chat
+  async getChatUsers() {
+    return this.request('/admin/chat/users');
+  }
+
+  async getChatHistory(userId) {
+    return this.request(`/admin/chat/${userId}`);
+  }
+
+  async sendChatMessage(userId, text) {
+    return this.request(`/admin/chat/${userId}`, {
+      method: 'POST',
+      body: JSON.stringify({ text })
+    });
+  }
 }
 
 const api = new ApiClient();

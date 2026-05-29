@@ -65,6 +65,9 @@ app.use('/api/wallet', walletRoutes);
 // Lottery routes
 app.use('/api/lotteries', lotteryRoutes);
 
+// Chat routes
+app.use('/api/chat', require('./routes/chat'));
+
 // Tickets route
 app.get('/api/tickets/my-tickets', auth, lotteryController.getAllMyTickets);
 

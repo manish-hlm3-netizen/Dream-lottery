@@ -36,4 +36,7 @@ class ApiConfig {
 
   // Referrals
   static const String referrals = '/auth/referrals';
+
+  // Support Chat
+  static const String chatMessages = '/chat';
 }

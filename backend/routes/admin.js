@@ -40,5 +40,10 @@ router.delete('/announcements/:id', adminController.deleteAnnouncement);
 router.get('/settings/upi', adminController.getUPISettings);
 router.put('/settings/upi', adminController.updateUPISettings);
 
+// Support Chat
+router.get('/chat/users', adminController.getChatUsers);
+router.get('/chat/:userId', adminController.getChatHistory);
+router.post('/chat/:userId', adminController.adminSendMessage);
+
 module.exports = router;
 

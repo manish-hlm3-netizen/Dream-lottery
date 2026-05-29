@@ -5,6 +5,7 @@ const Ticket = require('../models/Ticket');
 const Withdrawal = require('../models/Withdrawal');
 const Announcement = require('../models/Announcement');
 const Settings = require('../models/Settings');
+const Message = require('../models/Message');
 const { generateWinningNumbers, calculateMatches, determinePrize } = require('../utils/drawEngine');
 
 
@@ -21,7 +22,8 @@ exports.getDashboard = async (req, res) => {
       pendingWithdrawals,
       activeLotteries,
       completedLotteries,
-      totalRevenue
+      totalRevenue,
+      unreadChats
     ] = await Promise.all([
       User.countDocuments({ role: 'user' }),
       Transaction.countDocuments({ type: 'deposit', status: 'pending' }),
@@ -31,7 +33,8 @@ exports.getDashboard = async (req, res) => {
       Lottery.aggregate([
         { $match: { status: 'completed' } },
         { $group: { _id: null, total: { $sum: '$totalRevenue' } } }
-      ])
+      ]),
+      Message.countDocuments({ sender: 'user', isRead: false })
     ]);
 
     // Recent transactions
@@ -49,7 +52,8 @@ exports.getDashboard = async (req, res) => {
           pendingWithdrawals,
           activeLotteries,
           completedLotteries,
-          totalRevenue: totalRevenue[0]?.total || 0
+          totalRevenue: totalRevenue[0]?.total || 0,
+          unreadChats
         },
         recentTransactions
       }
@@ -948,6 +952,122 @@ exports.updateUPISettings = async (req, res) => {
     });
   } catch (error) {
     console.error('Update UPI settings error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get all unique users who have chat history
+ * @route   GET /api/admin/chat/users
+ * @access  Admin
+ */
+exports.getChatUsers = async (req, res) => {
+  try {
+    const uniqueUserIds = await Message.distinct('userId');
+    const chatUsers = [];
+
+    for (const userId of uniqueUserIds) {
+      const user = await User.findById(userId).select('name email phone');
+      if (!user) continue;
+
+      const latestMessage = await Message.findOne({ userId }).sort({ createdAt: -1 });
+      const unreadCount = await Message.countDocuments({ userId, sender: 'user', isRead: false });
+
+      chatUsers.push({
+        user,
+        latestMessage: latestMessage ? {
+          text: latestMessage.text,
+          createdAt: latestMessage.createdAt,
+          sender: latestMessage.sender
+        } : null,
+        unreadCount
+      });
+    }
+
+    // Sort by latest message date descending (most active first)
+    chatUsers.sort((a, b) => {
+      const aTime = a.latestMessage ? new Date(a.latestMessage.createdAt) : 0;
+      const bTime = b.latestMessage ? new Date(b.latestMessage.createdAt) : 0;
+      return bTime - aTime;
+    });
+
+    res.json({
+      success: true,
+      data: { chatUsers }
+    });
+  } catch (error) {
+    console.error('Get chat users error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get full support chat history for a specific user
+ * @route   GET /api/admin/chat/:userId
+ * @access  Admin
+ */
+exports.getChatHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select('name email phone');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const messages = await Message.find({ userId }).sort({ createdAt: 1 });
+
+    // Mark user's incoming messages as read
+    await Message.updateMany(
+      { userId, sender: 'user', isRead: false },
+      { isRead: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('Get chat history error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Send an admin reply message to a user
+ * @route   POST /api/admin/chat/:userId
+ * @access  Admin
+ */
+exports.adminSendMessage = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, message: 'Message text is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const message = await Message.create({
+      userId,
+      sender: 'admin',
+      text: text.trim(),
+      isRead: true
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { message }
+    });
+  } catch (error) {
+    console.error('Admin send message error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

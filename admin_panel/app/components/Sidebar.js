@@ -11,6 +11,7 @@ export default function Sidebar({ stats, onLogout }) {
     { href: '/withdrawals', icon: '💸', label: 'Withdrawals', badge: stats?.pendingWithdrawals },
     { href: '/lotteries', icon: '🎰', label: 'Lotteries' },
     { href: '/users', icon: '👥', label: 'Users' },
+    { href: '/support', icon: '💬', label: 'Support Chat', badge: stats?.unreadChats },
     { href: '/announcements', icon: '📢', label: 'Announcements' },
     { href: '/settings', icon: '⚙️', label: 'Settings' },
   ];

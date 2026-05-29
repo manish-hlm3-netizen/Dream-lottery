@@ -137,6 +137,11 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(context, '/referrals'),
                 ),
                 _ProfileMenuItem(
+                  icon: Icons.chat_bubble_outline,
+                  label: '${lang.translate('chat_support')} 💬',
+                  onTap: () => Navigator.pushNamed(context, '/support-chat'),
+                ),
+                _ProfileMenuItem(
                   icon: Icons.translate,
                   label: '${lang.translate('change_language')} (${lang.isHindi ? 'हिंदी' : 'English'})',
                   onTap: () => lang.toggleLanguage(),
