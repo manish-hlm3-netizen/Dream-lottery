@@ -123,283 +123,326 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
                       final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
-                      return GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
-                        child: Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: AppTheme.bgCard,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppTheme.borderColor),
-                            boxShadow: [
-                              BoxShadow(
-                                color: cardTheme.primaryColor.withOpacity(0.04),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              )
-                            ]
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Header with gradient
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      cardTheme.primaryColor.withOpacity(0.12),
-                                      Colors.transparent,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            lottery['name'] ?? '',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w800,
-                                              color: AppTheme.textPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            lang.isHindi 
-                                                 ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
-                                                 : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
-                                            style: const TextStyle(
-                                              color: AppTheme.textSecondary,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 22),
+                        child: PhysicalShape(
+                          clipper: const TicketClipper(punchY: 85.0, punchRadius: 10.0),
+                          color: AppTheme.bgCard,
+                          shadowColor: cardTheme.primaryColor.withOpacity(0.18),
+                          elevation: 6.0,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
+                            child: Container(
+                              width: double.infinity,
+                              color: Colors.transparent,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header with premium gradient and security texture
+                                  Container(
+                                    height: 85,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      gradient: cardTheme.gradient,
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        gradient: cardTheme.gradient,
-                                        borderRadius: BorderRadius.circular(30),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: cardTheme.primaryColor.withOpacity(0.3),
-                                            blurRadius: 10,
-                                          )
-                                        ],
-                                      ),
-                                      child: Text(
-                                        '₹${lottery['ticketPrice']}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Urgency Progress Bar (Left Ticket)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    child: Stack(
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.confirmation_number_outlined, 
-                                                size: 14, color: cardTheme.textIconColor),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '$ticketsLeft ${lang.translate('tickets_left')}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w700,
-                                                color: cardTheme.textIconColor,
-                                              ),
+                                        Positioned.fill(
+                                          child: CustomPaint(
+                                            painter: TicketPatternPainter(
+                                              color: Colors.white.withOpacity(0.06),
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                        Text(
-                                          '${((1 - progress) * 100).toInt()}% ${lang.translate('filled')}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppTheme.textMuted,
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Flexible(
+                                                          child: Text(
+                                                            lottery['name'] ?? '',
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                            style: const TextStyle(
+                                                              fontSize: 18,
+                                                              fontWeight: FontWeight.w900,
+                                                              color: Colors.white,
+                                                              letterSpacing: 0.3,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 6),
+                                                        const Text('⭐', style: TextStyle(fontSize: 13)),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      lang.isHindi 
+                                                           ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
+                                                           : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
+                                                      style: TextStyle(
+                                                        color: Colors.white.withOpacity(0.85),
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(30),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.12),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 3),
+                                                    )
+                                                  ],
+                                                ),
+                                                child: Text(
+                                                  '₹${lottery['ticketPrice']}',
+                                                  style: TextStyle(
+                                                    color: cardTheme.primaryColor,
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 6),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: LinearProgressIndicator(
-                                        value: 1 - progress,
-                                        minHeight: 6,
-                                        backgroundColor: AppTheme.borderColor,
-                                        color: cardTheme.primaryColor,
+                                  ),
+
+                                  // Perforated line align with notches
+                                  Container(
+                                    height: 1,
+                                    width: double.infinity,
+                                    color: Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: CustomPaint(
+                                      painter: DashedLinePainter(
+                                        color: AppTheme.borderColor.withOpacity(0.8),
+                                        strokeWidth: 1.5,
+                                        dashWidth: 6,
+                                        dashSpace: 4,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
+                                  ),
 
-                              // Winners Pricing matching tiers
-                              if (lottery['prizes'] != null && (lottery['prizes'] as List).isNotEmpty) ...[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Divider(color: AppTheme.borderColor, height: 1),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.emoji_events, 
-                                              color: AppTheme.warningColor.withOpacity(0.9), size: 15),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            lang.translate('winners_pricing'),
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppTheme.textSecondary,
-                                              letterSpacing: 0.3,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: (lottery['prizes'] as List).map<Widget>((p) {
-                                          final isTop = p['match'] == lottery['pickCount'];
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              gradient: isTop ? AppTheme.goldGradient : null,
-                                              color: isTop ? null : AppTheme.bgSurface,
-                                              borderRadius: BorderRadius.circular(10),
-                                              border: Border.all(
-                                                color: isTop 
-                                                    ? AppTheme.warningColor.withOpacity(0.3) 
-                                                    : AppTheme.borderColor,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
+                                  // Urgency Progress Bar (Left Ticket)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
                                               children: [
+                                                Icon(Icons.confirmation_number_outlined, 
+                                                    size: 14, color: cardTheme.textIconColor),
+                                                const SizedBox(width: 4),
                                                 Text(
-                                                  '${p['label']}: ',
+                                                  '$ticketsLeft ${lang.translate('tickets_left')}',
                                                   style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: isTop ? Colors.black87 : AppTheme.textSecondary,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  '₹${p['amount']}',
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w800,
-                                                    color: isTop ? Colors.black87 : cardTheme.textIconColor,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: cardTheme.textIconColor,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                      const SizedBox(height: 14),
-                                    ],
-                                  ),
-                                ),
-                              ],
-
-                              // Footer (Jackpot & Live Countdown Timer)
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.bgPrimary,
-                                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-                                ),
-                                padding: const EdgeInsets.all(20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(lang.translate('jackpot_pool'),
-                                            style: const TextStyle(
-                                                color: AppTheme.textMuted,
+                                            Text(
+                                              '${((1 - progress) * 100).toInt()}% ${lang.translate('filled')}',
+                                              style: const TextStyle(
                                                 fontSize: 11,
-                                                fontWeight: FontWeight.w600)),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '₹${jackpot.toString()}',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            color: cardTheme.textIconColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              width: 6,
-                                              height: 6,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.green,
-                                                shape: BoxShape.circle,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppTheme.textMuted,
                                               ),
                                             ),
-                                            const SizedBox(width: 4),
-                                            Text(lang.translate('live_timer'),
-                                                style: const TextStyle(
-                                                    color: AppTheme.textMuted,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600)),
                                           ],
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _formatCountdown(timeLeft, lang),
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.textPrimary,
-                                            fontFamily: 'monospace',
+                                        const SizedBox(height: 6),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: LinearProgressIndicator(
+                                            value: 1 - progress,
+                                            minHeight: 6,
+                                            backgroundColor: AppTheme.borderColor,
+                                            color: cardTheme.primaryColor,
                                           ),
                                         ),
                                       ],
                                     ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Winners Pricing matching tiers
+                                  if (lottery['prizes'] != null && (lottery['prizes'] as List).isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Divider(color: AppTheme.borderColor, height: 1),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.emoji_events, 
+                                                  color: AppTheme.warningColor.withOpacity(0.9), size: 15),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                lang.translate('winners_pricing'),
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppTheme.textSecondary,
+                                                  letterSpacing: 0.3,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: (lottery['prizes'] as List).map<Widget>((p) {
+                                              final isTop = p['match'] == lottery['pickCount'];
+                                              return Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  gradient: isTop ? AppTheme.goldGradient : null,
+                                                  color: isTop ? null : cardTheme.primaryColor.withOpacity(0.05),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(
+                                                    color: isTop 
+                                                        ? AppTheme.warningColor.withOpacity(0.4) 
+                                                        : cardTheme.primaryColor.withOpacity(0.15),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    if (isTop) ...[
+                                                      const Icon(Icons.stars, color: Colors.black87, size: 12),
+                                                      const SizedBox(width: 4),
+                                                    ],
+                                                    Text(
+                                                      '${p['label']}: ',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: isTop ? Colors.black87 : AppTheme.textSecondary,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '₹${p['amount']}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w800,
+                                                        color: isTop ? Colors.black87 : cardTheme.textIconColor,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                          const SizedBox(height: 16),
+                                        ],
+                                      ),
+                                    ),
                                   ],
-                                ),
+
+                                  // Footer stub (Jackpot & Live Countdown Timer in ultra-premium dark slate)
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              lang.translate('jackpot_pool').toUpperCase(),
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(0.6),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '₹${jackpot.toString()}',
+                                              style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w900,
+                                                color: Color(0xFFFBBF24), // Gold Pool
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: const BoxDecoration(
+                                                    color: Color(0xFF34D399), // Fluorescent Green
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  lang.translate('live_timer').toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: Colors.white.withOpacity(0.6),
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w700,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _formatCountdown(timeLeft, lang),
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF34D399), // Fluorescent Digital Green
+                                                fontFamily: 'monospace',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       );

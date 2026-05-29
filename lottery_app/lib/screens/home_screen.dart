@@ -555,112 +555,194 @@ class _LotteryCard extends StatelessWidget {
     final timeLeft = drawDate.difference(DateTime.now());
     final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.borderColor),
-          boxShadow: [
-            BoxShadow(
-              color: cardTheme.primaryColor.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: PhysicalShape(
+        clipper: const TicketClipper(punchY: 85.0, punchRadius: 10.0),
+        color: AppTheme.bgCard,
+        shadowColor: cardTheme.primaryColor.withOpacity(0.18),
+        elevation: 6.0,
+        child: GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/buy-ticket', arguments: lottery),
+          child: Container(
+            width: double.infinity,
+            color: Colors.transparent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    lottery['name'] ?? 'Lottery',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ),
+                // Header with premium gradient and security texture
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: cardTheme.primaryColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '₹${lottery['ticketPrice']}',
-                    style: TextStyle(
-                      color: cardTheme.textIconColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _InfoChip(
-                  icon: Icons.grid_view,
-                  iconColor: cardTheme.textIconColor,
-                  text: lang.isHindi 
-                      ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
-                      : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
-                ),
-                const SizedBox(width: 12),
-                _InfoChip(
-                  icon: Icons.timer,
-                  iconColor: cardTheme.textIconColor,
-                  text: timeLeft.isNegative
-                      ? lang.translate('draw_soon')
-                      : (lang.isHindi 
-                          ? '${timeLeft.inDays} दिन ${timeLeft.inHours % 24} घंटे बचे' 
-                          : '${timeLeft.inDays}d ${timeLeft.inHours % 24}h left'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${lottery['totalTicketsSold'] ?? 0} ${lang.translate('tickets_sold')}',
-                  style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  height: 85,
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: cardTheme.gradient,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cardTheme.primaryColor.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      )
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: TicketPatternPainter(
+                            color: Colors.white.withOpacity(0.06),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          lottery['name'] ?? 'Lottery',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Text('⭐', style: TextStyle(fontSize: 13)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    lang.isHindi 
+                                         ? '1-${lottery['maxNumber']} में से ${lottery['pickCount']} चुनें' 
+                                         : 'Pick ${lottery['pickCount']} from 1-${lottery['maxNumber']}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.85),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.12),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  )
+                                ],
+                              ),
+                              child: Text(
+                                '₹${lottery['ticketPrice']}',
+                                style: TextStyle(
+                                  color: cardTheme.primaryColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  child: Text(
-                    lang.translate('play_now'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                ),
+
+                // Perforated line align with notches
+                Container(
+                  height: 1,
+                  width: double.infinity,
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: CustomPaint(
+                    painter: DashedLinePainter(
+                      color: AppTheme.borderColor.withOpacity(0.8),
+                      strokeWidth: 1.5,
+                      dashWidth: 6,
+                      dashSpace: 4,
                     ),
+                  ),
+                ),
+
+                // Card Body
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _InfoChip(
+                            icon: Icons.confirmation_number_outlined,
+                            iconColor: cardTheme.textIconColor,
+                            text: '${lottery['totalTicketsSold'] ?? 0} ${lang.translate('tickets_sold')}',
+                          ),
+                          _InfoChip(
+                            icon: Icons.timer_outlined,
+                            iconColor: cardTheme.textIconColor,
+                            text: timeLeft.isNegative
+                                ? lang.translate('draw_soon')
+                                : (lang.isHindi 
+                                    ? '${timeLeft.inDays} दिन ${timeLeft.inHours % 24} घंटे' 
+                                    : '${timeLeft.inDays}d ${timeLeft.inHours % 24}h left'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(color: AppTheme.borderColor, height: 1),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            lang.translate('ready_try_luck'),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: cardTheme.gradient,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: cardTheme.primaryColor.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: Text(
+                              lang.translate('play_now'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -133,7 +133,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       child: ClipPath(
-                        clipper: TicketClipper(),
+                        clipper: MyTicketsClipper(),
                         child: Container(
                           decoration: BoxDecoration(
                             color: AppTheme.bgCard,
@@ -418,7 +418,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
 }
 
 // Custom Clipper for premium physical ticket cutout notches
-class TicketClipper extends CustomClipper<Path> {
+class MyTicketsClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();

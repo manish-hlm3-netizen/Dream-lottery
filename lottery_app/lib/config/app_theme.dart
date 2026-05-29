@@ -209,3 +209,119 @@ class AppTheme {
     ),
   );
 }
+
+class TicketClipper extends CustomClipper<Path> {
+  final double punchRadius;
+  final double punchY;
+
+  const TicketClipper({this.punchRadius = 8.0, this.punchY = 85.0});
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    
+    // Top-left corner
+    path.moveTo(0.0, 16.0);
+    path.quadraticBezierTo(0.0, 0.0, 16.0, 0.0);
+    
+    // Top line
+    path.lineTo(size.width - 16.0, 0.0);
+    
+    // Top-right corner
+    path.quadraticBezierTo(size.width, 0.0, size.width, 16.0);
+    
+    // Right side top down to notch
+    path.lineTo(size.width, punchY - punchRadius);
+    
+    // Right notch (inward curve)
+    path.quadraticBezierTo(
+      size.width - punchRadius,
+      punchY,
+      size.width,
+      punchY + punchRadius,
+    );
+    
+    // Right side down to bottom
+    path.lineTo(size.width, size.height - 16.0);
+    
+    // Bottom-right corner
+    path.quadraticBezierTo(size.width, size.height, size.width - 16.0, size.height);
+    
+    // Bottom line
+    path.lineTo(16.0, size.height);
+    
+    // Bottom-left corner
+    path.quadraticBezierTo(0.0, size.height, 0.0, size.height - 16.0);
+    
+    // Left side bottom up to notch
+    path.lineTo(0.0, punchY + punchRadius);
+    
+    // Left notch (inward curve)
+    path.quadraticBezierTo(
+      punchRadius,
+      punchY,
+      0.0,
+      punchY - punchRadius,
+    );
+    
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class TicketPatternPainter extends CustomPainter {
+  final Color color;
+  const TicketPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0;
+    
+    // Subtle diagonal lines
+    for (double i = -size.height; i < size.width; i += 10) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class DashedLinePainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+
+  const DashedLinePainter({
+    this.color = const Color(0xFFE2E8F0),
+    this.strokeWidth = 1.0,
+    this.dashWidth = 6.0,
+    this.dashSpace = 4.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double startX = 0;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth;
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
