@@ -16,52 +16,20 @@ export default function CreateLotteryPage() {
     drawDate: '',
     isAutomatic: true,
     prizes: [
-      { match: 6, label: 'Jackpot', amount: 50000 },
-      { match: 5, label: '2nd Prize', amount: 5000 },
-      { match: 4, label: '3rd Prize', amount: 500 },
-      { match: 3, label: 'Consolation', amount: 100 }
+      { match: 1, label: '1st Winner', amount: 50000 },
+      { match: 2, label: '2nd Winner', amount: 25000 },
+      { match: 3, label: '3rd Winner', amount: 10000 },
+      { match: 4, label: '4th to 10th Winner', amount: 1000 }
     ]
   });
 
   const getDefaultPrizesForPickCount = (count) => {
-    const num = Number(count);
-    if (isNaN(num) || num < 1) return [];
-    if (num === 1) {
-      return [
-        { match: 1, label: 'Jackpot', amount: 50000 }
-      ];
-    } else if (num === 2) {
-      return [
-        { match: 2, label: 'Jackpot', amount: 50000 },
-        { match: 1, label: 'Consolation', amount: 1000 }
-      ];
-    } else if (num === 3) {
-      return [
-        { match: 3, label: 'Jackpot', amount: 50000 },
-        { match: 2, label: '2nd Prize', amount: 5000 },
-        { match: 1, label: 'Consolation', amount: 100 }
-      ];
-    } else if (num === 4) {
-      return [
-        { match: 4, label: 'Jackpot', amount: 50000 },
-        { match: 3, label: '2nd Prize', amount: 5000 },
-        { match: 2, label: 'Consolation', amount: 500 }
-      ];
-    } else if (num === 5) {
-      return [
-        { match: 5, label: 'Jackpot', amount: 50000 },
-        { match: 4, label: '2nd Prize', amount: 5000 },
-        { match: 3, label: '3rd Prize', amount: 500 },
-        { match: 2, label: 'Consolation', amount: 100 }
-      ];
-    } else {
-      return [
-        { match: num, label: 'Jackpot', amount: 50000 },
-        { match: num - 1, label: '2nd Prize', amount: 5000 },
-        { match: num - 2, label: '3rd Prize', amount: 500 },
-        { match: num - 3, label: 'Consolation', amount: 100 }
-      ];
-    }
+    return [
+      { match: 1, label: '1st Winner', amount: 50000 },
+      { match: 2, label: '2nd Winner', amount: 25000 },
+      { match: 3, label: '3rd Winner', amount: 10000 },
+      { match: 4, label: '4th to 10th Winner', amount: 1000 }
+    ];
   };
 
   const updateForm = (key, value) => {

@@ -12,27 +12,62 @@ const processAutomaticDraw = async (lottery) => {
   try {
     console.log(`🎰 Processing automatic draw for: ${lottery.name}`);
 
-    // Generate winning numbers
-    const winningNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
+    // Get all tickets
+    const tickets = await Ticket.find({ lotteryId: lottery._id });
+
+    // Shuffle tickets randomly for raffle
+    const shuffledTickets = [...tickets];
+    for (let i = shuffledTickets.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledTickets[i], shuffledTickets[j]] = [shuffledTickets[j], shuffledTickets[i]];
+    }
+
+    // Determine winning numbers
+    let winningNumbers;
+    if (shuffledTickets.length > 0) {
+      winningNumbers = shuffledTickets[0].selectedNumbers;
+    } else {
+      winningNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
+    }
     console.log(`🎲 Winning numbers: ${winningNumbers.join(', ')}`);
 
     // Update lottery
     lottery.winningNumbers = winningNumbers;
     lottery.status = 'completed';
 
-    // Get all tickets
-    const tickets = await Ticket.find({ lotteryId: lottery._id });
     let totalPrizesPaid = 0;
     let winnersCount = 0;
 
-    // Process each ticket
-    for (const ticket of tickets) {
-      const { matchedNumbers, matchCount } = calculateMatches(
-        ticket.selectedNumbers,
-        winningNumbers
-      );
+    // Helper to find prize by rank
+    const getPrizeByRank = (rank, prizes) => {
+      let targetMatch = 4;
+      if (rank === 1) targetMatch = 1;
+      else if (rank === 2) targetMatch = 2;
+      else if (rank === 3) targetMatch = 3;
+      
+      const prizeTier = prizes.find(p => p.match === targetMatch);
+      return prizeTier ? prizeTier.amount : 0;
+    };
 
-      const prizeWon = determinePrize(matchCount, lottery.prizes);
+    // Process each ticket
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
+      const rank = shuffledIndex + 1; // 1-based rank
+
+      let prizeWon = 0;
+      let matchedNumbers = [];
+      let matchCount = 0;
+
+      if (rank <= 10) {
+        prizeWon = getPrizeByRank(rank, lottery.prizes);
+        matchedNumbers = ticket.selectedNumbers;
+        matchCount = ticket.selectedNumbers.length; // 100% matched for winning tickets
+      } else {
+        prizeWon = 0;
+        matchedNumbers = [];
+        matchCount = 0;
+      }
 
       ticket.matchedNumbers = matchedNumbers;
       ticket.matchCount = matchCount;
@@ -52,7 +87,7 @@ const processAutomaticDraw = async (lottery) => {
           type: 'winnings',
           amount: prizeWon,
           status: 'approved',
-          description: `Won ₹${prizeWon} in ${lottery.name} (matched ${matchCount})`
+          description: `Won ₹${prizeWon} in ${lottery.name} (matched ${matchCount} numbers)`
         });
 
         totalPrizesPaid += prizeWon;

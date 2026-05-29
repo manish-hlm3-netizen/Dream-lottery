@@ -203,7 +203,7 @@ export default function LotteryDetailPage({ params }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Match</th>
+              <th>Rank</th>
               <th>Label</th>
               <th>Prize Amount</th>
             </tr>
@@ -211,7 +211,7 @@ export default function LotteryDetailPage({ params }) {
           <tbody>
             {lottery.prizes?.map((prize, i) => (
               <tr key={i}>
-                <td>{prize.match} numbers</td>
+                <td>{prize.match <= 3 ? `Rank ${prize.match}` : `Ranks 4-10`}</td>
                 <td style={{ fontWeight: 600 }}>{prize.label}</td>
                 <td className="amount positive">₹{prize.amount?.toLocaleString()}</td>
               </tr>

@@ -98,12 +98,12 @@ exports.buyTicket = async (req, res) => {
       });
     }
 
-    // Check if user already bought a ticket for this lottery
-    const existingTicket = await Ticket.findOne({ userId: req.user._id, lotteryId });
-    if (existingTicket) {
+    // Check if user already bought 3 tickets for this lottery
+    const ticketCount = await Ticket.countDocuments({ userId: req.user._id, lotteryId });
+    if (ticketCount >= 3) {
       return res.status(400).json({
         success: false,
-        message: 'You have already purchased a ticket for this lottery. Only one ticket is allowed per user.'
+        message: 'You have already purchased the maximum of 3 tickets allowed for this lottery.'
       });
     }
 

@@ -336,10 +336,10 @@ exports.createLottery = async (req, res) => {
 
     // Default prizes if not provided
     const defaultPrizes = [
-      { match: pickCount || 6, label: 'Jackpot', amount: ticketPrice * 1000 },
-      { match: (pickCount || 6) - 1, label: '2nd Prize', amount: ticketPrice * 100 },
-      { match: (pickCount || 6) - 2, label: '3rd Prize', amount: ticketPrice * 10 },
-      { match: (pickCount || 6) - 3, label: 'Consolation', amount: ticketPrice * 2 }
+      { match: 1, label: '1st Winner', amount: ticketPrice * 50 },
+      { match: 2, label: '2nd Winner', amount: ticketPrice * 25 },
+      { match: 3, label: '3rd Winner', amount: ticketPrice * 10 },
+      { match: 4, label: '4th to 10th Winner', amount: ticketPrice * 3 }
     ];
 
     const lottery = await Lottery.create({
@@ -495,7 +495,30 @@ exports.drawLottery = async (req, res) => {
 
       winningNumbers = customNumbers.sort((a, b) => a - b);
     } else {
-      // Generate winning numbers randomly
+      // Generate winning numbers randomly or from first winner later
+      winningNumbers = [];
+    }
+
+    // Get all tickets for this lottery
+    const tickets = await Ticket.find({ lotteryId: lottery._id });
+
+    // Shuffle tickets randomly for raffle
+    const shuffledTickets = [...tickets];
+    for (let i = shuffledTickets.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledTickets[i], shuffledTickets[j]] = [shuffledTickets[j], shuffledTickets[i]];
+    }
+
+    // Determine winning numbers
+    if (req.body.winningNumbers) {
+      // Keep admin custom numbers if provided
+      const customNumbers = req.body.winningNumbers.map(n => parseInt(n));
+      winningNumbers = customNumbers.sort((a, b) => a - b);
+    } else if (shuffledTickets.length > 0) {
+      // Otherwise, match 1st winner's selectedNumbers
+      winningNumbers = shuffledTickets[0].selectedNumbers;
+    } else {
+      // If no tickets, just generate random winning numbers
       winningNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
     }
 
@@ -503,27 +526,38 @@ exports.drawLottery = async (req, res) => {
     lottery.winningNumbers = winningNumbers;
     lottery.status = 'completed';
 
-    // Get all tickets for this lottery
-    const tickets = await Ticket.find({ lotteryId: lottery._id });
-
     let totalPrizesPaid = 0;
     const winners = [];
 
+    // Helper to find prize by rank
+    const getPrizeByRank = (rank, prizes) => {
+      let targetMatch = 4;
+      if (rank === 1) targetMatch = 1;
+      else if (rank === 2) targetMatch = 2;
+      else if (rank === 3) targetMatch = 3;
+      
+      const prizeTier = prizes.find(p => p.match === targetMatch);
+      return prizeTier ? prizeTier.amount : 0;
+    };
+
     // Process each ticket
-    for (const ticket of tickets) {
-      const { matchedNumbers, matchCount } = calculateMatches(
-        ticket.selectedNumbers,
-        winningNumbers
-      );
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
+      const rank = shuffledIndex + 1; // 1-based rank
 
-      let prizeWon = determinePrize(matchCount, lottery.prizes);
+      let prizeWon = 0;
+      let matchedNumbers = [];
+      let matchCount = 0;
 
-      // Fail-safe fallback: If they matched 100% of the numbers (Jackpot) but prizeWon is 0 (due to admin setup mismatch)
-      if (prizeWon === 0 && matchCount > 0 && matchCount === lottery.pickCount) {
-        if (lottery.prizes && lottery.prizes.length > 0) {
-          const sortedPrizes = [...lottery.prizes].sort((a, b) => b.amount - a.amount);
-          prizeWon = sortedPrizes[0].amount;
-        }
+      if (rank <= 10) {
+        prizeWon = getPrizeByRank(rank, lottery.prizes);
+        matchedNumbers = ticket.selectedNumbers;
+        matchCount = ticket.selectedNumbers.length; // 100% matched for winning tickets
+      } else {
+        prizeWon = 0;
+        matchedNumbers = [];
+        matchCount = 0;
       }
 
       ticket.matchedNumbers = matchedNumbers;
@@ -535,8 +569,10 @@ exports.drawLottery = async (req, res) => {
       if (prizeWon > 0) {
         // Credit winnings to user's wallet
         const user = await User.findById(ticket.userId);
-        user.walletBalance += prizeWon;
-        await user.save();
+        if (user) {
+          user.walletBalance += prizeWon;
+          await user.save();
+        }
 
         // Create winnings transaction
         await Transaction.create({
