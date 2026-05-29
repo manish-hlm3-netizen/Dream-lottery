@@ -53,6 +53,10 @@ const lotterySchema = new mongoose.Schema({
     type: [Number],
     default: []
   },
+  rankWinningNumbers: {
+    type: [[Number]],
+    default: []
+  },
   isAutomatic: {
     type: Boolean,
     default: true

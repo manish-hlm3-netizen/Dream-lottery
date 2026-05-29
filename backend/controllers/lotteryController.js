@@ -309,6 +309,7 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
       success: true,
       data: {
         winningNumbers: lottery.winningNumbers,
+        rankWinningNumbers: lottery.rankWinningNumbers || [],
         name: lottery.name,
         drawDate: lottery.drawDate,
         winners: winners.map(w => ({
@@ -318,7 +319,8 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
           selectedNumbers: w.selectedNumbers,
           matchedNumbers: w.matchedNumbers,
           prizeWon: w.prizeWon,
-          status: w.status
+          status: w.status,
+          rank: w.rank || 0
         })),
         lost: lost.map(l => ({
           id: l._id,
@@ -327,7 +329,8 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
           selectedNumbers: l.selectedNumbers,
           matchedNumbers: l.matchedNumbers,
           prizeWon: l.prizeWon,
-          status: l.status
+          status: l.status,
+          rank: l.rank || 0
         }))
       }
     });

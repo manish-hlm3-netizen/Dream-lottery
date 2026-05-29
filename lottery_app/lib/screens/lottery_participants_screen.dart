@@ -24,6 +24,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
   List<dynamic> _winners = [];
   List<dynamic> _lost = [];
   List<int> _winningNumbers = [];
+  List<List<int>> _rankWinningNumbers = [];
   String _drawDate = '';
   String _lotteryName = '';
   String? _error;
@@ -46,6 +47,14 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
         final data = res['data'];
         setState(() {
           _winningNumbers = (data['winningNumbers'] as List?)?.cast<int>() ?? [];
+          final rankList = data['rankWinningNumbers'] as List?;
+          if (rankList != null && rankList.isNotEmpty) {
+            _rankWinningNumbers = rankList
+                .map((item) => (item as List).cast<int>().toList())
+                .toList();
+          } else {
+            _rankWinningNumbers = [];
+          }
           _winners = data['winners'] ?? [];
           _lost = data['lost'] ?? [];
           _drawDate = data['drawDate'] ?? '';
@@ -116,7 +125,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                     // Winning Numbers banner
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.only(top: 18, bottom: 20),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         border: Border(
@@ -126,48 +135,155 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            lang.translate('winning_numbers'),
-                            style: const TextStyle(
-                              color: AppTheme.textMuted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              lang.translate('winning_numbers').toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.textMuted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.0,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            alignment: WrapAlignment.center,
-                            children: _winningNumbers.map((num) {
-                              return Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  gradient: AppTheme.primaryGradient,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.primaryColor.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    num.toString().padLeft(2, '0'),
-                                    style: const TextStyle(
+                          const SizedBox(height: 14),
+                          
+                          if (_rankWinningNumbers.isNotEmpty) ...[
+                            // Scrollable rank winning numbers carousel
+                            SizedBox(
+                              height: 104,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: _rankWinningNumbers.length,
+                                itemBuilder: (context, idx) {
+                                  final numbers = _rankWinningNumbers[idx];
+                                  final rankNum = idx + 1;
+                                  final emoji = rankNum == 1 
+                                      ? '👑' 
+                                      : rankNum == 2 
+                                          ? '🥈' 
+                                          : rankNum == 3 
+                                              ? '🥉' 
+                                              : '🏆';
+                                  
+                                  return Container(
+                                    width: 275,
+                                    margin: const EdgeInsets.only(right: 14),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 15,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: AppTheme.borderColor),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              emoji,
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Rank $rankNum Combination',
+                                              style: TextStyle(
+                                                color: AppTheme.primaryColor,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: numbers.map((num) {
+                                            return Container(
+                                              width: 32,
+                                              height: 32,
+                                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                                              decoration: BoxDecoration(
+                                                gradient: AppTheme.primaryGradient,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppTheme.primaryColor.withOpacity(0.25),
+                                                    blurRadius: 4,
+                                                    offset: const Offset(0, 1.5),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  num.toString().padLeft(2, '0'),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ] else ...[
+                            // Standard single row fallback
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.center,
+                                children: _winningNumbers.map((num) {
+                                  return Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.primaryGradient,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppTheme.primaryColor.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        num.toString().padLeft(2, '0'),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

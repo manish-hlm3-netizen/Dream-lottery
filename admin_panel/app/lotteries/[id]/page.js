@@ -207,15 +207,29 @@ export default function LotteryDetailPage({ params }) {
       {/* Winning Numbers */}
       {lottery.winningNumbers && lottery.winningNumbers.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header">
-            <h3>🎲 Winning Numbers</h3>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>🎲 Drawn Winning Numbers per Rank</h3>
             <span className="badge-status completed">Draw Complete</span>
           </div>
           <div className="card-body">
-            <div className="winning-numbers">
-              {lottery.winningNumbers.map((num, i) => (
-                <div key={i} className="number-ball">{num}</div>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {(lottery.rankWinningNumbers && lottery.rankWinningNumbers.length > 0 ? lottery.rankWinningNumbers : [lottery.winningNumbers]).map((numbers, idx) => {
+                const rankNum = idx + 1;
+                const emoji = rankNum === 1 ? '👑' : rankNum === 2 ? '🥈' : rankNum === 3 ? '🥉' : '🏆';
+                return (
+                  <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '8px', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{emoji}</span>
+                      <span>Rank {rankNum} Combination</span>
+                    </div>
+                    <div className="winning-numbers" style={{ gap: 4 }}>
+                      {numbers?.map((num, i) => (
+                        <div key={i} className="number-ball" style={{ width: '28px', height: '28px', fontSize: '11px', minWidth: '28px' }}>{num}</div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

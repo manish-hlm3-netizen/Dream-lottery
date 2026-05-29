@@ -143,6 +143,25 @@ const processAutomaticDraw = async (lottery) => {
       }
     }
 
+    // Construct finalRankWinningNumbers array for transparency and fairness (10 ranks)
+    const finalRankWinningNumbers = Array(10).fill(null);
+    for (let r = 1; r <= 10; r++) {
+      // Check if any ticket actually won this rank, and use its numbers!
+      const winningRes = ticketResults.find(res => res.rank === r);
+      if (winningRes) {
+        finalRankWinningNumbers[r - 1] = winningRes.ticket.selectedNumbers;
+      }
+      // Otherwise, if it is Rank 1, fall back to primary winning numbers
+      else if (r === 1) {
+        finalRankWinningNumbers[0] = winningNumbers;
+      }
+      // Otherwise, generate a random combination for that rank so users see what the target was
+      else {
+        finalRankWinningNumbers[r - 1] = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
+      }
+    }
+    lottery.rankWinningNumbers = finalRankWinningNumbers;
+
     lottery.totalPrizesPaid = totalPrizesPaid;
     await lottery.save();
 

@@ -100,20 +100,42 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        lang.translate('winning_numbers'),
-                        style: const TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            lang.translate('winning_numbers'),
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          if (lottery['rankWinningNumbers'] != null && (lottery['rankWinningNumbers'] as List).isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                              ),
+                              child: const Text(
+                                '+9 other ranks drawn 🎯',
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: winningNumbers.map((num) {
+                        children: winningNumbers.map((n) {
                           return Container(
                             width: 42,
                             height: 42,
@@ -130,7 +152,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                num.toString().padLeft(2, '0'),
+                                n.toString().padLeft(2, '0'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
