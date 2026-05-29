@@ -126,7 +126,7 @@ class _HomeTabState extends State<_HomeTab> {
                             ),
                           ],
                           image: const DecorationImage(
-                            image: AssetImage('assets/images/logo.jpg'),
+                            image: AssetImage('assets/images/logo.png'),
                             fit: BoxFit.cover,
                           ),
                         ),
