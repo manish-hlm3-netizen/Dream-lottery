@@ -18,6 +18,19 @@ export default function LotteryDetailPage({ params }) {
   const [drawMode, setDrawMode] = useState('random'); // 'random' or 'manual'
   const [manualNumbers, setManualNumbers] = useState([]);
 
+  // Custom Rank Selections
+  const [rank1Selection, setRank1Selection] = useState('');
+  const [rank1Custom, setRank1Custom] = useState([]);
+  
+  const [rank2Selection, setRank2Selection] = useState('');
+  const [rank2Custom, setRank2Custom] = useState([]);
+
+  const [rank3Selection, setRank3Selection] = useState('');
+  const [rank3Custom, setRank3Custom] = useState([]);
+
+  const [rank4Selection, setRank4Selection] = useState('');
+  const [rank4Custom, setRank4Custom] = useState([]);
+
   useEffect(() => {
     loadLottery();
   }, [id]);
@@ -38,29 +51,63 @@ export default function LotteryDetailPage({ params }) {
 
   const handleDrawClick = () => {
     setManualNumbers(Array(lottery.pickCount).fill(''));
+    
+    setRank1Selection('');
+    setRank2Selection('');
+    setRank3Selection('');
+    setRank4Selection('');
+
+    setRank1Custom(Array(lottery.pickCount).fill(''));
+    setRank2Custom(Array(lottery.pickCount).fill(''));
+    setRank3Custom(Array(lottery.pickCount).fill(''));
+    setRank4Custom(Array(lottery.pickCount).fill(''));
+
     setDrawMode('random');
     setShowDrawModal(true);
+  };
+
+  const getRankNumbers = (selection, customNums) => {
+    if (selection === 'custom') {
+      const parsed = customNums.map(n => parseInt(n));
+      const invalid = parsed.some(n => isNaN(n) || n < 1 || n > lottery.maxNumber);
+      if (invalid) {
+        throw new Error(`All numbers must be valid integers between 1 and ${lottery.maxNumber}`);
+      }
+      const unique = new Set(parsed);
+      if (unique.size !== parsed.length) {
+        throw new Error('All numbers must be unique');
+      }
+      return parsed;
+    } else if (selection && selection !== '') {
+      return selection.split(',').map(n => parseInt(n));
+    }
+    return null;
   };
 
   const handleDrawSubmit = async (e) => {
     e.preventDefault();
     
-    let numbersToSend = null;
+    let drawData = {};
     if (drawMode === 'manual') {
-      const parsedNums = manualNumbers.map(n => parseInt(n));
-      const invalid = parsedNums.some(n => isNaN(n) || n < 1 || n > lottery.maxNumber);
-      if (invalid) {
-        showToast(`All numbers must be valid integers between 1 and ${lottery.maxNumber}`, 'error');
+      try {
+        const nums1 = getRankNumbers(rank1Selection, rank1Custom);
+        const nums2 = getRankNumbers(rank2Selection, rank2Custom);
+        const nums3 = getRankNumbers(rank3Selection, rank3Custom);
+        const nums4 = getRankNumbers(rank4Selection, rank4Custom);
+
+        if (nums1) drawData.winningNumbers1 = nums1;
+        if (nums2) drawData.winningNumbers2 = nums2;
+        if (nums3) drawData.winningNumbers3 = nums3;
+        if (nums4) drawData.winningNumbers4 = nums4;
+        
+        if (!nums1 && !nums2 && !nums3 && !nums4) {
+          showToast('Please select/enter at least one winner rank combination or use Random Draw.', 'error');
+          return;
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
         return;
       }
-      
-      const unique = new Set(parsedNums);
-      if (unique.size !== parsedNums.length) {
-        showToast('All numbers must be unique', 'error');
-        return;
-      }
-      
-      numbersToSend = parsedNums;
     }
 
     if (!confirm('Are you sure you want to conduct the draw? This action cannot be undone.')) return;
@@ -68,7 +115,7 @@ export default function LotteryDetailPage({ params }) {
     setDrawing(true);
     setShowDrawModal(false);
     try {
-      const data = await api.drawLottery(id, numbersToSend);
+      const data = await api.drawLottery(id, drawMode === 'manual' ? drawData : null);
       if (data.success) {
         setDrawResult(data.data);
         showToast('Draw completed successfully!', 'success');
@@ -290,7 +337,7 @@ export default function LotteryDetailPage({ params }) {
       {/* Conduct Draw Modal */}
       {showDrawModal && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ width: '500px', padding: '24px', position: 'relative' }}>
+          <div className="card" style={{ width: '550px', padding: '24px', position: 'relative' }}>
             <h3>Conduct Lottery Draw</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
               Choose draw method for <strong>{lottery.name}</strong>
@@ -318,42 +365,89 @@ export default function LotteryDetailPage({ params }) {
                       checked={drawMode === 'manual'}
                       onChange={() => setDrawMode('manual')}
                     />
-                    <span>Self Select Numbers</span>
+                    <span>Self Select Winner Numbers</span>
                   </label>
                 </div>
               </div>
 
               {drawMode === 'manual' && (
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                    Enter {lottery.pickCount} winning numbers (range 1-{lottery.maxNumber}):
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {manualNumbers.map((val, idx) => (
-                      <input
-                        key={idx}
-                        type="number"
-                        min="1"
-                        max={lottery.maxNumber}
-                        required
-                        style={{
-                          width: '60px',
-                          padding: '10px',
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '6px',
-                          color: '#fff',
-                          textAlign: 'center'
-                        }}
-                        value={val}
-                        onChange={(e) => {
-                          const updated = [...manualNumbers];
-                          updated[idx] = e.target.value;
-                          setManualNumbers(updated);
-                        }}
-                      />
-                    ))}
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px', marginBottom: '20px' }}>
+                  {(() => {
+                    const uniqueCombinations = [];
+                    const seen = new Set();
+                    for (const t of tickets) {
+                      const key = t.selectedNumbers.join(',');
+                      if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueCombinations.push({
+                          numbers: t.selectedNumbers,
+                          label: `${t.userId?.name || 'User'} - Numbers: [${t.selectedNumbers.join(', ')}]`,
+                          key
+                        });
+                      }
+                    }
+
+                    const renderRankField = (rankNum, label, selection, setSelection, customVal, setCustomVal) => {
+                      return (
+                        <div key={rankNum} className="form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', marginBottom: '8px', color: 'var(--accent-warning)' }}>
+                            {label}
+                          </label>
+                          <select
+                            className="form-input"
+                            style={{ width: '100%', marginBottom: selection === 'custom' ? '10px' : '0' }}
+                            value={selection}
+                            onChange={(e) => setSelection(e.target.value)}
+                          >
+                            <option value="">-- Random / Raffle Shuffled --</option>
+                            <option value="custom">✍️ Custom Combination</option>
+                            {uniqueCombinations.map((combo) => (
+                              <option key={combo.key} value={combo.key}>
+                                {combo.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          {selection === 'custom' && (
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                              {customVal.map((v, i) => (
+                                <input
+                                  key={i}
+                                  type="number"
+                                  min="1"
+                                  max={lottery.maxNumber}
+                                  required
+                                  style={{
+                                    width: '45px',
+                                    padding: '6px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '4px',
+                                    color: '#fff',
+                                    textAlign: 'center',
+                                    fontSize: '12px'
+                                  }}
+                                  value={v}
+                                  onChange={(e) => {
+                                    const updated = [...customVal];
+                                    updated[i] = e.target.value;
+                                    setCustomVal(updated);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    };
+
+                    return [
+                      renderRankField(1, '🏆 1st Winner (Rank 1)', rank1Selection, setRank1Selection, rank1Custom, setRank1Custom),
+                      renderRankField(2, '🥈 2nd Winner (Rank 2)', rank2Selection, setRank2Selection, rank2Custom, setRank2Custom),
+                      renderRankField(3, '🥉 3rd Winner (Rank 3)', rank3Selection, setRank3Selection, rank3Custom, setRank3Custom),
+                      renderRankField(4, '🎟️ 4th to 10th Winner (Rank 4)', rank4Selection, setRank4Selection, rank4Custom, setRank4Custom)
+                    ];
+                  })()}
                 </div>
               )}
 

@@ -463,40 +463,41 @@ exports.drawLottery = async (req, res) => {
       });
     }
 
-    let winningNumbers;
-
-    if (req.body.winningNumbers) {
-      const customNumbers = req.body.winningNumbers.map(n => parseInt(n));
-      if (!Array.isArray(customNumbers) || customNumbers.length !== lottery.pickCount) {
-        return res.status(400).json({
-          success: false,
-          message: `Winning numbers must be an array of exactly ${lottery.pickCount} numbers.`
-        });
+    // Helper to validate a winning numbers array
+    const validateNumbers = (nums, name) => {
+      if (!Array.isArray(nums) || nums.length !== lottery.pickCount) {
+        throw new Error(`${name} must be an array of exactly ${lottery.pickCount} numbers.`);
       }
-
-      // Check unique and range
-      const uniqueNums = new Set(customNumbers);
-      if (uniqueNums.size !== customNumbers.length) {
-        return res.status(400).json({
-          success: false,
-          message: 'All winning numbers must be unique.'
-        });
+      const unique = new Set(nums);
+      if (unique.size !== nums.length) {
+        throw new Error(`All numbers in ${name} must be unique.`);
       }
-
-      const invalidNums = customNumbers.filter(
+      const invalid = nums.filter(
         n => isNaN(n) || !Number.isInteger(n) || n < 1 || n > lottery.maxNumber
       );
-      if (invalidNums.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: `Winning numbers must be between 1 and ${lottery.maxNumber}.`
-        });
+      if (invalid.length > 0) {
+        throw new Error(`Numbers in ${name} must be between 1 and ${lottery.maxNumber}.`);
       }
+      return nums.map(n => parseInt(n)).sort((a, b) => a - b);
+    };
 
-      winningNumbers = customNumbers.sort((a, b) => a - b);
-    } else {
-      // Generate winning numbers randomly or from first winner later
-      winningNumbers = [];
+    let winningNumbers;
+    let winningNumbers1, winningNumbers2, winningNumbers3, winningNumbers4;
+
+    try {
+      if (req.body.winningNumbers1) winningNumbers1 = validateNumbers(req.body.winningNumbers1, 'Rank 1 numbers');
+      if (req.body.winningNumbers2) winningNumbers2 = validateNumbers(req.body.winningNumbers2, 'Rank 2 numbers');
+      if (req.body.winningNumbers3) winningNumbers3 = validateNumbers(req.body.winningNumbers3, 'Rank 3 numbers');
+      if (req.body.winningNumbers4) winningNumbers4 = validateNumbers(req.body.winningNumbers4, 'Rank 4 numbers');
+      
+      if (req.body.winningNumbers) {
+        winningNumbers = validateNumbers(req.body.winningNumbers, 'Winning numbers');
+      }
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
     }
 
     // Get all tickets for this lottery
@@ -509,11 +510,12 @@ exports.drawLottery = async (req, res) => {
       [shuffledTickets[i], shuffledTickets[j]] = [shuffledTickets[j], shuffledTickets[i]];
     }
 
-    // Determine winning numbers
-    if (req.body.winningNumbers) {
-      // Keep admin custom numbers if provided
-      const customNumbers = req.body.winningNumbers.map(n => parseInt(n));
-      winningNumbers = customNumbers.sort((a, b) => a - b);
+    // Determine final lottery winning numbers
+    if (winningNumbers) {
+      // Use explicit custom numbers
+    } else if (winningNumbers1) {
+      // Use Rank 1 custom numbers
+      winningNumbers = winningNumbers1;
     } else if (shuffledTickets.length > 0) {
       // Otherwise, match 1st winner's selectedNumbers
       winningNumbers = shuffledTickets[0].selectedNumbers;
@@ -543,18 +545,33 @@ exports.drawLottery = async (req, res) => {
     // Determine initial ranks and prize tiers for all tickets in memory
     const ticketResults = [];
     for (const ticket of tickets) {
-      const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
+      const ticketNumsStr = ticket.selectedNumbers.join(',');
       
       let rank = 0;
-      if (shuffledIndex >= 0 && shuffledIndex < 10) {
-        rank = shuffledIndex + 1;
-      } else {
-        // Check if it shares identical selected numbers with any of the primary winners
-        const ticketNumsStr = ticket.selectedNumbers.join(',');
-        for (let idx = 0; idx < Math.min(10, shuffledTickets.length); idx++) {
-          if (shuffledTickets[idx].selectedNumbers.join(',') === ticketNumsStr) {
-            rank = idx + 1;
-            break;
+      
+      // 1. Check if this ticket matches any of the admin's custom rank winning combinations
+      if (winningNumbers1 && ticketNumsStr === winningNumbers1.join(',')) {
+        rank = 1;
+      } else if (winningNumbers2 && ticketNumsStr === winningNumbers2.join(',')) {
+        rank = 2;
+      } else if (winningNumbers3 && ticketNumsStr === winningNumbers3.join(',')) {
+        rank = 3;
+      } else if (winningNumbers4 && ticketNumsStr === winningNumbers4.join(',')) {
+        rank = 4;
+      }
+      
+      // 2. If no rank matched yet, fall back to standard raffle rank
+      if (rank === 0) {
+        const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
+        if (shuffledIndex >= 0 && shuffledIndex < 10) {
+          rank = shuffledIndex + 1;
+        } else {
+          // Check if it shares identical selected numbers with any of the primary winners
+          for (let idx = 0; idx < Math.min(10, shuffledTickets.length); idx++) {
+            if (shuffledTickets[idx].selectedNumbers.join(',') === ticketNumsStr) {
+              rank = idx + 1;
+              break;
+            }
           }
         }
       }

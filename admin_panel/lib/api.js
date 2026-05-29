@@ -137,10 +137,18 @@ class ApiClient {
     });
   }
 
-  async drawLottery(id, winningNumbers = null) {
+  async drawLottery(id, drawData = null) {
+    let body = null;
+    if (drawData) {
+      if (Array.isArray(drawData)) {
+        body = { winningNumbers: drawData };
+      } else {
+        body = drawData;
+      }
+    }
     return this.request(`/admin/lotteries/${id}/draw`, {
       method: 'POST',
-      ...(winningNumbers && { body: JSON.stringify({ winningNumbers }) })
+      ...(body && { body: JSON.stringify(body) })
     });
   }
 
