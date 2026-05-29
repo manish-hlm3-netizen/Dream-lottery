@@ -627,6 +627,7 @@ exports.drawLottery = async (req, res) => {
       ticket.matchCount = matchCount;
       ticket.prizeWon = prizeWon;
       ticket.status = prizeWon > 0 ? 'won' : 'lost';
+      ticket.rank = res.rank;
       await ticket.save();
 
       if (prizeWon > 0) {

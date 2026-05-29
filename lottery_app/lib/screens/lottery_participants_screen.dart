@@ -252,6 +252,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
         final selectedNumbers = (ticket['selectedNumbers'] as List?)?.cast<int>() ?? [];
         final matchedNumbers = (ticket['matchedNumbers'] as List?)?.cast<int>() ?? [];
         final isWinner = ticket['status'] == 'won' || prizeWon > 0;
+        final rank = ticket['rank'] ?? 0;
         final currentLang = Provider.of<LanguageProvider>(context, listen: false);
 
         return Container(
@@ -300,7 +301,12 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                           child: Row(
                             children: [
                               if (isWinner) ...[
-                                const Text('🏆 ', style: TextStyle(fontSize: 18)),
+                                Text(
+                                  rank > 0 
+                                      ? (rank == 1 ? '👑 ' : rank == 2 ? '🥈 ' : rank == 3 ? '🥉 ' : '🏆 ')
+                                      : '🏆 ', 
+                                  style: const TextStyle(fontSize: 18)
+                                ),
                               ],
                               Flexible(
                                 child: Text(
@@ -343,7 +349,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 isWinner 
-                                    ? currentLang.translate('status_winner').toUpperCase()
+                                    ? (rank > 0 ? 'RANK $rank WINNER' : currentLang.translate('status_winner').toUpperCase())
                                     : currentLang.translate('status_participant').toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 9,

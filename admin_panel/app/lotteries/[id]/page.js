@@ -318,8 +318,8 @@ export default function LotteryDetailPage({ params }) {
                     </div>
                   </td>
                   <td>
-                    <span className={`badge-status ${ticket.status === 'won' ? 'approved' : ticket.status === 'lost' ? 'rejected' : 'active'}`}>
-                      {ticket.status}
+                    <span className={`badge-status ${ticket.status === 'won' ? 'approved' : ticket.status === 'lost' ? 'rejected' : 'active'}`} style={{ textTransform: 'capitalize' }}>
+                      {ticket.status === 'won' && ticket.rank > 0 ? `won (Rank ${ticket.rank})` : ticket.status}
                     </span>
                   </td>
                   {lottery.status === 'completed' && (

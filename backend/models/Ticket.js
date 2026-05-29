@@ -40,6 +40,10 @@ const ticketSchema = new mongoose.Schema({
     enum: ['active', 'won', 'lost'],
     default: 'active'
   },
+  rank: {
+    type: Number,
+    default: 0
+  },
   purchasedAt: {
     type: Date,
     default: Date.now
