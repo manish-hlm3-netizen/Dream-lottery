@@ -122,16 +122,12 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.black, // Dark color is highly premium as a backdrop
       body: Stack(
         children: [
-          // Background Video Player
+          // Background Video Player (Centred with Correct Aspect Ratio)
           if (_isVideoInitialized)
-            SizedBox.expand(
-              child: FittedBox(
-                fit: BoxFit.cover, // Full bleed video background
-                child: SizedBox(
-                  width: _videoController.value.size.width,
-                  height: _videoController.value.size.height,
-                  child: VideoPlayer(_videoController),
-                ),
+            Center(
+              child: AspectRatio(
+                aspectRatio: _videoController.value.aspectRatio,
+                child: VideoPlayer(_videoController),
               ),
             )
           else
@@ -154,6 +150,48 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
             ),
+
+          // Dream Lottery Brand Overlay
+          Positioned(
+            bottom: 48,
+            left: 0,
+            right: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ShaderMask(
+                  shaderCallback: (bounds) =>
+                      AppTheme.primaryGradient.createShader(bounds),
+                  child: const Text(
+                    'Dream Lottery',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 1.0,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your luck starts here',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
