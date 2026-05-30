@@ -211,7 +211,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                         const SizedBox(height: 10),
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
-                                          children: numbers.map((num) {
+                                          children: numbers.map((number) {
                                             return Container(
                                               width: 32,
                                               height: 32,
@@ -229,7 +229,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                               ),
                                               child: Center(
                                                 child: Text(
-                                                  num.toString().padLeft(2, '0'),
+                                                  number.toString().padLeft(2, '0'),
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.w900,
@@ -254,7 +254,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 alignment: WrapAlignment.center,
-                                children: _winningNumbers.map((num) {
+                                children: _winningNumbers.map((number) {
                                   return Container(
                                     width: 42,
                                     height: 42,
@@ -271,7 +271,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        num.toString().padLeft(2, '0'),
+                                        number.toString().padLeft(2, '0'),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w800,
@@ -541,8 +541,8 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                               Wrap(
                                 spacing: 4,
                                 runSpacing: 4,
-                                children: selectedNumbers.map((num) {
-                                  final isMatched = matchedNumbers.contains(num);
+                                children: selectedNumbers.map((number) {
+                                  final isMatched = matchedNumbers.contains(number);
                                   return Container(
                                     width: 26,
                                     height: 26,
@@ -568,7 +568,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        num.toString().padLeft(2, '0'),
+                                        number.toString().padLeft(2, '0'),
                                         style: TextStyle(
                                           color: isMatched ? Colors.white : AppTheme.textPrimary,
                                           fontWeight: FontWeight.w800,

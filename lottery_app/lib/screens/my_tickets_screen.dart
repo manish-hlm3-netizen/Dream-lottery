@@ -217,8 +217,8 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                               Wrap(
                                 spacing: 10,
                                 runSpacing: 10,
-                                children: numbers.map((num) {
-                                  final isMatched = matched.contains(num);
+                                children: numbers.map((number) {
+                                  final isMatched = matched.contains(number);
                                   return Container(
                                     width: 42,
                                     height: 42,
@@ -250,7 +250,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                     ),
                                     child: Center(
                                       child: Text(
-                                        num.toString().padLeft(2, '0'),
+                                        number.toString().padLeft(2, '0'),
                                         style: TextStyle(
                                           color: isMatched
                                               ? Colors.white

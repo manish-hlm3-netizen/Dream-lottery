@@ -16,14 +16,7 @@ function AuthenticatedLayout({ children }) {
   const [stats, setStats] = useState({});
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    loadData();
-    // Refresh stats every 30 seconds
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadData = async () => {
+  async function loadData() {
     try {
       const [dashRes, meRes] = await Promise.all([
         api.getDashboard(),
@@ -34,7 +27,19 @@ function AuthenticatedLayout({ children }) {
     } catch (err) {
       console.error('Error loading data:', err);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    // Refresh stats every 30 seconds
+    const interval = setInterval(loadData, 30000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = () => {
     api.clearToken();

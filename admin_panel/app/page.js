@@ -7,11 +7,7 @@ export default function DashboardPage() {
   const [recentTxns, setRecentTxns] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  async function loadDashboard() {
     try {
       const data = await api.getDashboard();
       if (data.success) {
@@ -23,7 +19,14 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadDashboard();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (loading) {
     return (

@@ -16,24 +16,7 @@ export default function SupportChatPage() {
   
   const chatEndRef = useRef(null);
 
-  useEffect(() => {
-    loadChatUsers();
-    // Poll for new support messages every 10 seconds
-    const interval = setInterval(loadChatUsers, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedUser) {
-      loadChatHistory(selectedUser.user._id);
-    }
-  }, [selectedUser]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const loadChatUsers = async () => {
+  async function loadChatUsers() {
     try {
       const data = await api.getChatUsers();
       if (data.success) {
@@ -44,9 +27,9 @@ export default function SupportChatPage() {
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }
 
-  const loadChatHistory = async (userId) => {
+  async function loadChatHistory(userId) {
     setLoadingMessages(true);
     try {
       const data = await api.getChatHistory(userId);
@@ -62,7 +45,36 @@ export default function SupportChatPage() {
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }
+
+  function scrollToBottom() {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadChatUsers();
+    }, 0);
+    // Poll for new support messages every 10 seconds
+    const interval = setInterval(loadChatUsers, 10000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedUser) {
+      const timer = setTimeout(() => {
+        loadChatHistory(selectedUser.user._id);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedUser]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendReply = async (e) => {
     e.preventDefault();
@@ -87,10 +99,6 @@ export default function SupportChatPage() {
     } finally {
       setSending(false);
     }
-  };
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const formatChatDate = (dateStr) => {

@@ -15,12 +15,7 @@ export default function UsersPage() {
   const [selectedUserForPassword, setSelectedUserForPassword] = useState(null);
   const [passwordInput, setPasswordInput] = useState('');
 
-  useEffect(() => {
-    const timer = setTimeout(() => loadUsers(), 300);
-    return () => clearTimeout(timer);
-  }, [search, activeTab]);
-
-  const loadUsers = async () => {
+  async function loadUsers() {
     setLoading(true);
     try {
       const data = await api.getUsers(1, search, activeTab === 'bot' ? 'true' : 'false');
@@ -30,7 +25,12 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => loadUsers(), 300);
+    return () => clearTimeout(timer);
+  }, [search, activeTab]);
 
   const handleToggle = async (userId) => {
     try {

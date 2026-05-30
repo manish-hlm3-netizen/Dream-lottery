@@ -15,12 +15,7 @@ export default function DepositsPage() {
   const [updatingSettings, setUpdatingSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    loadDeposits();
-    loadUPISettings();
-  }, [filter]);
-
-  const loadUPISettings = async () => {
+  async function loadUPISettings() {
     try {
       const res = await api.getUPISettings();
       if (res.success) {
@@ -30,7 +25,27 @@ export default function DepositsPage() {
     } catch (err) {
       console.error('Load UPI Settings error:', err);
     }
-  };
+  }
+
+  async function loadDeposits() {
+    setLoading(true);
+    try {
+      const data = await api.getDeposits(filter);
+      if (data.success) setDeposits(data.data.deposits);
+    } catch (err) {
+      console.error('Load deposits error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadDeposits();
+      loadUPISettings();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [filter]);
 
   const handleSettingsSubmit = async (e) => {
     e.preventDefault();
@@ -62,18 +77,6 @@ export default function DepositsPage() {
       setQrCodeUrl(reader.result);
     };
     reader.readAsDataURL(file);
-  };
-
-  const loadDeposits = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getDeposits(filter);
-      if (data.success) setDeposits(data.data.deposits);
-    } catch (err) {
-      console.error('Load deposits error:', err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleProcess = async (depositId, action) => {

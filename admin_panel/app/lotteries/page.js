@@ -7,11 +7,7 @@ export default function LotteriesPage() {
   const [lotteries, setLotteries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadLotteries();
-  }, []);
-
-  const loadLotteries = async () => {
+  async function loadLotteries() {
     try {
       const data = await api.getLotteries();
       if (data.success) setLotteries(data.data.lotteries);
@@ -20,7 +16,14 @@ export default function LotteriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadLotteries();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-IN', {

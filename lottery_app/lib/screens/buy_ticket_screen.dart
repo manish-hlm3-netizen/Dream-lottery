@@ -62,12 +62,12 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     }
   }
 
-  void _toggleNumber(int num) {
+  void _toggleNumber(int number) {
     setState(() {
-      if (_selectedNumbers.contains(num)) {
-        _selectedNumbers.remove(num);
+      if (_selectedNumbers.contains(number)) {
+        _selectedNumbers.remove(number);
       } else if (_selectedNumbers.length < _pickCount) {
-        _selectedNumbers.add(num);
+        _selectedNumbers.add(number);
       }
     });
   }
@@ -148,7 +148,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         alignment: WrapAlignment.center,
-                        children: (_selectedNumbers.toList()..sort()).map((num) {
+                        children: (_selectedNumbers.toList()..sort()).map((number) {
                           return Container(
                             width: 44,
                             height: 44,
@@ -165,7 +165,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                '$num',
+                                '$number',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,

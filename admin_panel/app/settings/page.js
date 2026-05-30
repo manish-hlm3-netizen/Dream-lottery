@@ -9,11 +9,12 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadUPISettings();
-  }, []);
+  function showToast(message, type) {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }
 
-  const loadUPISettings = async () => {
+  async function loadUPISettings() {
     setLoading(true);
     try {
       const res = await api.getUPISettings();
@@ -27,7 +28,14 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadUPISettings();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -65,10 +73,7 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+
 
   return (
     <>
@@ -144,7 +149,7 @@ export default function SettingsPage() {
           <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '340px' }}>
             <h3 style={{ marginBottom: '16px', alignSelf: 'flex-start' }}>📸 Live Scan Preview</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px', alignSelf: 'flex-start' }}>
-              This QR code and UPI ID will be rendered live inside the user's mobile deposit screen:
+              This QR code and UPI ID will be rendered live inside the user&apos;s mobile deposit screen:
             </p>
 
             {qrCodeUrl ? (

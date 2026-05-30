@@ -22,11 +22,7 @@ export default function LotteryDetailPage({ params }) {
   const [rankSelections, setRankSelections] = useState(Array(10).fill(''));
   const [rankCustoms, setRankCustoms] = useState(Array(10).fill([]));
 
-  useEffect(() => {
-    loadLottery();
-  }, [id]);
-
-  const loadLottery = async () => {
+  async function loadLottery() {
     try {
       const data = await api.getLotteryDetail(id);
       if (data.success) {
@@ -38,7 +34,14 @@ export default function LotteryDetailPage({ params }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadLottery();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [id]);
 
   const handleDrawClick = () => {
     setManualNumbers(Array(lottery.pickCount).fill(''));

@@ -12,11 +12,12 @@ export default function AnnouncementsPage() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
+  function showToast(message, type) {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }
 
-  const loadAnnouncements = async () => {
+  async function loadAnnouncements() {
     setLoading(true);
     try {
       const data = await api.getAnnouncements();
@@ -29,7 +30,14 @@ export default function AnnouncementsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadAnnouncements();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -68,10 +76,7 @@ export default function AnnouncementsPage() {
     }
   };
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-IN', {

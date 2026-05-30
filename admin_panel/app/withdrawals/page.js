@@ -9,11 +9,7 @@ export default function WithdrawalsPage() {
   const [processing, setProcessing] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadWithdrawals();
-  }, [filter]);
-
-  const loadWithdrawals = async () => {
+  async function loadWithdrawals() {
     setLoading(true);
     try {
       const data = await api.getWithdrawals(filter);
@@ -23,7 +19,14 @@ export default function WithdrawalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadWithdrawals();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [filter]);
 
   const handleProcess = async (id, action) => {
     const note = action === 'reject' ? prompt('Reason for rejection (optional):') : '';
