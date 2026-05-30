@@ -152,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark color is highly premium as a backdrop
+      backgroundColor: Colors.white, // Clean white background as requested
       body: Stack(
         children: [
           // Background Video Player (Centred with Correct Aspect Ratio)
@@ -164,19 +164,9 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             )
           else
-            // Gradient fallback with loader while video buffers
+            // Clean white fallback with loader while video buffers
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.black,
-                    Color(0xFF1E0D0D), // Ultra deep red tone
-                    Colors.black,
-                  ],
-                ),
-              ),
+              color: Colors.white,
               child: const Center(
                 child: CircularProgressIndicator(
                   color: AppTheme.primaryColor,
@@ -200,11 +190,11 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: Colors.white, // Base white required for ShaderMask gradient to overlay
                       letterSpacing: 1.0,
                       shadows: [
                         Shadow(
-                          color: Colors.black54,
+                          color: Color(0x1F000000), // Subtle light shadow for depth
                           blurRadius: 12,
                           offset: Offset(0, 4),
                         ),
@@ -216,7 +206,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const Text(
                   'Your luck starts here',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppTheme.textSecondary, // Highly readable Slate Gray on white theme
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
