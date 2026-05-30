@@ -21,20 +21,40 @@ class AuthProvider with ChangeNotifier {
   Future<void> checkAuth() async {
     final token = await StorageService.getToken();
     if (token != null) {
+      // 1. Immediately restore cached user details if available to avoid popups or delays
+      final cachedUser = await StorageService.getUserData();
+      if (cachedUser != null) {
+        _user = cachedUser;
+        _isLoggedIn = true;
+        notifyListeners();
+      }
+
       try {
         final res = await _api.getMe();
         if (res['success'] == true) {
           _user = res['data'];
           _isLoggedIn = true;
+          // Cache fresh user profile data locally
+          await StorageService.saveUserData(res['data']);
           notifyListeners();
           return;
         }
-      } catch (_) {
-        await StorageService.deleteToken();
+      } catch (err) {
+        // ONLY log out and wipe token if the backend explicitly reports unauthorized (401)
+        // If it is a momentary network timeout, offline state, etc., DO NOT delete the token!
+        final errStr = err.toString().toLowerCase();
+        if (errStr.contains('401') || errStr.contains('unauthorized')) {
+          await StorageService.deleteToken();
+          await StorageService.deleteUserData();
+          _user = null;
+          _isLoggedIn = false;
+          notifyListeners();
+        }
       }
+    } else {
+      _isLoggedIn = false;
+      notifyListeners();
     }
-    _isLoggedIn = false;
-    notifyListeners();
   }
 
   Future<bool> register({
@@ -59,6 +79,8 @@ class AuthProvider with ChangeNotifier {
       if (res['success'] == true) {
         await StorageService.saveToken(res['data']['token']);
         _user = res['data']['user'];
+        // Cache user details locally
+        await StorageService.saveUserData(res['data']['user']);
         _isLoggedIn = true;
         _isLoading = false;
         notifyListeners();
@@ -88,6 +110,8 @@ class AuthProvider with ChangeNotifier {
       if (res['success'] == true) {
         await StorageService.saveToken(res['data']['token']);
         _user = res['data']['user'];
+        // Cache user details locally
+        await StorageService.saveUserData(res['data']['user']);
         _isLoggedIn = true;
         _isLoading = false;
         notifyListeners();
@@ -109,6 +133,8 @@ class AuthProvider with ChangeNotifier {
       final res = await _api.getMe();
       if (res['success'] == true) {
         _user = res['data'];
+        // Cache refreshed user profile data locally
+        await StorageService.saveUserData(res['data']);
         notifyListeners();
       }
     } catch (_) {}
@@ -117,6 +143,8 @@ class AuthProvider with ChangeNotifier {
   void updateBalance(double newBalance) {
     if (_user != null) {
       _user!['walletBalance'] = newBalance;
+      // Update local secure cache as well
+      StorageService.saveUserData(_user!);
       notifyListeners();
     }
   }

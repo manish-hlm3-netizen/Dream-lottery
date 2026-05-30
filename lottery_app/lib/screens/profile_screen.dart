@@ -3,9 +3,99 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
+import '../services/storage_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isPinSet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPinStatus();
+  }
+
+  Future<void> _checkPinStatus() async {
+    final pin = await StorageService.getPin();
+    if (mounted) {
+      setState(() {
+        _isPinSet = pin != null && pin.isNotEmpty;
+      });
+    }
+  }
+
+  void _showDisablePinDialog() {
+    final TextEditingController controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Disable Security PIN', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your current 4-digit Security PIN to disable app locking:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: 4,
+              decoration: InputDecoration(
+                hintText: 'Enter 4-digit PIN',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final pin = controller.text;
+              final savedPin = await StorageService.getPin();
+              if (pin == savedPin) {
+                await StorageService.deletePin();
+                if (mounted) {
+                  Navigator.pop(context); // Close dialog
+                  _checkPinStatus(); // Refresh state
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Security PIN successfully disabled.')),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Incorrect PIN. Security PIN remains enabled.'),
+                      backgroundColor: AppTheme.dangerColor,
+                    ),
+                  );
+                  Navigator.pop(context); // Close dialog
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dangerColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Disable', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,6 +374,47 @@ class ProfileScreen extends StatelessWidget {
                               label: '${lang.translate('refer_earn')} 🎁',
                               onTap: () => Navigator.pushNamed(context, '/referrals'),
                             ),
+                            
+                            // NATIVE SECURITY PIN OPTIONS
+                            !_isPinSet
+                                ? _ProfileMenuItem(
+                                    icon: Icons.lock_open_outlined,
+                                    label: 'Set Security PIN 🔑',
+                                    onTap: () async {
+                                      final res = await Navigator.pushNamed(
+                                        context, 
+                                        '/security-pin', 
+                                        arguments: {'mode': 'setup'}
+                                      );
+                                      if (res == true) {
+                                        _checkPinStatus();
+                                      }
+                                    },
+                                  )
+                                : Column(
+                                    children: [
+                                      _ProfileMenuItem(
+                                        icon: Icons.lock_outline,
+                                        label: 'Change Security PIN 🔑',
+                                        onTap: () async {
+                                          final res = await Navigator.pushNamed(
+                                            context, 
+                                            '/security-pin', 
+                                            arguments: {'mode': 'change'}
+                                          );
+                                          if (res == true) {
+                                            _checkPinStatus();
+                                          }
+                                        },
+                                      ),
+                                      _ProfileMenuItem(
+                                        icon: Icons.lock_reset_outlined,
+                                        label: 'Disable Security PIN 🚫',
+                                        onTap: _showDisablePinDialog,
+                                      ),
+                                    ],
+                                  ),
+
                             _ProfileMenuItem(
                               icon: Icons.chat_bubble_outline,
                               label: '${lang.translate('chat_support')} 💬',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,7 +47,17 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
     if (auth.isLoggedIn) {
-      Navigator.pushReplacementNamed(context, '/home');
+      // Check if a Security PIN is configured
+      final savedPin = await StorageService.getPin();
+      if (savedPin != null && savedPin.isNotEmpty) {
+        Navigator.pushReplacementNamed(
+          context, 
+          '/security-pin',
+          arguments: {'mode': 'unlock'},
+        );
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
