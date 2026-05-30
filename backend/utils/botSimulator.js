@@ -5,19 +5,40 @@ const Ticket = require('../models/Ticket');
 const Transaction = require('../models/Transaction');
 const { generateWinningNumbers } = require('./drawEngine');
 
-// 50 realistic Indian names for bot player accounts
-const BOT_NAMES = [
-  'Rahul Sharma', 'Amit Patel', 'Priya Singh', 'Sandeep Kumar', 'Neha Gupta',
-  'Vijay Yadav', 'Rajesh Mishra', 'Sunita Rao', 'Anil Mehta', 'Deepak Verma',
-  'Sanjay Dutt', 'Ritu Sharma', 'Vikram Singh', 'Karan Johar', 'Arjun Kapoor',
-  'Aditya Roy', 'Nisha Joshi', 'Manish Pandey', 'Siddharth Malhotra', 'Shruti Hassan',
-  'Rohit Shetty', 'Pooja Hegde', 'Varun Dhawan', 'Kriti Sanon', 'Ranveer Singh',
-  'Deepika Padukone', 'Ranbir Kapoor', 'Alia Bhatt', 'Ajay Devgn', 'Kajol Mukherjee',
-  'Akshay Kumar', 'Twinkle Khanna', 'Sunil Shetty', 'Raveena Tandon', 'Bobby Deol',
-  'Sunny Deol', 'Karishma Kapoor', 'Kareena Kapoor', 'Saif Ali Khan', 'Amrita Singh',
-  'Sara Ali Khan', 'Janhvi Kapoor', 'Ishan Khatter', 'Ananya Panday', 'Tiger Shroff',
-  'Disha Patani', 'Rajkummar Rao', 'Patralekha Paul', 'Ayushmann Khurrana', 'Tahira Kashyap'
+// Pre-defined Indian first and last name lists to programmatically generate 1,000 unique player names
+const FIRST_NAMES = [
+  'Rahul', 'Amit', 'Priya', 'Sandeep', 'Neha', 'Vijay', 'Rajesh', 'Sunita', 'Anil', 'Deepak',
+  'Sanjay', 'Ritu', 'Vikram', 'Karan', 'Arjun', 'Aditya', 'Nisha', 'Manish', 'Siddharth', 'Shruti',
+  'Rohit', 'Pooja', 'Varun', 'Kriti', 'Ranveer', 'Deepika', 'Ranbir', 'Alia', 'Ajay', 'Kajol',
+  'Akshay', 'Twinkle', 'Sunil', 'Raveena', 'Bobby', 'Sunny', 'Karishma', 'Kareena', 'Saif', 'Amrita',
+  'Sara', 'Janhvi', 'Ishan', 'Ananya', 'Tiger', 'Disha', 'Rajkummar', 'Patralekha', 'Ayushmann', 'Tahira',
+  'Abhishek', 'Aishwarya', 'Hrithik', 'Sussanne', 'Vivek', 'Suresh', 'Ramesh', 'Ganesh', 'Dinesh', 'Mahesh',
+  'Naresh', 'Harish', 'Kamlesh', 'Umesh', 'Rakesh', 'Mukesh', 'Yogesh', 'Jitendra', 'Dharmendra', 'Manoj'
 ];
+
+const LAST_NAMES = [
+  'Sharma', 'Patel', 'Singh', 'Kumar', 'Gupta', 'Yadav', 'Mishra', 'Rao', 'Mehta', 'Verma',
+  'Dutt', 'Pandey', 'Malhotra', 'Hassan', 'Shetty', 'Hegde', 'Dhawan', 'Sanon', 'Bakshi', 'Kapoor',
+  'Bhatt', 'Devgn', 'Mukherjee', 'Khanna', 'Tandon', 'Deol', 'Khan', 'Shroff', 'Patani', 'Khurrana',
+  'Kashyap', 'Chopra', 'Johar', 'Joshi', 'Roy', 'Sen', 'Das', 'Banerjee', 'Chatterjee', 'Dutta',
+  'Garg', 'Bansal', 'Goel', 'Jain', 'Agarwal', 'Aggarwal', 'Chawla', 'Sood', 'Gill', 'Sandhu'
+];
+
+// Generate exactly 1,000 unique, deterministic combinations
+const generate1000BotNames = () => {
+  const names = [];
+  let count = 0;
+  for (let i = 0; i < FIRST_NAMES.length; i++) {
+    for (let j = 0; j < LAST_NAMES.length; j++) {
+      names.push(`${FIRST_NAMES[i]} ${LAST_NAMES[j]}`);
+      count++;
+      if (count === 1000) return names;
+    }
+  }
+  return names;
+};
+
+const BOT_NAMES = generate1000BotNames();
 
 /**
  * Seed support bot accounts if not present
@@ -30,7 +51,7 @@ const seedBotPlayers = async () => {
       return;
     }
 
-    console.log('🤖 Seeding bot player accounts...');
+    console.log(`🤖 Seeding bot player accounts (Target: ${BOT_NAMES.length})...`);
     let seededCount = 0;
 
     for (let i = 0; i < BOT_NAMES.length; i++) {
@@ -64,6 +85,7 @@ const seedBotPlayers = async () => {
 
 /**
  * Execute periodic simulated bot ticket purchases for active lotteries
+ * Matches exact 80% bot tickets to 20% real tickets ratio dynamically.
  */
 const runSimulationTick = async () => {
   try {
@@ -81,24 +103,52 @@ const runSimulationTick = async () => {
     const bots = await User.find({ isBot: true });
     if (bots.length === 0) return;
 
+    // Create a fast lookup map of bot user IDs
+    const botMap = {};
+    bots.forEach(b => {
+      botMap[b._id.toString()] = true;
+    });
+
     for (const lottery of activeLotteries) {
-      // Determine how many tickets to buy this minute (simulating a Poisson-like flow)
-      // 40% chance of 0 tickets, 30% chance of 1, 20% chance of 2, 10% chance of 3
-      const roll = Math.random();
+      // Fetch all tickets for this lottery
+      const tickets = await Ticket.find({ lotteryId: lottery._id });
+      
+      let realTicketsCount = 0;
+      let botTicketsCount = 0;
+      
+      tickets.forEach(t => {
+        if (botMap[t.userId.toString()]) {
+          botTicketsCount++;
+        } else {
+          realTicketsCount++;
+        }
+      });
+
+      // Target bot count to achieve exactly 80% ratio of bot tickets (N_bot = 4 * N_real)
+      const targetBotTickets = realTicketsCount * 4;
       let ticketsToBuy = 0;
-      if (roll > 0.90) ticketsToBuy = 3;
-      else if (roll > 0.70) ticketsToBuy = 2;
-      else if (roll > 0.40) ticketsToBuy = 1;
+
+      if (realTicketsCount > 0) {
+        if (botTicketsCount < targetBotTickets) {
+          // Catch up to maintain the 80% bot / 20% real user ticket ratio
+          ticketsToBuy = Math.min(15, targetBotTickets - botTicketsCount);
+        }
+      } else {
+        // Baseline organic growth: keep listing active (up to 12 baseline tickets)
+        if (botTicketsCount < 12 && Math.random() < 0.25) {
+          ticketsToBuy = 1;
+        }
+      }
 
       if (ticketsToBuy === 0) continue;
 
-      console.log(`🤖 Simulating ${ticketsToBuy} ticket purchases for lottery: ${lottery.name}`);
+      console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] currently has ${realTicketsCount} real, ${botTicketsCount} bot tickets. Buying ${ticketsToBuy} bot tickets to target ${targetBotTickets} (80% bot ratio).`);
 
       for (let t = 0; t < ticketsToBuy; t++) {
         // Pick a random bot
         const bot = bots[Math.floor(Math.random() * bots.length)];
 
-        // Enforce the 3 tickets per user per lottery constraint for bots too!
+        // Enforce the 3 tickets per user per lottery constraint for bots too
         const existingCount = await Ticket.countDocuments({ userId: bot._id, lotteryId: lottery._id });
         if (existingCount >= 3) continue;
 
