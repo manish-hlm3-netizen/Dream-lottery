@@ -70,6 +70,11 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> getAppVersion() async {
+    final response = await _dio.get(ApiConfig.appVersionCheck);
+    return response.data;
+  }
+
   Future<Map<String, dynamic>> updateProfile({String? name, String? phone}) async {
     final data = <String, dynamic>{};
     if (name != null) data['name'] = name;

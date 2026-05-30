@@ -912,7 +912,9 @@ exports.getUPISettings = async (req, res) => {
       settings = await Settings.create({
         key: 'upi_settings',
         upiId: 'pay@upi',
-        qrCodeUrl: ''
+        qrCodeUrl: '',
+        appVersion: '1.0.0',
+        appDownloadUrl: 'https://lottery-api-vgk0.onrender.com/api/app/download'
       });
     }
     res.json({
@@ -932,7 +934,7 @@ exports.getUPISettings = async (req, res) => {
  */
 exports.updateUPISettings = async (req, res) => {
   try {
-    const { upiId, qrCodeUrl } = req.body;
+    const { upiId, qrCodeUrl, appVersion, appDownloadUrl } = req.body;
     if (!upiId) {
       return res.status(400).json({
         success: false,
@@ -948,6 +950,12 @@ exports.updateUPISettings = async (req, res) => {
     settings.upiId = upiId;
     if (qrCodeUrl !== undefined) {
       settings.qrCodeUrl = qrCodeUrl;
+    }
+    if (appVersion !== undefined) {
+      settings.appVersion = appVersion;
+    }
+    if (appDownloadUrl !== undefined) {
+      settings.appDownloadUrl = appDownloadUrl;
     }
     
     await settings.save();

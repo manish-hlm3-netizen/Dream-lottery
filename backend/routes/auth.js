@@ -55,5 +55,8 @@ router.get('/settings/upi', auth, authController.getUPISettings);
 // @route   GET /api/auth/referrals
 router.get('/referrals', auth, authController.getReferralStats);
 
+// @route   GET /api/auth/app-version
+router.get('/app-version', authController.getAppVersion);
+
 module.exports = router;
 

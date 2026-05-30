@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -42,6 +43,26 @@ const authLimiter = rateLimit({
     success: false,
     message: 'Too many attempts. Please try again after 15 minutes.'
   }
+});
+
+// ──────────────────────────────────────────
+// Static Assets & Public App Update Downloads
+// ──────────────────────────────────────────
+
+// Serve static files from 'public' folder
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Public direct APK download endpoint
+app.get('/api/app/download', (req, res) => {
+  const apkPath = path.join(__dirname, 'public/app-release.apk');
+  res.download(apkPath, 'dream-lottery.apk', (err) => {
+    if (err) {
+      console.error('Download error:', err);
+      if (!res.headersSent) {
+        res.status(404).json({ success: false, message: 'App update file not found on server' });
+      }
+    }
+  });
 });
 
 // ──────────────────────────────────────────

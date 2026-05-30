@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../config/api_config.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -49,6 +52,36 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuthAndPrepare() async {
     // Record start time to ensure the splash video plays for a satisfying duration
     final startTime = DateTime.now();
+
+    final ApiService api = ApiService();
+
+    // 1. Fetch remote version and verify if client needs to update
+    try {
+      final res = await api.getAppVersion().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () {
+          debugPrint('⏳ Splash Screen: Version check timed out.');
+          return {'success': false};
+        },
+      );
+      
+      if (res['success'] == true) {
+        final remoteVersion = res['data']['appVersion'] as String;
+        final downloadUrl = res['data']['appDownloadUrl'] as String;
+        
+        if (remoteVersion != ApiConfig.appVersion) {
+          // Force update! Display update dialog and stop startup flow.
+          if (mounted) {
+            _showUpdateDialog(remoteVersion, downloadUrl);
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking app version: $e');
+    }
+
+    if (!mounted) return;
 
     try {
       final auth = context.read<AuthProvider>();
@@ -195,5 +228,79 @@ class _SplashScreenState extends State<SplashScreen> {
         ],
       ),
     );
+  }
+
+  void _showUpdateDialog(String version, String downloadUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Force update!
+      builder: (context) => PopScope(
+        canPop: false, // Disable back button
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          title: const Row(
+            children: [
+              Icon(Icons.system_update_alt, color: AppTheme.primaryColor),
+              SizedBox(width: 10),
+              Text(
+                'Update Available!',
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'A new version (v$version) of Dream Lottery is available.',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Please update the app to continue playing lottery and avoid secure login errors.',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => _launchDownloadUrl(downloadUrl),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text(
+                'Update Now',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchDownloadUrl(String url) async {
+    // If downloadUrl is empty, fallback to default API server endpoint
+    final targetUrl = url.isNotEmpty 
+        ? url 
+        : 'https://lottery-api-vgk0.onrender.com/api/app/download';
+        
+    final Uri uri = Uri.parse(targetUrl);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        debugPrint('Could not launch update URL: $targetUrl');
+      }
+    } catch (e) {
+      debugPrint('Error launching update URL: $e');
+    }
   }
 }

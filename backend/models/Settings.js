@@ -16,6 +16,16 @@ const settingsSchema = new mongoose.Schema({
     type: String, // Base64 or URL
     required: false,
     default: ''
+  },
+  appVersion: {
+    type: String,
+    required: false,
+    default: '1.0.0'
+  },
+  appDownloadUrl: {
+    type: String,
+    required: false,
+    default: 'https://lottery-api-vgk0.onrender.com/api/app/download'
   }
 }, {
   timestamps: true

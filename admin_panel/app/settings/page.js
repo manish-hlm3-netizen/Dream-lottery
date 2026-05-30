@@ -5,6 +5,8 @@ import api from '@/lib/api';
 export default function SettingsPage() {
   const [upiId, setUpiId] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [appVersion, setAppVersion] = useState('1.0.0');
+  const [appDownloadUrl, setAppDownloadUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -21,10 +23,12 @@ export default function SettingsPage() {
       if (res.success) {
         setUpiId(res.data.upiId || '');
         setQrCodeUrl(res.data.qrCodeUrl || '');
+        setAppVersion(res.data.appVersion || '1.0.0');
+        setAppDownloadUrl(res.data.appDownloadUrl || '');
       }
     } catch (err) {
       console.error('Load settings error:', err);
-      showToast('Failed to load payment settings', 'error');
+      showToast('Failed to load system settings', 'error');
     } finally {
       setLoading(false);
     }
@@ -43,12 +47,21 @@ export default function SettingsPage() {
       showToast('UPI ID is required', 'error');
       return;
     }
+    if (!appVersion.trim()) {
+      showToast('App version is required', 'error');
+      return;
+    }
 
     setSaving(true);
     try {
-      const res = await api.updateUPISettings({ upiId, qrCodeUrl });
+      const res = await api.updateUPISettings({ 
+        upiId, 
+        qrCodeUrl, 
+        appVersion: appVersion.trim(), 
+        appDownloadUrl: appDownloadUrl.trim() 
+      });
       if (res.success) {
-        showToast('Settings saved successfully!', 'success');
+        showToast('System settings saved successfully!', 'success');
       }
     } catch (err) {
       showToast(err.message || 'Failed to save settings', 'error');
@@ -73,13 +86,11 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-
-
   return (
     <>
       <div className="page-header">
         <h2>System Settings</h2>
-        <p>Manage system payment gateways, active UPI accounts, and scan QR details</p>
+        <p>Manage system payment gateways, active UPI accounts, app version settings, and QR codes</p>
       </div>
 
       {loading ? (
@@ -88,7 +99,8 @@ export default function SettingsPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', alignItems: 'start' }}>
-          {/* Settings Form */}
+          
+          {/* UPI Settings Form */}
           <div className="card" style={{ padding: '24px' }}>
             <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>💳 UPI Payment Details</h3>
             <form onSubmit={handleSave}>
@@ -140,7 +152,69 @@ export default function SettingsPage() {
                 style={{ width: '100%', padding: '14px', fontSize: '15px', fontWeight: '600' }}
                 disabled={saving}
               >
-                {saving ? 'Saving changes...' : '💾 Save Settings'}
+                {saving ? 'Saving changes...' : '💾 Save Payments'}
+              </button>
+            </form>
+          </div>
+
+          {/* App Update Settings Form */}
+          <div className="card" style={{ padding: '24px' }}>
+            <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>📱 App Update Controls</h3>
+            <form onSubmit={handleSave}>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Latest App Version</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '15px'
+                  }}
+                  placeholder="e.g. 1.0.0"
+                  value={appVersion}
+                  onChange={(e) => setAppVersion(e.target.value)}
+                  required
+                />
+                <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+                  Note: Users with a client version different from this code will be prompted to update.
+                </small>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>APK Download URL</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '15px'
+                  }}
+                  placeholder="e.g. https://lottery-api-vgk0.onrender.com/api/app/download"
+                  value={appDownloadUrl}
+                  onChange={(e) => setAppDownloadUrl(e.target.value)}
+                />
+                <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+                  Direct APK download link. Leave empty to use default server host.
+                </small>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '14px', fontSize: '15px', fontWeight: '600' }}
+                disabled={saving}
+              >
+                {saving ? 'Saving changes...' : '💾 Save Version Info'}
               </button>
             </form>
           </div>

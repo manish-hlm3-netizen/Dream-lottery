@@ -340,3 +340,38 @@ exports.getReferralStats = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get latest app version and download URL
+ * @route   GET /api/auth/app-version
+ * @access  Public
+ */
+exports.getAppVersion = async (req, res) => {
+  try {
+    const Settings = require('../models/Settings');
+    let settings = await Settings.findOne({ key: 'upi_settings' });
+    if (!settings) {
+      settings = await Settings.create({
+        key: 'upi_settings',
+        upiId: 'pay@upi',
+        qrCodeUrl: '',
+        appVersion: '1.0.0',
+        appDownloadUrl: 'https://lottery-api-vgk0.onrender.com/api/app/download'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        appVersion: settings.appVersion || '1.0.0',
+        appDownloadUrl: settings.appDownloadUrl || 'https://lottery-api-vgk0.onrender.com/api/app/download'
+      }
+    });
+  } catch (error) {
+    console.error('Get app version error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving app version'
+    });
+  }
+};
+
