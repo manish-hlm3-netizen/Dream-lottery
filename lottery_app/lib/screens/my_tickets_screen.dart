@@ -28,6 +28,17 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
     super.dispose();
   }
 
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return 'N/A';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
@@ -131,7 +142,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                     }
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: ClipPath(
                         clipper: MyTicketsClipper(),
                         child: Container(
@@ -143,19 +154,20 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                   : AppTheme.borderColor,
                               width: status == 'won' ? 1.5 : 1,
                             ),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                                color: Colors.black.withOpacity(0.01),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               )
                             ]
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // 1. Title + Status Row
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -164,29 +176,32 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                       lottery?['name'] ?? 'Dream Lottery',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w800,
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         color: AppTheme.textPrimary,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
+                                        horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: statusColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(statusIcon, size: 13, color: statusColor),
-                                        const SizedBox(width: 4),
+                                        Icon(statusIcon, size: 11, color: statusColor),
+                                        const SizedBox(width: 3),
                                         Text(
                                           status.toUpperCase(),
                                           style: TextStyle(
                                             color: statusColor,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w800,
                                             letterSpacing: 0.5,
                                           ),
                                         ),
@@ -195,12 +210,45 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 6),
 
-                              // Dashed divider
+                              // 2. Ticket Metadata (Draw Date + Price + Matches)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '📅 Draw: ${_formatDate(lottery?['drawDate'])}',
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    '💰 Price: ₹${lottery?['ticketPrice'] ?? 50}',
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (status != 'active')
+                                    Text(
+                                      '🎯 Match: ${matched.length}/${numbers.length}',
+                                      style: TextStyle(
+                                        color: status == 'won' ? AppTheme.successColor : AppTheme.textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Tear-off dashed divider at 50% notch line
                               Row(
                                 children: List.generate(
-                                  28,
+                                  36,
                                   (index) => Expanded(
                                     child: Container(
                                       height: 1,
@@ -211,17 +259,17 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 10),
 
-                              // Dynamic 3D Lottery Balls for numbers
+                              // 3. Compact Dynamic 3D Lottery Balls
                               Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: numbers.map((number) {
                                   final isMatched = matched.contains(number);
                                   return Container(
-                                    width: 42,
-                                    height: 42,
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       gradient: isMatched
                                           ? const LinearGradient(
@@ -238,10 +286,10 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                       boxShadow: [
                                         BoxShadow(
                                           color: isMatched
-                                              ? AppTheme.successColor.withOpacity(0.3)
-                                              : Colors.black.withOpacity(0.06),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
+                                              ? AppTheme.successColor.withOpacity(0.2)
+                                              : Colors.black.withOpacity(0.04),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1.5),
                                         ),
                                       ],
                                       border: isMatched
@@ -256,19 +304,19 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                               ? Colors.white
                                               : AppTheme.textPrimary,
                                           fontWeight: FontWeight.w800,
-                                          fontSize: 14,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ),
                                   );
                                 }).toList(),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 10),
 
-                              // Dashed divider
+                              // Tear-off dashed divider
                               Row(
                                 children: List.generate(
-                                  28,
+                                  36,
                                   (index) => Expanded(
                                     child: Container(
                                       height: 1,
@@ -279,83 +327,90 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 8),
 
-                              // Barcode & Serial Footer
+                              // 4. Barcode & Purchase Info Footer
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  if (prizeWon > 0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        gradient: AppTheme.goldGradient,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.warningColor.withOpacity(0.3),
-                                            blurRadius: 8,
-                                          )
-                                        ]
-                                      ),
-                                      child: Text(
-                                        '🏆 Won ₹$prizeWon',
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    Column(
+                                  Expanded(
+                                    child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'SERIAL: TKT-${ticket['_id'].toString().substring(0, 8).toUpperCase()}',
-                                          style: const TextStyle(
-                                            color: AppTheme.textMuted,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            fontFamily: 'monospace',
+                                        if (prizeWon > 0)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              gradient: AppTheme.goldGradient,
+                                              borderRadius: BorderRadius.circular(6),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppTheme.warningColor.withOpacity(0.2),
+                                                  blurRadius: 4,
+                                                )
+                                              ]
+                                            ),
+                                            child: Text(
+                                              '🏆 Won ₹$prizeWon',
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          )
+                                        else ...[
+                                          Text(
+                                            'SERIAL: TKT-${ticket['_id'].toString().substring(0, 8).toUpperCase()}',
+                                            style: const TextStyle(
+                                              color: AppTheme.textMuted,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              fontFamily: 'monospace',
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        const Text(
-                                          'DREAM LOTTERY PREMIUM TICKET',
-                                          style: TextStyle(
-                                            color: AppTheme.textMuted,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w600,
+                                          const SizedBox(height: 1),
+                                          Text(
+                                            '🎟️ Purchased: ${_formatDate(ticket['purchasedAt'])}',
+                                            style: const TextStyle(
+                                              color: AppTheme.textMuted,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ],
                                     ),
+                                  ),
 
-                                  // Visual Barcode
+                                  // Visual Barcode (Sleek Compact Version)
                                   Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       ...List.generate(
-                                        12,
+                                        10,
                                         (idx) => Container(
-                                          width: idx % 3 == 0 ? 3 : 1.5,
-                                          height: 24,
-                                          margin: const EdgeInsets.only(right: 2),
-                                          color: AppTheme.textSecondary.withOpacity(0.4),
+                                          width: idx % 3 == 0 ? 2.5 : 1.2,
+                                          height: 18,
+                                          margin: const EdgeInsets.only(right: 1.5),
+                                          color: AppTheme.textSecondary.withOpacity(0.35),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
+
+                              // Compact Action TextButton for Won/Lost state
                               if (status == 'won' || status == 'lost') ...[
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 6),
                                 const Divider(color: AppTheme.borderColor, height: 1),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 4),
                                 SizedBox(
+                                  height: 28,
                                   width: double.infinity,
-                                  child: ElevatedButton.icon(
+                                  child: TextButton.icon(
                                     onPressed: () {
                                       if (lottery != null && lottery['_id'] != null) {
                                         Navigator.pushNamed(
@@ -368,22 +423,17 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                                         );
                                       }
                                     },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryColor,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 0,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      foregroundColor: AppTheme.primaryColor,
                                     ),
-                                    icon: const Icon(Icons.emoji_events, size: 16),
+                                    icon: const Icon(Icons.emoji_events, size: 14),
                                     label: Text(
                                       Provider.of<LanguageProvider>(context, listen: false)
                                           .translate('view_winners_results'),
                                       style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ),
@@ -417,26 +467,26 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
   }
 }
 
-// Custom Clipper for premium physical ticket cutout notches
+// Custom Clipper for premium physical ticket cutout notches centered perfectly
 class MyTicketsClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
     path.lineTo(0, 0);
-    // Left notch
-    path.lineTo(0, size.height * 0.40 - 8);
+    // Left notch centered perfectly
+    path.lineTo(0, size.height * 0.50 - 6);
     path.arcToPoint(
-      Offset(0, size.height * 0.40 + 8),
-      radius: const Radius.circular(8),
+      Offset(0, size.height * 0.50 + 6),
+      radius: const Radius.circular(6),
       clockwise: true,
     );
     path.lineTo(0, size.height);
     path.lineTo(size.width, size.height);
-    // Right notch
-    path.lineTo(size.width, size.height * 0.40 + 8);
+    // Right notch centered perfectly
+    path.lineTo(size.width, size.height * 0.50 + 6);
     path.arcToPoint(
-      Offset(size.width, size.height * 0.40 - 8),
-      radius: const Radius.circular(8),
+      Offset(size.width, size.height * 0.50 - 6),
+      radius: const Radius.circular(6),
       clockwise: true,
     );
     path.lineTo(size.width, 0);
