@@ -20,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   bool _isVideoInitialized = false;
   String? _nextRoute;
   Object? _nextRouteArgs;
+  bool _isLaunchingUpdate = false;
 
   @override
   void initState() {
@@ -224,53 +225,99 @@ class _SplashScreenState extends State<SplashScreen> {
     showDialog(
       context: context,
       barrierDismissible: false, // Force update!
-      builder: (context) => PopScope(
-        canPop: false, // Disable back button
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: Colors.white,
-          title: const Row(
-            children: [
-              Icon(Icons.system_update_alt, color: AppTheme.primaryColor),
-              SizedBox(width: 10),
-              Text(
-                'Update Available!',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'A new version (v$version) of Dream Lottery is available.',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Please update the app to continue playing lottery and avoid secure login errors.',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => _launchDownloadUrl(downloadUrl),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => PopScope(
+          canPop: false, // Disable back button
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            title: const Row(
+              children: [
+                Icon(Icons.system_update_alt, color: AppTheme.primaryColor),
+                SizedBox(width: 10),
+                Text(
+                  'Update Available!',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-              child: const Text(
-                'Update Now',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
+              ],
             ),
-          ],
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'A new version (v$version) of Dream Lottery is available.',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Please update the app to continue playing lottery and avoid secure login errors.',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                ),
+                if (_isLaunchingUpdate) ...[
+                  const SizedBox(height: 20),
+                  const Row(
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Opening download link...',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              if (!_isLaunchingUpdate)
+                ElevatedButton(
+                  onPressed: () async {
+                    setDialogState(() {
+                      _isLaunchingUpdate = true;
+                    });
+                    
+                    await _launchDownloadUrl(downloadUrl);
+                    
+                    // Reset spinner after a short safety delay to allow retries if launch fails
+                    if (mounted) {
+                      Future.delayed(const Duration(seconds: 5), () {
+                        if (mounted) {
+                          setDialogState(() {
+                            _isLaunchingUpdate = false;
+                          });
+                        }
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Update Now',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -284,9 +331,9 @@ class _SplashScreenState extends State<SplashScreen> {
         
     final Uri uri = Uri.parse(targetUrl);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
+      // Bypassing canLaunchUrl and invoking launchUrl directly is the official recommended 
+      // standard by the Flutter team on Android 11+ to solve visibility restrictions completely.
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         debugPrint('Could not launch update URL: $targetUrl');
       }
     } catch (e) {
