@@ -45,12 +45,12 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Email Address or Phone</label>
             <input
               id="login-email"
-              type="email"
+              type="text"
               className="form-input"
-              placeholder="admin@lottery.com"
+              placeholder="admin@lottery.com or 10-digit mobile"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

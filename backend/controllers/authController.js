@@ -135,9 +135,15 @@ exports.login = async (req, res) => {
     }
 
     const { email, password } = req.body;
+    const loginId = email.toLowerCase().trim();
 
-    // Find user with password
-    const user = await User.findOne({ email }).select('+password');
+    // Find user with password matching email OR phone
+    const user = await User.findOne({
+      $or: [
+        { email: loginId },
+        { phone: loginId }
+      ]
+    }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,

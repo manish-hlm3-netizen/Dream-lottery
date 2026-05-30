@@ -25,8 +25,17 @@ router.post('/register', [
 router.post('/login', [
   body('email')
     .trim()
-    .isEmail().withMessage('Please provide a valid email')
-    .normalizeEmail(),
+    .custom((value) => {
+      if (!value) {
+        throw new Error('Email or Phone number is required');
+      }
+      const isEmail = /^\S+@\S+\.\S+$/.test(value);
+      const isPhone = /^[6-9]\d{9}$/.test(value);
+      if (!isEmail && !isPhone) {
+        throw new Error('Please provide a valid email or 10-digit Indian phone number');
+      }
+      return true;
+    }),
   body('password')
     .notEmpty().withMessage('Password is required')
 ], authController.login);

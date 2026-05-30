@@ -173,13 +173,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                labelText: lang.translate('email'),
-                                prefixIcon: const Icon(Icons.email_outlined,
+                                labelText: lang.translate('email_or_phone'),
+                                prefixIcon: const Icon(Icons.person_outline,
                                     color: AppTheme.textMuted),
                               ),
                               validator: (val) {
-                                if (val == null || val.isEmpty) return 'Email is required';
-                                if (!val.contains('@')) return 'Invalid email';
+                                if (val == null || val.isEmpty) {
+                                  return 'Email or Phone is required';
+                                }
+                                final trimmed = val.trim();
+                                final isEmail = trimmed.contains('@');
+                                final isPhone = RegExp(r'^[6-9]\d{9}$').hasMatch(trimmed);
+                                if (!isEmail && !isPhone) {
+                                  return 'Enter a valid Email or 10-digit Phone';
+                                }
                                 return null;
                               },
                             ),
