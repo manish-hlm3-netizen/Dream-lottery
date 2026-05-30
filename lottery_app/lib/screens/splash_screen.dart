@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/storage_service.dart';
@@ -11,49 +12,54 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  late VideoPlayerController _videoController;
+  bool _isVideoInitialized = false;
+  String? _nextRoute;
+  Object? _nextRouteArgs;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
-
-    _controller.forward();
-    _checkAuth();
+    _initializeVideo();
+    _checkAuthAndPrepare();
   }
 
-  Future<void> _checkAuth() async {
+  Future<void> _initializeVideo() async {
     try {
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse('https://cdn.dribbble.com/userupload/28360722/file/original-4aed894ee6a4a98d3fa93b9388929f64.mp4'),
+      );
+      
+      await _videoController.initialize();
+      _videoController.setLooping(true);
+      _videoController.play();
+      _videoController.setVolume(0.0); // Muted to avoid startling the user
+      
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing splash video: $e');
+    }
+  }
 
+  Future<void> _checkAuthAndPrepare() async {
+    // Record start time to ensure the splash video plays for a satisfying duration
+    final startTime = DateTime.now();
+
+    try {
       final auth = context.read<AuthProvider>();
       
-      // Perform the authentication check, but set a timeout so the app never hangs indefinitely
+      // Perform the authentication check with a maximum 4s timeout to avoid freezes
       await auth.checkAuth().timeout(
         const Duration(seconds: 4),
         onTimeout: () {
-          debugPrint('⏳ Splash Screen: Auth check timed out. Proceeding...');
+          debugPrint('⏳ Splash Screen: Auth check timed out.');
         },
       );
-
-      if (!mounted) return;
 
       if (auth.isLoggedIn) {
         // Check if a Security PIN is configured
@@ -64,120 +70,91 @@ class _SplashScreenState extends State<SplashScreen>
           debugPrint('Error reading security PIN: $e');
         }
 
-        if (!mounted) return;
-
         if (savedPin != null && savedPin.isNotEmpty) {
-          Navigator.pushReplacementNamed(
-            context, 
-            '/security-pin',
-            arguments: {'mode': 'unlock'},
-          );
+          _nextRoute = '/security-pin';
+          _nextRouteArgs = {'mode': 'unlock'};
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          _nextRoute = '/home';
         }
       } else {
-        Navigator.pushReplacementNamed(context, '/login');
+        _nextRoute = '/login';
       }
     } catch (e) {
       debugPrint('🚨 Splash Screen: Exception during auth check: $e');
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
+      _nextRoute = '/login';
+    }
+
+    // Enforce a minimum play time of 3.5 seconds for the video splash screen
+    final elapsed = DateTime.now().difference(startTime);
+    final remainingDelay = const Duration(milliseconds: 3500) - elapsed;
+    
+    if (remainingDelay > Duration.zero) {
+      await Future.delayed(remainingDelay);
+    }
+
+    _navigateToNext();
+  }
+
+  void _navigateToNext() {
+    if (!mounted) return;
+    if (_nextRoute != null) {
+      Navigator.pushReplacementNamed(
+        context, 
+        _nextRoute!,
+        arguments: _nextRouteArgs,
+      );
+    } else {
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (_isVideoInitialized) {
+      _videoController.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Color(0xFFFFF1F1),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(32),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.15),
-                              blurRadius: 30,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            width: 180,
-                            height: 180,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              debugPrint('Error loading splash logo: $error');
-                              return const Center(
-                                child: Text('🏆', style: TextStyle(fontSize: 48)),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      ShaderMask(
-                        shaderCallback: (bounds) =>
-                            AppTheme.primaryGradient.createShader(bounds),
-                        child: const Text(
-                          'Dream Lottery',
-                          style: TextStyle(
-                            fontSize: 38,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Your luck starts here',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
+      backgroundColor: Colors.black, // Dark color is highly premium as a backdrop
+      body: Stack(
+        children: [
+          // Background Video Player
+          if (_isVideoInitialized)
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover, // Full bleed video background
+                child: SizedBox(
+                  width: _videoController.value.size.width,
+                  height: _videoController.value.size.height,
+                  child: VideoPlayer(_videoController),
                 ),
-              );
-            },
-          ),
-        ),
+              ),
+            )
+          else
+            // Gradient fallback with loader while video buffers
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.black,
+                    Color(0xFF1E0D0D), // Ultra deep red tone
+                    Colors.black,
+                  ],
+                ),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
