@@ -39,27 +39,50 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-    final auth = context.read<AuthProvider>();
-    await auth.checkAuth();
+      final auth = context.read<AuthProvider>();
+      
+      // Perform the authentication check, but set a timeout so the app never hangs indefinitely
+      await auth.checkAuth().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () {
+          debugPrint('⏳ Splash Screen: Auth check timed out. Proceeding...');
+        },
+      );
 
-    if (!mounted) return;
-    if (auth.isLoggedIn) {
-      // Check if a Security PIN is configured
-      final savedPin = await StorageService.getPin();
-      if (savedPin != null && savedPin.isNotEmpty) {
-        Navigator.pushReplacementNamed(
-          context, 
-          '/security-pin',
-          arguments: {'mode': 'unlock'},
-        );
+      if (!mounted) return;
+
+      if (auth.isLoggedIn) {
+        // Check if a Security PIN is configured
+        String? savedPin;
+        try {
+          savedPin = await StorageService.getPin();
+        } catch (e) {
+          debugPrint('Error reading security PIN: $e');
+        }
+
+        if (!mounted) return;
+
+        if (savedPin != null && savedPin.isNotEmpty) {
+          Navigator.pushReplacementNamed(
+            context, 
+            '/security-pin',
+            arguments: {'mode': 'unlock'},
+          );
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       } else {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/login');
       }
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      debugPrint('🚨 Splash Screen: Exception during auth check: $e');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 
