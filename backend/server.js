@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 const { startScheduler } = require('./utils/scheduler');
+const { startBotSimulator } = require('./utils/botSimulator');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -121,6 +122,9 @@ const startServer = async () => {
 
   // Start scheduled draws
   startScheduler();
+
+  // Start bot player simulator
+  await startBotSimulator();
 
   // Start Express
   app.listen(PORT, () => {

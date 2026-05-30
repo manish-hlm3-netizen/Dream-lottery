@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isBot: {
+    type: Boolean,
+    default: false
+  },
   referralCode: {
     type: String,
     unique: true,
