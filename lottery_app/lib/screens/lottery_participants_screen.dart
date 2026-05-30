@@ -218,10 +218,10 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                               margin: const EdgeInsets.symmetric(horizontal: 3),
                                               decoration: BoxDecoration(
                                                 gradient: AppTheme.primaryGradient,
-                                                shape: BoxShape.circle,
+                                                borderRadius: BorderRadius.circular(8),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: AppTheme.primaryColor.withOpacity(0.25),
+                                                    color: AppTheme.primaryColor.withOpacity(0.18),
                                                     blurRadius: 4,
                                                     offset: const Offset(0, 1.5),
                                                   ),
@@ -233,7 +233,7 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.w900,
-                                                    fontSize: 11,
+                                                    fontSize: 12,
                                                   ),
                                                 ),
                                               ),
@@ -251,21 +251,21 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 20),
                               child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                                spacing: 6,
+                                runSpacing: 6,
                                 alignment: WrapAlignment.center,
                                 children: _winningNumbers.map((number) {
                                   return Container(
-                                    width: 42,
-                                    height: 42,
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       gradient: AppTheme.primaryGradient,
-                                      shape: BoxShape.circle,
+                                      borderRadius: BorderRadius.circular(8),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: AppTheme.primaryColor.withOpacity(0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
+                                          color: AppTheme.primaryColor.withOpacity(0.18),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1.5),
                                         ),
                                       ],
                                     ),
@@ -274,8 +274,8 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
                                         number.toString().padLeft(2, '0'),
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 15,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ),

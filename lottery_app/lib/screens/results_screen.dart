@@ -133,20 +133,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       ),
                       const SizedBox(height: 10),
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: winningNumbers.map((n) {
                           return Container(
-                            width: 42,
-                            height: 42,
+                            width: 32,
+                            height: 32,
                             decoration: BoxDecoration(
                               gradient: AppTheme.primaryGradient,
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  color: AppTheme.primaryColor.withOpacity(0.18),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1.5),
                                 ),
                               ],
                             ),
@@ -155,8 +155,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                 n.toString().padLeft(2, '0'),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
