@@ -76,7 +76,14 @@ exports.getUsers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const search = req.query.search || '';
+    const isBot = req.query.isBot;
     const filter = { role: 'user' };
+
+    if (isBot === 'true') {
+      filter.isBot = true;
+    } else if (isBot === 'false') {
+      filter.isBot = { $ne: true };
+    }
 
     if (search) {
       filter.$or = [

@@ -7,6 +7,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [activeTab, setActiveTab] = useState('real'); // 'real' or 'bot'
 
   // Edit states
   const [selectedUserForWallet, setSelectedUserForWallet] = useState(null);
@@ -17,12 +18,12 @@ export default function UsersPage() {
   useEffect(() => {
     const timer = setTimeout(() => loadUsers(), 300);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, activeTab]);
 
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const data = await api.getUsers(1, search);
+      const data = await api.getUsers(1, search, activeTab === 'bot' ? 'true' : 'false');
       if (data.success) setUsers(data.data.users);
     } catch (err) {
       console.error('Load users error:', err);
@@ -106,9 +107,54 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '24px' }}>
         <h2>User Management</h2>
         <p>View and manage registered users, update wallets, and reset passwords</p>
+      </div>
+
+      <div className="tabs-container" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <button
+          onClick={() => setActiveTab('real')}
+          className={`tab-btn ${activeTab === 'real' ? 'active' : ''}`}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '12px',
+            border: 'none',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.3s ease',
+            background: activeTab === 'real' ? 'linear-gradient(135deg, #E52D27 0%, #B31217 100%)' : 'rgba(255, 255, 255, 0.05)',
+            color: activeTab === 'real' ? '#fff' : 'rgba(255, 255, 255, 0.6)',
+            boxShadow: activeTab === 'real' ? '0 4px 15px rgba(229, 45, 39, 0.4)' : 'none',
+          }}
+        >
+          👥 Real Users
+        </button>
+        <button
+          onClick={() => setActiveTab('bot')}
+          className={`tab-btn ${activeTab === 'bot' ? 'active' : ''}`}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '12px',
+            border: 'none',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.3s ease',
+            background: activeTab === 'bot' ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'rgba(255, 255, 255, 0.05)',
+            color: activeTab === 'bot' ? '#fff' : 'rgba(255, 255, 255, 0.6)',
+            boxShadow: activeTab === 'bot' ? '0 4px 15px rgba(16, 185, 129, 0.4)' : 'none',
+          }}
+        >
+          🤖 Simulated Bot Players
+        </button>
       </div>
 
       <div className="filter-bar">
@@ -116,7 +162,7 @@ export default function UsersPage() {
           <input
             type="text"
             className="search-input"
-            placeholder="Search by name, email, or phone..."
+            placeholder={activeTab === 'bot' ? "Search bots by name, email, or phone..." : "Search users by name, email, or phone..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -128,8 +174,8 @@ export default function UsersPage() {
           <div className="loading"><div className="loading-spinner"></div>Loading...</div>
         ) : users.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">👥</div>
-            <h4>No users found</h4>
+            <div className="empty-icon">{activeTab === 'bot' ? '🤖' : '👥'}</div>
+            <h4>No {activeTab === 'bot' ? 'bot players' : 'users'} found</h4>
           </div>
         ) : (
           <table className="data-table">

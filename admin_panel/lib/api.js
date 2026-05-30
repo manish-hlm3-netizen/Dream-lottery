@@ -82,8 +82,12 @@ class ApiClient {
   }
 
   // Users
-  async getUsers(page = 1, search = '') {
-    return this.request(`/admin/users?page=${page}&search=${search}`);
+  async getUsers(page = 1, search = '', isBot = '') {
+    let url = `/admin/users?page=${page}&search=${search}`;
+    if (isBot !== '') {
+      url += `&isBot=${isBot}`;
+    }
+    return this.request(url);
   }
 
   async toggleUser(userId) {
