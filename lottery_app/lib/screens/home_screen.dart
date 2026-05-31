@@ -144,55 +144,57 @@ class _HomeTabState extends State<_HomeTab> {
                 builder: (context, auth, _) {
                   return Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                     decoration: BoxDecoration(
                       gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          lang.translate('wallet_balance'),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lang.translate('wallet_balance'),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '₹${auth.walletBalance.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '₹${auth.walletBalance.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                         Row(
                           children: [
-                            Expanded(
-                              child: _WalletButton(
-                                icon: Icons.add,
-                                label: lang.translate('deposit'),
-                                onTap: () => Navigator.pushNamed(context, '/deposit'),
-                              ),
+                            _SmallWalletButton(
+                              icon: Icons.add,
+                              label: lang.translate('deposit'),
+                              onTap: () => Navigator.pushNamed(context, '/deposit'),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _WalletButton(
-                                icon: Icons.arrow_upward,
-                                label: lang.translate('withdraw'),
-                                onTap: () => Navigator.pushNamed(context, '/withdraw'),
-                              ),
+                            const SizedBox(width: 8),
+                            _SmallWalletButton(
+                              icon: Icons.arrow_upward,
+                              label: lang.translate('withdraw'),
+                              onTap: () => Navigator.pushNamed(context, '/withdraw'),
                             ),
                           ],
                         ),
@@ -220,17 +222,22 @@ class _HomeTabState extends State<_HomeTab> {
                     label: lang.translate('play_lottery_action'),
                     color: AppTheme.primaryColor,
                     onTap: () {
-                      // Switch to lotteries tab
+                      final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                      if (homeState != null) {
+                        homeState.setState(() {
+                          homeState._currentIndex = 1;
+                        });
+                      }
                     },
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   _QuickAction(
                     icon: Icons.emoji_events,
                     label: lang.translate('view_results_action'),
                     color: AppTheme.warningColor,
                     onTap: () => Navigator.pushNamed(context, '/results'),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   _QuickAction(
                     icon: Icons.confirmation_number,
                     label: lang.translate('my_tickets_action'),
@@ -456,12 +463,12 @@ class _HomeTabState extends State<_HomeTab> {
   }
 }
 
-class _WalletButton extends StatelessWidget {
+class _SmallWalletButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _WalletButton({
+  const _SmallWalletButton({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -472,22 +479,21 @@ class _WalletButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: 14),
+            const SizedBox(width: 4),
             Text(
               label,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 12,
               ),
             ),
           ],
@@ -516,22 +522,22 @@ class _QuickAction extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.2)),
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.15)),
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
+              Icon(icon, color: color, size: 20),
+              const SizedBox(height: 5),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: color,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
