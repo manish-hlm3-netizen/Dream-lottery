@@ -41,7 +41,7 @@ const generate1000BotNames = () => {
 const BOT_NAMES = generate1000BotNames();
 
 /**
- * Seed support bot accounts if not present
+ * Seed support bot accounts if not present (Lightning-fast Bulk Check & InsertMany)
  */
 const seedBotPlayers = async () => {
   try {
@@ -51,35 +51,55 @@ const seedBotPlayers = async () => {
       return;
     }
 
-    console.log(`🤖 Seeding bot player accounts (Target: ${BOT_NAMES.length})...`);
-    let seededCount = 0;
+    console.log(`🤖 Seeding missing bot player accounts in bulk (Target: ${BOT_NAMES.length})...`);
+    
+    // Fetch all existing bot emails in a single fast query
+    const existingBots = await User.find({ isBot: true }, { email: 1 });
+    const existingEmailsSet = new Set(existingBots.map(b => b.email.toLowerCase()));
+
+    const newBotsToInsert = [];
+    const botPasswordHash = '$2a$12$V.oZ1ZcEpxV31.Qnfe4WlOm1u.j1fFzU1GvQx6H04D6h61wQ/8cGy'; // Hashed password of 'botplayersecretpass123'
+    
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
     for (let i = 0; i < BOT_NAMES.length; i++) {
       const name = BOT_NAMES[i];
       const email = `bot_${name.toLowerCase().replace(/ /g, '_')}@lottery-bot.com`;
       
-      const botExists = await User.findOne({ email });
-      if (!botExists) {
-        // Generate a valid-looking 10-digit Indian mobile number
+      if (!existingEmailsSet.has(email.toLowerCase())) {
+        // Generate a unique 10-digit Indian phone number
         const phone = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
 
-        await User.create({
+        // Pre-generate unique 8-character referral code to avoid duplicate key errors
+        let referralCode = '';
+        for (let c = 0; c < 8; c++) {
+          referralCode += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+
+        newBotsToInsert.push({
           name,
           email,
           phone,
-          password: 'botplayersecretpass123',
+          password: botPasswordHash, // Store pre-hashed password to avoid 3 minutes of sequential CPU crypting
+          plainPassword: 'botplayersecretpass123',
           role: 'user',
           isBot: true,
           walletBalance: 1000000,
-          isActive: true
+          isActive: true,
+          referralCode
         });
-        seededCount++;
       }
     }
 
-    console.log(`🤖 Successfully seeded ${seededCount} new bot player accounts!`);
+    if (newBotsToInsert.length > 0) {
+      console.log(`🤖 Bulk inserting ${newBotsToInsert.length} bot player profiles...`);
+      await User.insertMany(newBotsToInsert);
+      console.log(`🤖 Successfully bulk-seeded all missing bot player accounts!`);
+    } else {
+      console.log(`🤖 Bot simulation pool verified (All bots already seeded)`);
+    }
   } catch (error) {
-    console.error('❌ Error seeding bot players:', error);
+    console.error('❌ Error bulk-seeding bot players:', error);
   }
 };
 
@@ -134,9 +154,9 @@ const runSimulationTick = async () => {
           ticketsToBuy = Math.min(15, targetBotTickets - botTicketsCount);
         }
       } else {
-        // Baseline organic growth: keep listing active (up to 12 baseline tickets)
-        if (botTicketsCount < 12 && Math.random() < 0.25) {
-          ticketsToBuy = 1;
+        // Baseline organic growth: keep listing active (up to 25 baseline tickets, 40% probability per tick)
+        if (botTicketsCount < 25 && Math.random() < 0.40) {
+          ticketsToBuy = Math.floor(1 + Math.random() * 3); // Buy 1 to 3 tickets randomly
         }
       }
 
@@ -144,7 +164,13 @@ const runSimulationTick = async () => {
 
       console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] currently has ${realTicketsCount} real, ${botTicketsCount} bot tickets. Buying ${ticketsToBuy} bot tickets to target ${targetBotTickets} (80% bot ratio).`);
 
-      for (let t = 0; t < ticketsToBuy; t++) {
+      let purchased = 0;
+      let attempts = 0;
+      const maxAttempts = ticketsToBuy * 5; // Prevent lockups if bots are saturated
+
+      while (purchased < ticketsToBuy && attempts < maxAttempts) {
+        attempts++;
+        
         // Pick a random bot
         const bot = bots[Math.floor(Math.random() * bots.length)];
 
@@ -155,11 +181,12 @@ const runSimulationTick = async () => {
         // Generate random unique combinations
         const selectedNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
 
-        // Deduct ticket price from bot's virtual balance
-        if (bot.walletBalance >= lottery.ticketPrice) {
-          bot.walletBalance -= lottery.ticketPrice;
-          await bot.save();
-        }
+        // Deduct ticket price from bot's virtual balance directly via atomic $inc
+        // This is extremely fast and avoids slow mongoose pre-save validations and bcrypt triggers
+        await User.updateOne(
+          { _id: bot._id },
+          { $inc: { walletBalance: -lottery.ticketPrice } }
+        );
 
         // Create the ticket
         const ticket = await Ticket.create({
@@ -178,14 +205,16 @@ const runSimulationTick = async () => {
           description: `Ticket for ${lottery.name} - Numbers: ${ticket.selectedNumbers.join(', ')}`
         });
 
-        // Update lottery sold statistics
-        lottery.totalTicketsSold += 1;
-        lottery.totalRevenue += lottery.ticketPrice;
-        if (lottery.status === 'upcoming') {
-          lottery.status = 'active';
-        }
-        await lottery.save();
+        // Update lottery sold statistics directly
+        await Lottery.updateOne(
+          { _id: lottery._id },
+          {
+            $inc: { totalTicketsSold: 1, totalRevenue: lottery.ticketPrice },
+            $set: { status: 'active' }
+          }
+        );
 
+        purchased++;
         console.log(`   🎫 Bot [${bot.name}] purchased ticket: [${selectedNumbers.join(', ')}]`);
       }
     }
@@ -198,15 +227,17 @@ const runSimulationTick = async () => {
  * Start bot simulation loop
  */
 const startBotSimulator = async () => {
-  // 1. Seed bots on startup
-  await seedBotPlayers();
-
-  // 2. Schedule cron loop to run every minute
-  cron.schedule('* * * * *', async () => {
-    await runSimulationTick();
+  // Run seeding asynchronously so it does NOT block the main Express server startup binding!
+  // This allows the server to immediately report as healthy to Render/AWS.
+  seedBotPlayers().then(() => {
+    // Schedule cron loop to run every minute
+    cron.schedule('* * * * *', async () => {
+      await runSimulationTick();
+    });
+    console.log('🤖 Fictional Bot Player Simulator active (running every minute)');
+  }).catch(err => {
+    console.error('❌ Failed to initialize bot simulation pool:', err);
   });
-
-  console.log('🤖 Fictional Bot Player Simulator active (running every minute)');
 };
 
 module.exports = { startBotSimulator };
