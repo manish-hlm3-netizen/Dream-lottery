@@ -360,6 +360,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onTap: () => Navigator.pushNamed(context, '/results'),
                             ),
                             _ProfileMenuItem(
+                              icon: Icons.stars_outlined,
+                              label: lang.isHindi ? "हाल ही के विजेता 🏆" : "Recent Winners 🏆",
+                              onTap: () => Navigator.pushNamed(context, '/recent-winners'),
+                            ),
+                            _ProfileMenuItem(
                               icon: Icons.history,
                               label: lang.translate('txn_history'),
                               onTap: () => Navigator.pushNamed(context, '/wallet'),

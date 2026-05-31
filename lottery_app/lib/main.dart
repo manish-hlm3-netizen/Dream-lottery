@@ -14,6 +14,7 @@ import 'screens/buy_ticket_screen.dart';
 import 'screens/results_screen.dart';
 import 'screens/my_tickets_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/recent_winners_screen.dart';
 import 'screens/announcements_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/referrals_screen.dart';
@@ -50,6 +51,7 @@ class LotteryApp extends StatelessWidget {
           '/deposit': (context) => const DepositScreen(),
           '/withdraw': (context) => const WithdrawScreen(),
           '/results': (context) => const ResultsScreen(),
+          '/recent-winners': (context) => const RecentWinnersScreen(),
           '/my-tickets': (context) => const MyTicketsScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/announcements': (context) => const AnnouncementsScreen(),
