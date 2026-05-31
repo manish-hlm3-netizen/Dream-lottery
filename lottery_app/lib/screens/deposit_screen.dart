@@ -75,6 +75,14 @@ class _DepositScreenState extends State<DepositScreen> {
     return 3;
   }
 
+  bool _isStepUnlocked(int stepNum) {
+    if (stepNum == 1) return true;
+    final amountText = _amountController.text.trim();
+    if (amountText.isEmpty) return false;
+    final amount = double.tryParse(amountText);
+    return amount != null && amount >= 10;
+  }
+
   Future<void> _handleDeposit() async {
     if (!_formKey.currentState!.validate()) return;
     final lang = Provider.of<LanguageProvider>(context, listen: false);
@@ -743,6 +751,7 @@ class _DepositScreenState extends State<DepositScreen> {
     final step = _currentStep;
     final isActive = stepNum == step;
     final isCompleted = stepNum < step;
+    final isUnlocked = _isStepUnlocked(stepNum);
 
     return IntrinsicHeight(
       child: Row(
@@ -775,7 +784,7 @@ class _DepositScreenState extends State<DepositScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
-                        color: isActive || isCompleted ? AppTheme.textPrimary : AppTheme.textMuted,
+                        color: isUnlocked ? AppTheme.textPrimary : AppTheme.textMuted,
                       ),
                     ),
                     if (isCompleted) ...[
@@ -804,16 +813,16 @@ class _DepositScreenState extends State<DepositScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isActive || isCompleted ? AppTheme.textSecondary : AppTheme.textMuted,
+                      color: isUnlocked ? AppTheme.textSecondary : AppTheme.textMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
                 const SizedBox(height: 12),
                 Opacity(
-                  opacity: isActive || isCompleted ? 1.0 : 0.45,
+                  opacity: isUnlocked ? 1.0 : 0.45,
                   child: AbsorbPointer(
-                    absorbing: !isActive && !isCompleted,
+                    absorbing: !isUnlocked,
                     child: Card(
                       elevation: isActive ? 4 : 0,
                       shadowColor: AppTheme.primaryColor.withOpacity(0.06),
