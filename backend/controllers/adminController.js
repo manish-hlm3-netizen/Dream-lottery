@@ -901,6 +901,47 @@ exports.deleteAnnouncement = async (req, res) => {
 };
 
 /**
+ * @desc    Update an announcement
+ * @route   PUT /api/admin/announcements/:id
+ * @access  Admin
+ */
+exports.updateAnnouncement = async (req, res) => {
+  try {
+    const { title, content, titleHi, contentHi } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required'
+      });
+    }
+
+    const announcement = await Announcement.findById(req.params.id);
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        message: 'Announcement not found'
+      });
+    }
+
+    announcement.title = title;
+    announcement.content = content;
+    announcement.titleHi = titleHi;
+    announcement.contentHi = contentHi;
+
+    await announcement.save();
+
+    res.json({
+      success: true,
+      message: 'Announcement updated successfully',
+      data: { announcement }
+    });
+  } catch (error) {
+    console.error('Update announcement error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
  * @desc    Get current UPI payment settings
  * @route   GET /api/admin/settings/upi
  * @access  Admin

@@ -183,6 +183,13 @@ class ApiClient {
     });
   }
 
+  async updateAnnouncement(id, announcementData) {
+    return this.request(`/admin/announcements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(announcementData)
+    });
+  }
+
   async deleteAnnouncement(id) {
     return this.request(`/admin/announcements/${id}`, {
       method: 'DELETE'

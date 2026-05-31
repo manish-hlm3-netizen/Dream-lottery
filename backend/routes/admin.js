@@ -34,6 +34,7 @@ router.post('/lotteries/:id/draw', adminController.drawLottery);
 // Announcements
 router.get('/announcements', adminController.getAdminAnnouncements);
 router.post('/announcements', adminController.createAnnouncement);
+router.put('/announcements/:id', adminController.updateAnnouncement);
 router.delete('/announcements/:id', adminController.deleteAnnouncement);
 
 // Settings

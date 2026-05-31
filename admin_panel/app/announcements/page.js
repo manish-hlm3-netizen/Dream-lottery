@@ -10,6 +10,9 @@ export default function AnnouncementsPage() {
   // Form inputs
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [titleHi, setTitleHi] = useState('');
+  const [contentHi, setContentHi] = useState('');
+  const [editingId, setEditingId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function showToast(message, type) {
@@ -39,7 +42,15 @@ export default function AnnouncementsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleCreate = async (e) => {
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setTitleHi('');
+    setContentHi('');
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
       showToast('Title and Content are required', 'error');
@@ -48,18 +59,36 @@ export default function AnnouncementsPage() {
 
     setIsSubmitting(true);
     try {
-      const data = await api.createAnnouncement({ title, content });
-      if (data.success) {
-        showToast(data.message || 'Announcement created successfully', 'success');
-        setTitle('');
-        setContent('');
-        loadAnnouncements();
+      const payload = { title, content, titleHi, contentHi };
+      if (editingId) {
+        const data = await api.updateAnnouncement(editingId, payload);
+        if (data.success) {
+          showToast(data.message || 'Announcement updated successfully', 'success');
+          resetForm();
+          loadAnnouncements();
+        }
+      } else {
+        const data = await api.createAnnouncement(payload);
+        if (data.success) {
+          showToast(data.message || 'Announcement created successfully', 'success');
+          resetForm();
+          loadAnnouncements();
+        }
       }
     } catch (err) {
-      showToast(err.message || 'Failed to create announcement', 'error');
+      showToast(err.message || `Failed to ${editingId ? 'update' : 'create'} announcement`, 'error');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const startEdit = (ann) => {
+    setEditingId(ann._id);
+    setTitle(ann.title || '');
+    setContent(ann.content || '');
+    setTitleHi(ann.titleHi || '');
+    setContentHi(ann.contentHi || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {
@@ -69,6 +98,7 @@ export default function AnnouncementsPage() {
       const data = await api.deleteAnnouncement(id);
       if (data.success) {
         showToast(data.message || 'Announcement deleted successfully', 'success');
+        if (editingId === id) resetForm();
         loadAnnouncements();
       }
     } catch (err) {
@@ -96,12 +126,14 @@ export default function AnnouncementsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', alignItems: 'start' }}>
-        {/* Create Announcement Form */}
+        {/* Create / Edit Announcement Form */}
         <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ marginBottom: '16px' }}>New Announcement</h3>
-          <form onSubmit={handleCreate}>
+          <h3 style={{ marginBottom: '16px', color: editingId ? '#3b82f6' : '#fff' }}>
+            {editingId ? '✏️ Edit Announcement' : '📢 New Announcement'}
+          </h3>
+          <form onSubmit={handleSubmit}>
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Title</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Title (English)</label>
               <input
                 type="text"
                 className="form-control"
@@ -119,13 +151,33 @@ export default function AnnouncementsPage() {
                 required
               />
             </div>
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Content</label>
+
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#f3a83b' }}>Title (Hindi - Optional)</label>
+              <input
+                type="text"
+                className="form-control"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                }}
+                placeholder="e.g. सर्वर रखरखाव या बोनस ऑफर"
+                value={titleHi}
+                onChange={(e) => setTitleHi(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Content (English)</label>
               <textarea
                 className="form-control"
                 style={{
                   width: '100%',
-                  height: '150px',
+                  height: '100px',
                   padding: '10px',
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -139,14 +191,63 @@ export default function AnnouncementsPage() {
                 required
               />
             </div>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px' }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Posting...' : '📢 Post Announcement'}
-            </button>
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#f3a83b' }}>Content (Hindi - Optional)</label>
+              <textarea
+                className="form-control"
+                style={{
+                  width: '100%',
+                  height: '80px',
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  resize: 'none',
+                }}
+                placeholder="घोषणा पाठ यहाँ लिखें..."
+                value={contentHi}
+                onChange={(e) => setContentHi(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: editingId ? '#3b82f6' : 'var(--primary-color)',
+                  borderColor: editingId ? '#3b82f6' : 'var(--primary-color)',
+                }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? (editingId ? 'Saving Changes...' : 'Posting...')
+                  : (editingId ? '💾 Save Changes' : '📢 Post Announcement')}
+              </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                  onClick={resetForm}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -177,20 +278,64 @@ export default function AnnouncementsPage() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, fontWeight: 600, color: '#fff' }}>{ann.title}</h4>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      style={{ padding: '4px 8px', fontSize: '12px' }}
-                      onClick={() => handleDelete(ann._id)}
-                    >
-                      🗑️ Delete
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h4 style={{ margin: 0, fontWeight: 600, color: '#fff', fontSize: '16px' }}>{ann.title}</h4>
+                      {ann.titleHi && (
+                        <span style={{ fontSize: '13px', color: '#f3a83b', fontWeight: 500 }}>🇮🇳 {ann.titleHi}</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '12px',
+                          background: 'rgba(59, 130, 246, 0.2)',
+                          color: '#60a5fa',
+                          border: '1px solid rgba(59, 130, 246, 0.4)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => startEdit(ann)}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => handleDelete(ann._id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
                   <p style={{ color: '#ccc', margin: '0 0 12px 0', whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.5' }}>
                     {ann.content}
                   </p>
+                  {ann.contentHi && (
+                    <p style={{
+                      color: '#aaa',
+                      margin: '0 0 12px 0',
+                      whiteSpace: 'pre-wrap',
+                      fontSize: '13px',
+                      lineHeight: '1.5',
+                      fontStyle: 'italic',
+                      borderLeft: '2px solid #f3a83b',
+                      paddingLeft: '10px',
+                    }}>
+                      {ann.contentHi}
+                    </p>
+                  )}
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '8px' }}>
                     <span>Posted on: {formatDate(ann.createdAt)}</span>
+                    {ann.updatedAt !== ann.createdAt && (
+                      <span style={{ color: '#60a5fa' }}>• Edited on: {formatDate(ann.updatedAt)}</span>
+                    )}
                   </div>
                 </div>
               ))}
