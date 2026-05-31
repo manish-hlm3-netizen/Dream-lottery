@@ -59,6 +59,14 @@ class StorageService {
     // Retain PIN even if clearAll is called during session clear, except if specifically logging out or reset.
     // Wait, to keep PIN active even if user session refreshes, but clear it on complete logout.
     // If they click "Logout", secure tokens are cleared. Wiping the PIN on logout is good so next login is fresh.
-    await _storage.deleteAll();
+    try {
+      await _storage.deleteAll();
+    } catch (e) {
+      try {
+        await _storage.delete(key: _tokenKey);
+        await _storage.delete(key: _userKey);
+        await _storage.delete(key: _pinKey);
+      } catch (_) {}
+    }
   }
 }

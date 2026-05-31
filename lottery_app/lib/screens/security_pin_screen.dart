@@ -175,7 +175,7 @@ class _SecurityPinScreenState extends State<SecurityPinScreen> {
   Future<void> _handleForgottenPin() async {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Forgot Security PIN?', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
@@ -183,12 +183,12 @@ class _SecurityPinScreenState extends State<SecurityPinScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(dialogContext); // Close dialog
               final auth = context.read<AuthProvider>();
               await auth.logout();
               if (mounted) {

@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Disable Security PIN', style: TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
@@ -58,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
@@ -68,21 +68,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (pin == savedPin) {
                 await StorageService.deletePin();
                 if (mounted) {
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(dialogContext); // Close dialog
                   _checkPinStatus(); // Refresh state
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(this.context).showSnackBar(
                     const SnackBar(content: Text('Security PIN successfully disabled.')),
                   );
                 }
               } else {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(this.context).showSnackBar(
                     const SnackBar(
                       content: Text('Incorrect PIN. Security PIN remains enabled.'),
                       backgroundColor: AppTheme.dangerColor,
                     ),
                   );
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(dialogContext); // Close dialog
                 }
               }
             },
@@ -199,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Consumer<AuthProvider>(
-                builder: (context, auth, _) {
+                builder: (ctx, auth, _) {
                   return Column(
                     children: [
                       const SizedBox(height: 50), // Padding to position the avatar card beautifully
@@ -434,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: OutlinedButton.icon(
                                 onPressed: () async {
                                   await auth.logout();
-                                  if (context.mounted) {
+                                  if (mounted) {
                                     Navigator.pushReplacementNamed(context, '/login');
                                   }
                                 },

@@ -150,7 +150,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await StorageService.clearAll();
+    try {
+      await StorageService.clearAll();
+    } catch (e) {
+      debugPrint('Error during StorageService.clearAll: $e');
+    }
     _user = null;
     _isLoggedIn = false;
     _error = null;
