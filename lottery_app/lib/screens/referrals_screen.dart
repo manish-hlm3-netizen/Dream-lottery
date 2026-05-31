@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import '../providers/language_provider.dart';
@@ -83,9 +84,10 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
+    const downloadUrl = "https://lottery-api-vgk0.onrender.com/api/app/download";
     final inviteMessage = lang.isHindi 
-        ? "नमस्ते! 🎲 ड्रीम लॉटरी पर मेरे साथ जुड़ें, सबसे बेहतरीन प्रीमियम फंतासी लॉटरी प्लेटफॉर्म! मेरे रेफरल कोड: $_referralCode का उपयोग करके तुरंत ₹20 का साइनअप बोनस प्राप्त करें। अभी डाउनलोड करें और साथ में खेलें!"
-        : "Hey! 🎲 Join me on Dream Lottery, the ultimate premium fantasy lottery platform! Use my referral code: $_referralCode to get a ₹20 signup bonus instantly. Download now and let's play together!";
+        ? "नमस्ते! 🎲 ड्रीम लॉटरी पर मेरे साथ जुड़ें, सबसे बेहतरीन प्रीमियम फंतासी लॉटरी प्लेटफॉर्म! तुरंत ₹20 का साइनअप बोनस प्राप्त करने के लिए मेरे रेफरल कोड: $_referralCode का उपयोग करें।\n\nऐप को यहाँ से डाउनलोड करें: $downloadUrl\n\nआइए साथ मिलकर खेलें और जीतें! 🏆"
+        : "Hey! 🎲 Join me on Dream Lottery, the ultimate premium fantasy lottery platform! Use my referral code: $_referralCode to get a ₹20 signup bonus instantly.\n\nDownload the app here: $downloadUrl\n\nLet's play and win together! 🏆";
 
     return Scaffold(
       appBar: AppBar(
@@ -284,9 +286,11 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                                           child: ElevatedButton.icon(
                                             onPressed: _referralCode.isEmpty
                                                 ? null
-                                                : () => _copyToClipboard(
-                                                    inviteMessage,
-                                                    lang.translate('copied')),
+                                                : () => SharePlus.instance.share(
+                                                    ShareParams(
+                                                      text: inviteMessage,
+                                                    ),
+                                                  ),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
                                                   AppTheme.primaryColor,
