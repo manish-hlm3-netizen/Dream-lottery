@@ -854,7 +854,7 @@ exports.getAdminAnnouncements = async (req, res) => {
  */
 exports.createAnnouncement = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, titleHi, contentHi } = req.body;
     if (!title || !content) {
       return res.status(400).json({
         success: false,
@@ -862,7 +862,7 @@ exports.createAnnouncement = async (req, res) => {
       });
     }
 
-    const announcement = await Announcement.create({ title, content });
+    const announcement = await Announcement.create({ title, content, titleHi, contentHi });
     res.status(201).json({
       success: true,
       message: 'Announcement created successfully',

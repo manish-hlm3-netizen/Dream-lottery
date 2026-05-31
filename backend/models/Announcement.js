@@ -12,6 +12,14 @@ const announcementSchema = new mongoose.Schema({
     required: [true, 'Content is required'],
     trim: true
   },
+  titleHi: {
+    type: String,
+    trim: true
+  },
+  contentHi: {
+    type: String,
+    trim: true
+  },
   isActive: {
     type: Boolean,
     default: true

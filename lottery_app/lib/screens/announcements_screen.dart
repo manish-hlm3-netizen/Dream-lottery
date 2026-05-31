@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
+import '../providers/language_provider.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   const AnnouncementsScreen({super.key});
@@ -50,9 +52,16 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Announcements 📢'),
+        title: Text(lang.translate('announcements') + ' 📢'),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(
@@ -68,7 +77,9 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                         const Icon(Icons.error_outline, color: AppTheme.dangerColor, size: 48),
                         const SizedBox(height: 12),
                         Text(
-                          _errorMessage!,
+                          lang.isHindi 
+                              ? 'नेटवर्क त्रुटि। कृपया बाद में पुनः प्रयास करें।' 
+                              : _errorMessage!,
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                         ),
@@ -82,22 +93,22 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text('Retry'),
+                          child: Text(lang.isHindi ? 'पुनः प्रयास करें' : 'Retry'),
                         ),
                       ],
                     ),
                   ),
                 )
               : _announcements.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.campaign_outlined, color: AppTheme.textSecondary, size: 64),
-                          SizedBox(height: 12),
+                          const Icon(Icons.campaign_outlined, color: AppTheme.textSecondary, size: 64),
+                          const SizedBox(height: 12),
                           Text(
-                            'No announcements yet',
-                            style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                            lang.isHindi ? 'अभी तक कोई घोषणा नहीं' : 'No announcements yet',
+                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                           ),
                         ],
                       ),
@@ -106,12 +117,22 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                       onRefresh: _fetchAnnouncements,
                       color: AppTheme.primaryColor,
                       child: ListView.builder(
+                        physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.all(20),
                         itemCount: _announcements.length,
                         itemBuilder: (context, index) {
                           final ann = _announcements[index];
-                          final title = ann['title'] ?? 'No Title';
-                          final content = ann['content'] ?? '';
+                          
+                          // Dynamic English vs Hindi Title Selection with Fallback
+                          final title = (lang.isHindi && ann['titleHi'] != null && ann['titleHi'].toString().trim().isNotEmpty)
+                              ? ann['titleHi']
+                              : (ann['title'] ?? 'No Title');
+                              
+                          // Dynamic English vs Hindi Content Selection with Fallback
+                          final content = (lang.isHindi && ann['contentHi'] != null && ann['contentHi'].toString().trim().isNotEmpty)
+                              ? ann['contentHi']
+                              : (ann['content'] ?? '');
+                              
                           final dateStr = ann['createdAt'];
                           DateTime? date;
                           if (dateStr != null) {
@@ -127,7 +148,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                               border: Border.all(color: AppTheme.borderColor),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withOpacity(0.04),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
