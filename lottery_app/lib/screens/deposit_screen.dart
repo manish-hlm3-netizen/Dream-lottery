@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,11 +23,6 @@ class _DepositScreenState extends State<DepositScreen> {
   bool _loading = false;
   String? _message;
   bool _success = false;
-
-  // Polling and verification states
-  String? _initiatedTxnId;
-  bool _isVerifying = false;
-  Timer? _pollTimer;
 
   // Dynamic UPI settings
   String _upiId = 'lottery@upi';
@@ -75,7 +69,8 @@ class _DepositScreenState extends State<DepositScreen> {
     final amount = double.tryParse(amountText);
     if (amount == null || amount < 10) return 1;
 
-    if (_initiatedTxnId == null) return 2;
+    final txnId = _upiTxnController.text.trim();
+    if (txnId.isEmpty || txnId.length < 5) return 2;
 
     return 3;
   }
@@ -86,64 +81,6 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amountText.isEmpty) return false;
     final amount = double.tryParse(amountText);
     return amount != null && amount >= 10;
-  }
-
-  void _startPolling(String transactionId) {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
-      try {
-        final res = await ApiService().getTransactions(page: 1, type: 'deposit');
-        if (res['success'] == true && res['data'] != null && res['data']['transactions'] != null) {
-          final List txns = res['data']['transactions'];
-          
-          final matchingTxn = txns.firstWhere(
-            (txn) => txn['_id'] == transactionId,
-            orElse: () => null,
-          );
-          
-          if (matchingTxn != null) {
-            final String status = matchingTxn['status'] ?? 'pending';
-            
-            if (status == 'approved') {
-              _stopPolling();
-              
-              final lang = Provider.of<LanguageProvider>(context, listen: false);
-              final auth = Provider.of<AuthProvider>(context, listen: false);
-              
-              await auth.getMe();
-              
-              setState(() {
-                _isVerifying = false;
-                _success = true;
-                _message = lang.isHindi
-                    ? '🎉 भुगतान सत्यापित! ₹${matchingTxn['amount']} आपके वॉलेट में जमा कर दिया गया है।'
-                    : '🎉 Payment Verified! ₹${matchingTxn['amount']} credited to your wallet.';
-                _amountController.clear();
-                _initiatedTxnId = null;
-              });
-            } else if (status == 'rejected') {
-              _stopPolling();
-              final lang = Provider.of<LanguageProvider>(context, listen: false);
-              setState(() {
-                _isVerifying = false;
-                _success = false;
-                _message = lang.isHindi
-                    ? '❌ भुगतान अस्वीकार कर दिया गया।'
-                    : '❌ Payment rejected by verification.';
-                _initiatedTxnId = null;
-              });
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Polling transaction status error: $e');
-      }
-    });
-  }
-
-  void _stopPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
   }
 
   Future<void> _handleDeposit() async {
@@ -207,44 +144,20 @@ class _DepositScreenState extends State<DepositScreen> {
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _message = null;
-    });
+    final Uri uri = Uri.parse(
+        'upi://pay?pa=$_upiId&pn=Lottery&am=${amount.toStringAsFixed(2)}&cu=INR&tn=Lottery%20Deposit');
 
     try {
-      // Step A: Initiate the transaction on backend first
-      final initRes = await ApiService().initiateDeposit(amount: amount);
-      if (initRes['success'] != true || initRes['data'] == null) {
-        throw Exception('Initiation failed');
-      }
-
-      final String transactionId = initRes['data']['transactionId'];
-      setState(() {
-        _initiatedTxnId = transactionId;
-        _isVerifying = true;
-      });
-
-      // Step B: Construct UPI link with the unique "tr" transaction ID parameter
-      final Uri uri = Uri.parse(
-          'upi://pay?pa=$_upiId&pn=Lottery&am=${amount.toStringAsFixed(2)}&tr=$transactionId&cu=INR&tn=Lottery%20Deposit');
-
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
+        setState(() {
+          _message = lang.isHindi
+              ? 'कृपया भुगतान के बाद UPI ट्रांजैक्शन ID कॉपी करें और सबमिट करने के लिए नीचे पेस्ट करें!'
+              : 'Please copy the UPI Transaction ID after payment and paste it below to submit!';
+          _success = true;
+        });
       } else {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-
-      setState(() {
-        _message = lang.isHindi
-            ? 'भुगतान पूरा करें और ऑटो-सत्यापन के लिए वापस लौटें!'
-            : 'Complete the payment and return here for automatic verification!';
-        _success = true;
-      });
-
-      // Step C: Start polling for payment success
-      _startPolling(transactionId);
-
     } catch (e) {
       setState(() {
         _success = false;
@@ -341,7 +254,6 @@ class _DepositScreenState extends State<DepositScreen> {
 
   @override
   void dispose() {
-    _stopPolling();
     _amountController.removeListener(_onFieldChanged);
     _upiTxnController.removeListener(_onFieldChanged);
     _amountController.dispose();
@@ -568,167 +480,76 @@ class _DepositScreenState extends State<DepositScreen> {
                           ),
                         ),
 
-                        // Step 3: Automatic Verification with manual backup
+                        // Step 3: Reference UTR ID & Submission
                         _buildStep(
                           stepNum: 3,
-                          title: lang.isHindi ? '3. ऑटो-सत्यापन स्थिति' : '3. Automatic Verification',
-                          subtitle: lang.isHindi 
-                              ? 'भुगतान के बाद आपका बैलेंस तुरंत अपडेट हो जाएगा' 
-                              : 'Your balance will credit automatically after payment',
+                          title: lang.isHindi ? '3. ट्रांजैक्शन ID दर्ज करें' : '3. Reference ID & Submit',
+                          subtitle: lang.isHindi ? 'पेमेंट रसीद से 12 अंकों की ID दर्ज करें' : 'Enter 12-digit payment ref ID',
                           content: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (_isVerifying)
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      const SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 3.5,
-                                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        lang.isHindi 
-                                            ? '⏳ भुगतान सत्यापन की प्रतीक्षा कर रहे हैं...' 
-                                            : '⏳ Waiting for payment verification...',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 13,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        lang.isHindi
-                                            ? 'कृपया इस स्क्रीन को बंद न करें। भुगतान पूरा होने के बाद balance स्वतः अपडेट हो जाएगा।'
-                                            : 'Please do not close this screen. Once the payment is complete, the balance will update automatically.',
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: AppTheme.textSecondary,
-                                          height: 1.4,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else if (_success && _initiatedTxnId == null && _amountController.text.isEmpty)
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.successColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppTheme.successColor.withOpacity(0.3)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.verified_user_rounded, color: AppTheme.successColor, size: 24),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          lang.isHindi 
-                                              ? 'भुगतान सफलतापूर्वक प्राप्त और सत्यापित हुआ!' 
-                                              : 'Payment successfully received and verified!',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.successColor,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.borderColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    lang.isHindi 
-                                        ? '⚡ भुगतान शुरू करने के बाद सत्यापन शुरू होगा।' 
-                                        : '⚡ Verification starts automatically after pay app launches.',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppTheme.textMuted,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                              TextFormField(
+                                controller: _upiTxnController,
+                                decoration: InputDecoration(
+                                  labelText: lang.isHindi ? 'UPI ट्रांजैक्शन / UTR ID' : 'UPI Transaction / UTR ID',
+                                  prefixIcon: const Icon(Icons.receipt_long, color: AppTheme.textMuted),
+                                  hintText: lang.isHindi ? '12 अंकों की txn ID यहां पेस्ट करें' : 'Paste 12-digit txn ID here',
                                 ),
-                              const SizedBox(height: 12),
-                              
-                              // Legacy manual fallback option (Expandable)
-                              Theme(
-                                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                                child: ExpansionTile(
-                                  title: Text(
-                                    lang.isHindi 
-                                        ? 'मैन्युअल रूप से UTR ID दर्ज करें (वैकल्पिक)' 
-                                        : 'Submit UTR ID manually (Fallback)',
-                                    style: const TextStyle(
-                                      fontSize: 11, 
-                                      color: AppTheme.textSecondary,
-                                      fontWeight: FontWeight.w700,
-                                      decoration: TextDecoration.underline,
+                                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) {
+                                    return lang.isHindi ? 'UPI ट्रांजैक्शन ID दर्ज करें' : 'Enter UPI transaction ID';
+                                  }
+                                  if (val.length < 5) {
+                                    return lang.isHindi ? 'अमान्य ट्रांजैक्शन ID' : 'Invalid transaction ID';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.info_outline, size: 12, color: AppTheme.textMuted),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      lang.isHindi
+                                          ? 'GPay में UTR नंबर या PhonePe/Paytm में UPI Ref No. पेस्ट करें।'
+                                          : 'Locate 12-digit UTR/Ref No. in payment details screen.',
+                                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
                                     ),
                                   ),
-                                  tilePadding: EdgeInsets.zero,
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _upiTxnController,
-                                      decoration: InputDecoration(
-                                        labelText: lang.isHindi ? 'UPI ट्रांजैक्शन / UTR ID' : 'UPI Transaction / UTR ID',
-                                        prefixIcon: const Icon(Icons.receipt_long, color: AppTheme.textMuted),
-                                        hintText: lang.isHindi ? '12 अंकों की txn ID यहां पेस्ट करें' : 'Paste 12-digit txn ID here',
-                                      ),
-                                      style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Submission Trigger
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: _loading ? null : _handleDeposit,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.successColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 40,
-                                      child: ElevatedButton(
-                                        onPressed: _loading ? null : _handleDeposit,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.successColor,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                    shadowColor: AppTheme.successColor.withOpacity(0.3),
+                                  ),
+                                  child: _loading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
                                           ),
+                                        )
+                                      : Text(
+                                          lang.isHindi ? 'जमा अनुरोध सबमिट करें' : 'Submit Deposit Request',
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                                         ),
-                                        child: _loading
-                                            ? const SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                            : Text(
-                                                lang.isHindi ? 'मैन्युअल अनुरोध सबमिट करें' : 'Submit Manual Request',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                              ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ],
