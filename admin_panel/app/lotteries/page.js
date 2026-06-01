@@ -81,7 +81,7 @@ export default function LotteriesPage() {
                   <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatDate(lottery.drawDate)}</td>
                   <td><span className={`badge-status ${lottery.status}`}>{lottery.status}</span></td>
                   <td>
-                    <Link href={`/lotteries/${lottery._id}`} className="btn btn-outline btn-sm">
+                    <Link href={`/lotteries/detail?id=${lottery._id}`} className="btn btn-outline btn-sm">
                       View Details
                     </Link>
                   </td>

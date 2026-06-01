@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
-export default function LotteryDetailPage({ params }) {
-  const { id } = use(params);
+function LotteryDetailContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const router = useRouter();
   const [lottery, setLottery] = useState(null);
   const [tickets, setTickets] = useState([]);
@@ -23,6 +24,7 @@ export default function LotteryDetailPage({ params }) {
   const [rankCustoms, setRankCustoms] = useState(Array(10).fill([]));
 
   async function loadLottery() {
+    if (!id) return;
     try {
       const data = await api.getLotteryDetail(id);
       if (data.success) {
@@ -485,5 +487,13 @@ export default function LotteryDetailPage({ params }) {
 
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
     </>
+  );
+}
+
+export default function LotteryDetailPage() {
+  return (
+    <Suspense fallback={<div className="loading"><div className="loading-spinner"></div>Loading lottery details...</div>}>
+      <LotteryDetailContent />
+    </Suspense>
   );
 }

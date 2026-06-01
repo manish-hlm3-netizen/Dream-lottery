@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LottoAdmin</string>
+    <string name="title_activity_main">LottoAdmin</string>
+    <string name="package_name">com.lotto.admin</string>
+    <string name="custom_url_scheme">com.lotto.admin</string>
+</resources>
