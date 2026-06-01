@@ -4,8 +4,17 @@ const router = express.Router();
 const walletController = require('../controllers/walletController');
 const auth = require('../middleware/auth');
 
-// All wallet routes require authentication
+// Public Webhook route (does NOT require authentication)
+router.post('/webhook/upi', walletController.handleUPIWebhook);
+
+// All other wallet routes require authentication
 router.use(auth);
+
+// @route   POST /api/wallet/deposit/initiate
+router.post('/deposit/initiate', [
+  body('amount')
+    .isFloat({ min: 10 }).withMessage('Minimum deposit is ₹10')
+], walletController.initiateDeposit);
 
 // @route   GET /api/wallet/balance
 router.get('/balance', walletController.getBalance);

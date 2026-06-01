@@ -103,6 +103,15 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> initiateDeposit({
+    required double amount,
+  }) async {
+    final response = await _dio.post(ApiConfig.walletDepositInitiate, data: {
+      'amount': amount,
+    });
+    return response.data;
+  }
+
   Future<Map<String, dynamic>> withdraw({
     required double amount,
     required String upiId,

@@ -14,6 +14,7 @@ class ApiConfig {
   // Wallet endpoints
   static const String walletBalance = '/wallet/balance';
   static const String walletDeposit = '/wallet/deposit';
+  static const String walletDepositInitiate = '/wallet/deposit/initiate';
   static const String walletWithdraw = '/wallet/withdraw';
   static const String walletTransactions = '/wallet/transactions';
   static const String walletWithdrawals = '/wallet/withdrawals';

@@ -224,3 +224,140 @@ exports.getWithdrawals = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+/**
+ * @desc    Initiate a deposit request (Dynamic UPI transaction)
+ * @route   POST /api/wallet/deposit/initiate
+ * @access  Private
+ */
+exports.initiateDeposit = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { amount } = req.body;
+
+    // Create a pending transaction first to obtain a unique _id
+    const transaction = await Transaction.create({
+      userId: req.user._id,
+      type: 'deposit',
+      amount,
+      upiTransactionId: `initiated_${Date.now()}`, // Temporary placeholder
+      status: 'pending',
+      description: `Deposit of ₹${amount} via dynamic UPI intent`
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Deposit initiated successfully',
+      data: {
+        transactionId: transaction._id,
+        amount: transaction.amount,
+        status: transaction.status,
+        createdAt: transaction.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Initiate deposit error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Handle UPI payment webhook callback (Automated verification)
+ * @route   POST /api/wallet/webhook/upi
+ * @access  Public
+ */
+exports.handleUPIWebhook = async (req, res) => {
+  try {
+    const secret = req.headers['x-upi-webhook-secret'] || req.body.secret;
+    const expectedSecret = process.env.UPI_WEBHOOK_SECRET || 'super_secret_upi_webhook_key';
+
+    if (secret !== expectedSecret) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: Invalid webhook secret'
+      });
+    }
+
+    const { transactionId, status, upiTxnId, amount } = req.body;
+
+    if (!transactionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing transactionId in webhook body'
+      });
+    }
+
+    // Find the pending transaction
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction || transaction.type !== 'deposit') {
+      return res.status(404).json({
+        success: false,
+        message: 'Deposit transaction not found'
+      });
+    }
+
+    if (transaction.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Transaction already processed (status: ${transaction.status})`
+      });
+    }
+
+    // Verify amount matches (to prevent spoofing or paying lower amounts)
+    if (parseFloat(amount) !== parseFloat(transaction.amount)) {
+      return res.status(400).json({
+        success: false,
+        message: `Amount mismatch. Expected: ₹${transaction.amount}, Received: ₹${amount}`
+      });
+    }
+
+    if (status === 'SUCCESS') {
+      // Find the user and credit their wallet
+      const user = await User.findById(transaction.userId);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      user.walletBalance += parseFloat(amount);
+      await user.save();
+
+      // Update the transaction details
+      transaction.status = 'approved';
+      transaction.upiTransactionId = upiTxnId || `auto_${transactionId}`;
+      transaction.description = `Deposit of ₹${amount} automatically verified via UPI Webhook`;
+      transaction.processedAt = new Date();
+      await transaction.save();
+
+      console.log(`✅ Auto-approved deposit of ₹${amount} for user ${user.name} (${user._id})`);
+
+      return res.json({
+        success: true,
+        message: 'Webhook processed successfully. Wallet credited.'
+      });
+    } else {
+      // Mark transaction as rejected/failed
+      transaction.status = 'rejected';
+      transaction.adminNote = 'Payment failed/cancelled according to gateway webhook callback';
+      transaction.processedAt = new Date();
+      await transaction.save();
+
+      console.log(`❌ Rejected deposit of ₹${amount} - Webhook reported failed status.`);
+
+      return res.json({
+        success: true,
+        message: 'Webhook processed successfully. Transaction marked as failed.'
+      });
+    }
+  } catch (error) {
+    console.error('UPI Webhook processing error:', error);
+    res.status(500).json({ success: false, message: 'Server error during webhook processing' });
+  }
+};
