@@ -3,6 +3,27 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Withdrawal = require('../models/Withdrawal');
 
+// Webhooky Real-time Admin Notification Helper
+const sendAdminNotification = async (title, message) => {
+  try {
+    const webhookUrl = 'https://webhookreceiver-ps6nryst2a-ey.a.run.app/3c555gajhxxbzgowt2knoun4yt5fvglb';
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        message,
+        timestamp: new Date().toISOString()
+      })
+    });
+    console.log(`🔔 Webhooky Push Notification Sent: "${title}"`);
+  } catch (err) {
+    console.error('❌ Failed to send Webhooky notification:', err.message);
+  }
+};
+
 /**
  * @desc    Get wallet balance
  * @route   GET /api/wallet/balance
@@ -64,6 +85,12 @@ exports.deposit = async (req, res) => {
       status: 'pending',
       description: `Deposit of ₹${amount} via UPI`
     });
+
+    // Send real-time push notification to Admin
+    sendAdminNotification(
+      '💰 Manual Deposit Submitted',
+      `User ${req.user.name} submitted UTR ID: ${transaction.upiTransactionId} for ₹${transaction.amount}.`
+    );
 
     res.status(201).json({
       success: true,
@@ -142,6 +169,12 @@ exports.withdraw = async (req, res) => {
       status: 'pending',
       description: `Withdrawal of ₹${amount} to UPI: ${upiId}`
     });
+
+    // Send real-time push notification to Admin
+    sendAdminNotification(
+      '💸 New Withdrawal Request',
+      `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
+    );
 
     res.status(201).json({
       success: true,
@@ -252,6 +285,12 @@ exports.initiateDeposit = async (req, res) => {
       status: 'pending',
       description: `Deposit of ₹${amount} via dynamic UPI intent`
     });
+
+    // Send real-time push notification to Admin
+    sendAdminNotification(
+      '⚡ UPI Deposit Initiated',
+      `User ${req.user.name} initiated a dynamic UPI deposit of ₹${transaction.amount}. Transaction ID: ${transaction._id}`
+    );
 
     res.status(201).json({
       success: true,
