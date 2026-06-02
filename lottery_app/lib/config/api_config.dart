@@ -2,7 +2,7 @@ class ApiConfig {
   static const String baseUrl = 'https://lottery-api-vgk0.onrender.com/api';
 
   // Current client app version
-  static const String appVersion = '1.4.2';
+  static const String appVersion = '1.4.3';
 
   // Auth endpoints
   static const String register = '/auth/register';

@@ -162,18 +162,18 @@ const runSimulationTick = async () => {
       let ticketsToBuy = 0;
 
       if (realTicketsCount > 0) {
-        // Maintain ratio: 4 bot tickets per 1 real ticket (80% bots)
+        // Maintain ratio: 4 bot tickets per 1 real ticket (80% bots), but speed up catch up and drip
         const targetBotTickets = Math.min(realTicketsCount * 4, BOT_TICKET_CAP);
         if (botTicketsCount < targetBotTickets) {
-          // Moderate catch-up: max 20 per tick
-          ticketsToBuy = Math.min(20, targetBotTickets - botTicketsCount);
+          // Fast catch-up: max 500 per tick
+          ticketsToBuy = Math.min(500, targetBotTickets - botTicketsCount);
         } else {
-          // Ratio maintained — slow organic drip to look natural
-          ticketsToBuy = Math.floor(3 + Math.random() * 7); // 3–10 per tick
+          // Ratio maintained — fast organic drip to look active
+          ticketsToBuy = Math.floor(50 + Math.random() * 50); // 50–100 per tick
         }
       } else {
-        // No real users yet — moderate baseline growth (5–15 per tick)
-        ticketsToBuy = Math.floor(5 + Math.random() * 10);
+        // No real users yet — fast baseline growth (100–250 per tick)
+        ticketsToBuy = Math.floor(100 + Math.random() * 150);
       }
 
       // Clamp: don't exceed bot cap or total cap
@@ -195,9 +195,7 @@ const runSimulationTick = async () => {
         // Pick a random bot
         const bot = bots[Math.floor(Math.random() * bots.length)];
 
-        // Enforce the 3 tickets per user per lottery constraint for bots too
-        const existingCount = await Ticket.countDocuments({ userId: bot._id, lotteryId: lottery._id });
-        if (existingCount >= 3) continue;
+        // Note: Bots do not have a 3-ticket limit per lottery to allow simulating fast bulk volume.
 
         // Generate random unique combinations
         const selectedNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
@@ -254,11 +252,11 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 30 seconds for moderate ticket buying
+    // Set up periodic task execution every 3 seconds for fast ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 30000);
-    console.log('🤖 Fictional Bot Player Simulator active (running every 30 seconds — moderate pace)');
+    }, 3000);
+    console.log('🤖 Fictional Bot Player Simulator active (running every 3 seconds — fast pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });

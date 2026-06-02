@@ -305,9 +305,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  lang.isHindi
-                                                      ? '$ticketsLeft टिकट बचे'
-                                                      : '$ticketsLeft tickets left',
+                                                  '$totalSold ${lang.translate('tickets_sold')}',
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w700,
