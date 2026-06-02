@@ -290,8 +290,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
             try {
               final dio = Dio();
-              final tempDir = await getTemporaryDirectory();
-              final apkPath = '${tempDir.path}/dream-lottery-update.apk';
+              
+              Directory? updateDir;
+              if (Platform.isAndroid) {
+                // Use app-specific external cache/files dir on Android to prevent Xiaomi/Oppo/Vivo private folder security errors
+                try {
+                  final extDirs = await getExternalCacheDirectories();
+                  if (extDirs != null && extDirs.isNotEmpty) {
+                    updateDir = extDirs.first;
+                  } else {
+                    updateDir = await getExternalStorageDirectory();
+                  }
+                } catch (err) {
+                  debugPrint('Failed to get external directories: $err');
+                }
+              }
+              updateDir ??= await getTemporaryDirectory();
+              final apkPath = '${updateDir.path}/dream-lottery-update.apk';
 
               // Delete old update file if it exists to avoid conflicts
               final file = File(apkPath);
@@ -324,15 +339,31 @@ class _SplashScreenState extends State<SplashScreen> {
               if (result.type != ResultType.done) {
                 setDialogState(() {
                   isDownloading = false;
-                  statusText = 'Failed to install: ${result.message}';
+                  statusText = 'Install failed locally. Opening browser download...';
                 });
+                
+                // Fallback to browser download if local installation fails
+                final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               }
             } catch (e) {
               debugPrint('Error during update download/install: $e');
               setDialogState(() {
                 isDownloading = false;
-                statusText = 'Download failed. Please try again.';
+                statusText = 'Install failed. Opening browser download...';
               });
+              
+              // Fallback to browser download on error
+              final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download');
+              try {
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              } catch (launchError) {
+                debugPrint('Failed to launch browser: $launchError');
+              }
             }
           }
 
