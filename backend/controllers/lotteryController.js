@@ -144,15 +144,23 @@ exports.buyTicket = async (req, res) => {
 
     // Check wallet balance
     const user = await User.findById(req.user._id);
-    if (user.walletBalance < lottery.ticketPrice) {
+    const totalBalance = (user.walletBalance || 0) + (user.referralBalance || 0);
+    if (totalBalance < lottery.ticketPrice) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient balance. Ticket costs ₹${lottery.ticketPrice}. Your balance: ₹${user.walletBalance}`
+        message: `Insufficient balance. Ticket costs ₹${lottery.ticketPrice}. Your balance: ₹${totalBalance}`
       });
     }
 
-    // Deduct from wallet
-    user.walletBalance -= lottery.ticketPrice;
+    // Deduct from wallet: referral balance first, then deposit balance
+    let remainingToPay = lottery.ticketPrice;
+    if ((user.referralBalance || 0) >= remainingToPay) {
+      user.referralBalance -= remainingToPay;
+    } else {
+      remainingToPay -= (user.referralBalance || 0);
+      user.referralBalance = 0;
+      user.walletBalance -= remainingToPay;
+    }
     await user.save();
 
     // Create ticket
@@ -274,11 +282,33 @@ exports.getResults = async (req, res) => {
   try {
     const lotteries = await Lottery.find({ status: 'completed' })
       .sort({ drawDate: -1 })
-      .limit(20);
+      .limit(20)
+      .lean();
+
+    const results = [];
+    for (const lottery of lotteries) {
+      const rank1Tickets = await Ticket.find({
+        lotteryId: lottery._id,
+        status: 'won',
+        rank: 1
+      }).populate('userId', 'name');
+
+      let rank1WinnerName = 'No Winner';
+      if (rank1Tickets.length > 0) {
+        rank1WinnerName = rank1Tickets
+          .map(t => t.userId ? t.userId.name : 'Unknown User')
+          .join(', ');
+      }
+
+      results.push({
+        ...lottery,
+        rank1WinnerName
+      });
+    }
 
     res.json({
       success: true,
-      data: { lotteries }
+      data: { lotteries: results }
     });
   } catch (error) {
     console.error('Get results error:', error);

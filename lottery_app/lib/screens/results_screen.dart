@@ -330,52 +330,62 @@ class _ResultCardState extends State<_ResultCard> {
                   const Divider(color: AppTheme.borderColor, height: 1),
                   const SizedBox(height: 16),
 
-                  // Enhanced Information Grid (2x3 Layout)
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.8,
+                  // Redesigned simplified info: Rank 1 Winner & Ticket Price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'टिकट मूल्य' : 'Ticket Price',
-                        '₹${widget.lottery['ticketPrice']}',
-                        context,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (widget.lang.isHindi ? 'रैंक 1 विजेता' : 'RANK 1 WINNER').toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.textMuted,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.lottery['rank1WinnerName'] ?? (widget.lang.isHindi ? 'कोई विजेता नहीं' : 'No Winner'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: AppTheme.successColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'जैकपॉट पूल' : 'Jackpot Pool',
-                        '₹$jackpot',
-                        context,
-                        valueColor: AppTheme.warningColor,
-                      ),
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'टिकट बिके' : 'Tickets Sold',
-                        '${widget.lottery['totalTicketsSold'] ?? 0}',
-                        context,
-                      ),
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'कुल बिक्री' : 'Total Sales',
-                        '₹$revenue',
-                        context,
-                      ),
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'कुल इनाम भुगतान' : 'Total Paid Out',
-                        '₹$prizesPaid',
-                        context,
-                        valueColor: AppTheme.successColor,
-                      ),
-                      _buildGridInfo(
-                        widget.lang.isHindi ? 'शुद्ध राजस्व' : 'Net Profit',
-                        '₹$netProfit',
-                        context,
-                        valueColor: netProfit >= 0 ? AppTheme.infoColor : AppTheme.dangerColor,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            (widget.lang.isHindi ? 'टिकट मूल्य' : 'TICKET PRICE').toUpperCase(),
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₹${widget.lottery['ticketPrice']}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   
                   // Expandable Ranks Section Toggle
                   InkWell(
@@ -401,8 +411,8 @@ class _ResultCardState extends State<_ResultCard> {
                               const SizedBox(width: 6),
                               Text(
                                 widget.lang.isHindi 
-                                    ? (_isExpanded ? 'अन्य रैंक छिपाएं' : 'अन्य 9 रैंक विजेता संयोजन देखें')
-                                    : (_isExpanded ? 'Hide Lower Ranks' : 'View Other Ranks Drawn'),
+                                    ? (_isExpanded ? 'रैंक छिपाएं' : 'सभी 10 रैंक संयोजन देखें')
+                                    : (_isExpanded ? 'Hide Ranks' : 'View All 10 Ranks Drawn'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -424,9 +434,9 @@ class _ResultCardState extends State<_ResultCard> {
                   // Collapsible ranks list
                   if (_isExpanded) ...[
                     const SizedBox(height: 12),
-                    ...List.generate(9, (idx) {
-                      final rank = idx + 2; // Rank 2 to 10
-                      final rankNumbers = (widget.lottery['rankWinningNumbers'] as List?)?[idx + 1] as List?;
+                    ...List.generate(10, (idx) {
+                      final rank = idx + 1; // Rank 1 to 10
+                      final rankNumbers = (widget.lottery['rankWinningNumbers'] as List?)?[idx] as List?;
                       final prize = _getPrizeForRank(rank, prizes);
                       
                       if (rankNumbers == null || rankNumbers.isEmpty) return const SizedBox.shrink();
@@ -548,33 +558,6 @@ class _ResultCardState extends State<_ResultCard> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildGridInfo(String label, String value, BuildContext context, {Color? valueColor}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            color: AppTheme.textMuted,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 13,
-            color: valueColor ?? AppTheme.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }

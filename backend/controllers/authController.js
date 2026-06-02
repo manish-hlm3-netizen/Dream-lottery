@@ -61,12 +61,13 @@ exports.register = async (req, res) => {
       phone,
       password,
       referredBy,
-      walletBalance: referredBy ? 20 : 0
+      walletBalance: 0,
+      referralBalance: referredBy ? 20 : 0
     });
 
     // Reward referrer if found
     if (referrer) {
-      referrer.walletBalance += 50;
+      referrer.referralBalance += 50;
       referrer.referralEarnings += 50;
       referrer.referredUsersCount += 1;
       await referrer.save();
@@ -105,6 +106,7 @@ exports.register = async (req, res) => {
           phone: user.phone,
           role: user.role,
           walletBalance: user.walletBalance,
+          referralBalance: user.referralBalance || 0,
           referralCode: user.referralCode
         }
       }
@@ -181,7 +183,8 @@ exports.login = async (req, res) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          walletBalance: user.walletBalance
+          walletBalance: user.walletBalance,
+          referralBalance: user.referralBalance || 0
         }
       }
     });
@@ -211,6 +214,7 @@ exports.getMe = async (req, res) => {
         phone: user.phone,
         role: user.role,
         walletBalance: user.walletBalance,
+        referralBalance: user.referralBalance || 0,
         createdAt: user.createdAt
       }
     });
@@ -250,7 +254,8 @@ exports.updateProfile = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        walletBalance: user.walletBalance
+        walletBalance: user.walletBalance,
+        referralBalance: user.referralBalance || 0
       }
     });
   } catch (error) {

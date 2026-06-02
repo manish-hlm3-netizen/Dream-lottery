@@ -108,7 +108,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                        Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(lang.translate('available_balance'),
+                          Text(lang.isHindi ? 'निकासी योग्य बैलेंस' : 'Withdrawable Balance',
                               style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
                           Text(
                             '₹${auth.walletBalance.toStringAsFixed(0)}',

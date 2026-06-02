@@ -334,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             color: AppTheme.textMuted, fontSize: 12),
                                       ),
                                       Text(
-                                        '₹${auth.walletBalance.toStringAsFixed(0)}',
+                                        '₹${(auth.walletBalance + auth.referralBalance).toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 24,
                                           fontWeight: FontWeight.w700,

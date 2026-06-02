@@ -54,7 +54,25 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Public direct APK download endpoint
 app.get('/api/app/download', (req, res) => {
-  const apkPath = path.join(__dirname, 'public/app-release.apk');
+  const fs = require('fs');
+  const publicDir = path.join(__dirname, 'public');
+  let targetApk = 'app-release.apk';
+
+  try {
+    if (fs.existsSync(publicDir)) {
+      const files = fs.readdirSync(publicDir);
+      const apkFiles = files.filter(f => f.startsWith('app-release-') && f.endsWith('.apk'));
+      if (apkFiles.length > 0) {
+        // Sort files descending to pick the one with the latest version name
+        apkFiles.sort((a, b) => b.localeCompare(a));
+        targetApk = apkFiles[0];
+      }
+    }
+  } catch (err) {
+    console.error('Error scanning public folder for versioned APKs:', err);
+  }
+
+  const apkPath = path.join(publicDir, targetApk);
   res.download(apkPath, 'dream-lottery.apk', (err) => {
     if (err) {
       console.error('Download error:', err);

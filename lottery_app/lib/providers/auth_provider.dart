@@ -17,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   String get userName => _user?['name'] ?? '';
   String get userEmail => _user?['email'] ?? '';
   double get walletBalance => (_user?['walletBalance'] ?? 0).toDouble();
+  double get referralBalance => (_user?['referralBalance'] ?? 0).toDouble();
 
   Future<void> checkAuth() async {
     final token = await StorageService.getToken();
@@ -144,6 +145,15 @@ class AuthProvider with ChangeNotifier {
     if (_user != null) {
       _user!['walletBalance'] = newBalance;
       // Update local secure cache as well
+      StorageService.saveUserData(_user!);
+      notifyListeners();
+    }
+  }
+
+  void updateBalances(double newWalletBalance, double newReferralBalance) {
+    if (_user != null) {
+      _user!['walletBalance'] = newWalletBalance;
+      _user!['referralBalance'] = newReferralBalance;
       StorageService.saveUserData(_user!);
       notifyListeners();
     }

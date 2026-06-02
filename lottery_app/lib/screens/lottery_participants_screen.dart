@@ -55,7 +55,12 @@ class _LotteryParticipantsScreenState extends State<LotteryParticipantsScreen> {
           } else {
             _rankWinningNumbers = [];
           }
-          _winners = data['winners'] ?? [];
+          final rawWinners = data['winners'] as List? ?? [];
+          _winners = List.from(rawWinners)..sort((a, b) {
+            final rankA = a['rank'] ?? 99;
+            final rankB = b['rank'] ?? 99;
+            return rankA.compareTo(rankB);
+          });
           _lost = data['lost'] ?? [];
           _drawDate = data['drawDate'] ?? '';
           _lotteryName = data['name'] ?? widget.lotteryName;

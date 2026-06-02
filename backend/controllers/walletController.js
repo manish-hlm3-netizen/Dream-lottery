@@ -35,7 +35,8 @@ exports.getBalance = async (req, res) => {
     res.json({
       success: true,
       data: {
-        balance: user.walletBalance
+        balance: user.walletBalance,
+        referralBalance: user.referralBalance || 0
       }
     });
   } catch (error) {

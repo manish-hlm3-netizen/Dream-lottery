@@ -753,11 +753,11 @@ exports.getLotteryDetail = async (req, res) => {
  */
 exports.updateUserWallet = async (req, res) => {
   try {
-    const { balance } = req.body;
-    if (balance === undefined || isNaN(balance) || balance < 0) {
+    const { balance, referralBalance } = req.body;
+    if (balance === undefined && referralBalance === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid wallet balance (minimum 0)'
+        message: 'Please provide a wallet balance or referral balance to update'
       });
     }
 
@@ -769,18 +769,43 @@ exports.updateUserWallet = async (req, res) => {
       });
     }
 
-    const oldBalance = user.walletBalance;
-    user.walletBalance = balance;
-    await user.save();
+    if (balance !== undefined) {
+      if (isNaN(balance) || balance < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid wallet balance (minimum 0)'
+        });
+      }
+      const oldBalance = user.walletBalance;
+      user.walletBalance = balance;
+      await Transaction.create({
+        userId: user._id,
+        type: 'deposit',
+        amount: Math.abs(balance - oldBalance),
+        status: 'approved',
+        description: `Manual wallet adjustment by Admin from ₹${oldBalance} to ₹${balance}`
+      });
+    }
 
-    // Create a transaction log for manual adjustments
-    await Transaction.create({
-      userId: user._id,
-      type: 'deposit',
-      amount: Math.abs(balance - oldBalance),
-      status: 'approved',
-      description: `Manual wallet adjustment by Admin from ₹${oldBalance} to ₹${balance}`
-    });
+    if (referralBalance !== undefined) {
+      if (isNaN(referralBalance) || referralBalance < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid referral balance (minimum 0)'
+        });
+      }
+      const oldRefBalance = user.referralBalance || 0;
+      user.referralBalance = referralBalance;
+      await Transaction.create({
+        userId: user._id,
+        type: 'referral',
+        amount: Math.abs(referralBalance - oldRefBalance),
+        status: 'approved',
+        description: `Manual referral balance adjustment by Admin from ₹${oldRefBalance} to ₹${referralBalance}`
+      });
+    }
+
+    await user.save();
 
     res.json({
       success: true,

@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Wallet balance cannot be negative']
   },
+  referralBalance: {
+    type: Number,
+    default: 0,
+    min: [0, 'Referral balance cannot be negative']
+  },
   isActive: {
     type: Boolean,
     default: true
