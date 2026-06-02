@@ -96,7 +96,11 @@ const processAutomaticDraw = async (lottery) => {
       }
     }
 
-    // Apply the split division to final prizeWon and process tickets
+    // Apply the split division to final prizeWon and process tickets in bulk
+    const bulkTicketUpdates = [];
+    const bulkUserUpdates = [];
+    const bulkTransactions = [];
+
     for (const res of ticketResults) {
       let finalPrize = res.initialPrize;
       let splitCount = 1;
@@ -113,24 +117,35 @@ const processAutomaticDraw = async (lottery) => {
       const matchedNumbers = res.matchedNumbers;
       const matchCount = res.matchCount;
 
-      ticket.matchedNumbers = matchedNumbers;
-      ticket.matchCount = matchCount;
-      ticket.prizeWon = prizeWon;
-      ticket.status = prizeWon > 0 ? 'won' : 'lost';
-      ticket.rank = res.rank;
-      await ticket.save();
+      bulkTicketUpdates.push({
+        updateOne: {
+          filter: { _id: ticket._id },
+          update: {
+            $set: {
+              matchedNumbers,
+              matchCount,
+              prizeWon,
+              status: prizeWon > 0 ? 'won' : 'lost',
+              rank: res.rank
+            }
+          }
+        }
+      });
 
       if (prizeWon > 0) {
         // Credit winnings
-        await User.findByIdAndUpdate(ticket.userId, {
-          $inc: { walletBalance: prizeWon }
+        bulkUserUpdates.push({
+          updateOne: {
+            filter: { _id: ticket.userId },
+            update: { $inc: { walletBalance: prizeWon } }
+          }
         });
 
         // Create transaction
         const splitDesc = splitCount > 1 
           ? ` (Split among ${splitCount} winners with identical numbers)` 
           : '';
-        await Transaction.create({
+        bulkTransactions.push({
           userId: ticket.userId,
           type: 'winnings',
           amount: prizeWon,
@@ -141,6 +156,17 @@ const processAutomaticDraw = async (lottery) => {
         totalPrizesPaid += prizeWon;
         winnersCount++;
       }
+    }
+
+    // Execute bulk database updates in parallel
+    if (bulkTicketUpdates.length > 0) {
+      await Ticket.bulkWrite(bulkTicketUpdates);
+    }
+    if (bulkUserUpdates.length > 0) {
+      await User.bulkWrite(bulkUserUpdates);
+    }
+    if (bulkTransactions.length > 0) {
+      await Transaction.insertMany(bulkTransactions);
     }
 
     // Construct finalRankWinningNumbers array for transparency and fairness (10 ranks)

@@ -113,7 +113,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
                       // Urgency metrics (Left Ticket)
                       final int totalSold = lottery['totalTicketsSold'] ?? 0;
-                      final int maxTickets = 100000; // Total ticket cap per lottery
+                      final int maxTickets = 10000; // Total ticket cap per lottery
                       final int ticketsLeft = (maxTickets - totalSold).clamp(0, maxTickets);
                       final double progress = (totalSold / maxTickets).clamp(0.0, 1.0);
 

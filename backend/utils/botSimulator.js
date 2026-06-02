@@ -107,9 +107,9 @@ const seedBotPlayers = async () => {
  * Total ticket cap per lottery (shown in UI as 100,000)
  * Bots are capped at 99,500 — reserving 500 slots for real users.
  */
-const MAX_TICKETS_PER_LOTTERY = 100000;
-const BOT_TICKET_CAP = 99500;  // 99,500 for bots
-const REAL_USER_RESERVED = 500; // 500 reserved for real players
+const MAX_TICKETS_PER_LOTTERY = 10000;
+const BOT_TICKET_CAP = 9950;  // 9,950 for bots
+const REAL_USER_RESERVED = 50; // 50 reserved for real players
 
 const runSimulationTick = async () => {
   try {
@@ -137,15 +137,15 @@ const runSimulationTick = async () => {
 
       const totalTicketsSold = realTicketsCount + botTicketsCount;
 
-      // Hard cap: stop if total reached 100,000
+      // Hard cap: stop if total reached MAX_TICKETS_PER_LOTTERY
       if (totalTicketsSold >= MAX_TICKETS_PER_LOTTERY) {
-        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] reached the 100,000 ticket cap. Stopping.`);
+        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] reached the ${MAX_TICKETS_PER_LOTTERY} ticket cap. Stopping.`);
         continue;
       }
 
-      // Bot cap: bots cannot exceed 99,500 tickets
+      // Bot cap: bots cannot exceed BOT_TICKET_CAP tickets
       if (botTicketsCount >= BOT_TICKET_CAP) {
-        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] bot cap (99,500) reached. Reserving remaining for real users.`);
+        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] bot cap (${BOT_TICKET_CAP}) reached. Reserving remaining for real users.`);
         continue;
       }
 
@@ -236,12 +236,53 @@ const runSimulationTick = async () => {
 };
 
 /**
+ * Clean up bot tickets and transactions older than 3 days to protect database storage
+ */
+const runBotCleanup = async () => {
+  try {
+    console.log('🧹 Bot Simulator: Running cleanup of bot tickets and transactions older than 3 days...');
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const bots = await User.find({ isBot: true }, { _id: 1 });
+    const botIds = bots.map(b => b._id);
+
+    if (botIds.length > 0) {
+      // Find completed lotteries older than 3 days
+      const completedLotteries = await Lottery.find({ status: 'completed', drawDate: { $lte: threeDaysAgo } }, { _id: 1 });
+      const completedLotteryIds = completedLotteries.map(l => l._id);
+
+      let ticketsDeleted = 0;
+      if (completedLotteryIds.length > 0) {
+        const ticketDelResult = await Ticket.deleteMany({
+          lotteryId: { $in: completedLotteryIds },
+          userId: { $in: botIds }
+        });
+        ticketsDeleted = ticketDelResult.deletedCount;
+      }
+
+      const transDelResult = await Transaction.deleteMany({
+        userId: { $in: botIds },
+        createdAt: { $lte: threeDaysAgo }
+      });
+
+      console.log(`   ✅ Cleaned up ${ticketsDeleted} old bot tickets and ${transDelResult.deletedCount} old bot transactions.`);
+    }
+  } catch (cleanupError) {
+    console.error('❌ Bot Simulator: Cleanup task error:', cleanupError);
+  }
+};
+
+/**
  * Start bot simulation loop
  */
 const startBotSimulator = async () => {
   // Run seeding asynchronously so it does NOT block the main Express server startup binding!
   // This allows the server to immediately report as healthy to Render/AWS.
-  seedBotPlayers().then(() => {
+  seedBotPlayers().then(async () => {
+    // Run cleanup on startup
+    await runBotCleanup();
+
     // Run immediately on startup
     runSimulationTick();
     
@@ -249,6 +290,12 @@ const startBotSimulator = async () => {
     setInterval(async () => {
       await runSimulationTick();
     }, 5000);
+
+    // Run daily cleanup at midnight
+    cron.schedule('0 0 * * *', async () => {
+      await runBotCleanup();
+    });
+
     console.log('🤖 Fictional Bot Player Simulator active (running every 5 seconds — fast bulk pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
