@@ -11,6 +11,7 @@ import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,9 +36,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeVideo() async {
     try {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse('https://cdn.dribbble.com/userupload/28360722/file/original-4aed894ee6a4a98d3fa93b9388929f64.mp4'),
-      );
+      final appDir = await getApplicationSupportDirectory();
+      final localVideoPath = '${appDir.path}/splash_video.mp4';
+      final localFile = File(localVideoPath);
+
+      if (await localFile.exists()) {
+        debugPrint('📺 Splash Screen: Loading video from local cache...');
+        _videoController = VideoPlayerController.file(localFile);
+      } else {
+        debugPrint('📺 Splash Screen: Cache miss. Loading video from network...');
+        _videoController = VideoPlayerController.networkUrl(
+          Uri.parse('https://cdn.dribbble.com/userupload/28360722/file/original-4aed894ee6a4a98d3fa93b9388929f64.mp4'),
+        );
+        // Start background download for next time
+        _downloadVideoToCache(localVideoPath);
+      }
       
       await _videoController.initialize();
       _videoController.setLooping(true);
@@ -51,6 +64,19 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       debugPrint('Error initializing splash video: $e');
+    }
+  }
+
+  Future<void> _downloadVideoToCache(String targetPath) async {
+    try {
+      final dio = Dio();
+      await dio.download(
+        'https://cdn.dribbble.com/userupload/28360722/file/original-4aed894ee6a4a98d3fa93b9388929f64.mp4',
+        targetPath,
+      );
+      debugPrint('📺 Splash Screen: Video downloaded and cached successfully.');
+    } catch (e) {
+      debugPrint('📺 Splash Screen: Failed to cache video: $e');
     }
   }
 
@@ -122,9 +148,9 @@ class _SplashScreenState extends State<SplashScreen> {
       _nextRoute = '/login';
     }
 
-    // Enforce a minimum play time of 3.5 seconds for the video splash screen
+    // Enforce a minimum play time of 1.5 seconds for the video splash screen
     final elapsed = DateTime.now().difference(startTime);
-    final remainingDelay = const Duration(milliseconds: 3500) - elapsed;
+    final remainingDelay = const Duration(milliseconds: 1500) - elapsed;
     
     if (remainingDelay > Duration.zero) {
       await Future.delayed(remainingDelay);
@@ -237,6 +263,24 @@ class _SplashScreenState extends State<SplashScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           Future<void> startDownload() async {
+            // Check and request "install unknown apps" permission on Android
+            if (Platform.isAndroid) {
+              final status = await Permission.requestInstallPackages.status;
+              if (!status.isGranted) {
+                setDialogState(() {
+                  statusText = 'Requesting installation permission...';
+                });
+                final requestStatus = await Permission.requestInstallPackages.request();
+                if (!requestStatus.isGranted) {
+                  setDialogState(() {
+                    isDownloading = false;
+                    statusText = 'Failed to install: Permission denied: android.permission.REQUEST_INSTALL_PACKAGES';
+                  });
+                  return;
+                }
+              }
+            }
+
             setDialogState(() {
               isDownloading = true;
               downloadProgress = 0.0;
