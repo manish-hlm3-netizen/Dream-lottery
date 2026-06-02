@@ -104,15 +104,17 @@ const seedBotPlayers = async () => {
 };
 
 /**
- * Execute periodic simulated bot ticket purchases for active lotteries
- * Matches exact 80% bot tickets to 20% real tickets ratio dynamically.
+ * Total ticket cap per lottery (shown in UI as 100,000)
+ * Bots are capped at 99,500 — reserving 500 slots for real users.
  */
-const MAX_TICKETS_PER_LOTTERY = 10000;
+const MAX_TICKETS_PER_LOTTERY = 100000;
+const BOT_TICKET_CAP = 99500;  // 99,500 for bots
+const REAL_USER_RESERVED = 500; // 500 reserved for real players
 
 const runSimulationTick = async () => {
   try {
     const now = new Date();
-    
+
     // Find active lotteries that are accepting ticket purchases
     const activeLotteries = await Lottery.find({
       status: { $in: ['upcoming', 'active'] },
@@ -125,19 +127,16 @@ const runSimulationTick = async () => {
     const bots = await User.find({ isBot: true });
     if (bots.length === 0) return;
 
-    // Create a fast lookup map of bot user IDs
+    // Fast lookup map: botId -> true
     const botMap = {};
-    bots.forEach(b => {
-      botMap[b._id.toString()] = true;
-    });
+    bots.forEach(b => { botMap[b._id.toString()] = true; });
 
     for (const lottery of activeLotteries) {
-      // Fetch all tickets for this lottery
       const tickets = await Ticket.find({ lotteryId: lottery._id });
-      
+
       let realTicketsCount = 0;
       let botTicketsCount = 0;
-      
+
       tickets.forEach(t => {
         if (botMap[t.userId.toString()]) {
           botTicketsCount++;
@@ -148,37 +147,43 @@ const runSimulationTick = async () => {
 
       const totalTicketsSold = realTicketsCount + botTicketsCount;
 
-      // Don't exceed the 10,000 ticket cap
+      // Hard cap: stop if total reached 100,000
       if (totalTicketsSold >= MAX_TICKETS_PER_LOTTERY) {
-        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] has reached the 10,000 ticket cap. Skipping.`);
+        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] reached the 100,000 ticket cap. Stopping.`);
         continue;
       }
 
-      // Target bot count to achieve exactly 80% ratio of bot tickets (N_bot = 4 * N_real)
-      const targetBotTickets = realTicketsCount * 4;
+      // Bot cap: bots cannot exceed 99,500 tickets
+      if (botTicketsCount >= BOT_TICKET_CAP) {
+        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] bot cap (99,500) reached. Reserving remaining for real users.`);
+        continue;
+      }
+
       let ticketsToBuy = 0;
 
       if (realTicketsCount > 0) {
+        // Maintain ratio: 4 bot tickets per 1 real ticket (80% bots)
+        const targetBotTickets = Math.min(realTicketsCount * 4, BOT_TICKET_CAP);
         if (botTicketsCount < targetBotTickets) {
-          // Catch up fast to maintain the 80% bot / 20% real user ticket ratio
-          ticketsToBuy = Math.min(100, targetBotTickets - botTicketsCount);
+          // Moderate catch-up: max 20 per tick
+          ticketsToBuy = Math.min(20, targetBotTickets - botTicketsCount);
         } else {
-          // Ratio maintained — buy a small organic batch to keep activity alive
-          ticketsToBuy = Math.floor(5 + Math.random() * 15);
+          // Ratio maintained — slow organic drip to look natural
+          ticketsToBuy = Math.floor(3 + Math.random() * 7); // 3–10 per tick
         }
       } else {
-        // No real users yet — bots start buying aggressively immediately to populate the lottery
-        // Buy 20 to 60 tickets per tick regardless of any condition
-        ticketsToBuy = Math.floor(20 + Math.random() * 40);
+        // No real users yet — moderate baseline growth (5–15 per tick)
+        ticketsToBuy = Math.floor(5 + Math.random() * 10);
       }
 
-      // Clamp so we don't exceed the 10,000 cap
-      const slotsLeft = MAX_TICKETS_PER_LOTTERY - totalTicketsSold;
-      ticketsToBuy = Math.min(ticketsToBuy, slotsLeft);
+      // Clamp: don't exceed bot cap or total cap
+      const botSlotsLeft = BOT_TICKET_CAP - botTicketsCount;
+      const totalSlotsLeft = MAX_TICKETS_PER_LOTTERY - REAL_USER_RESERVED - botTicketsCount;
+      ticketsToBuy = Math.min(ticketsToBuy, botSlotsLeft, Math.max(0, totalSlotsLeft));
 
       if (ticketsToBuy === 0) continue;
 
-      console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] currently has ${realTicketsCount} real, ${botTicketsCount} bot tickets. Buying ${ticketsToBuy} bot tickets to target ${targetBotTickets} (80% bot ratio).`);
+      console.log(`🤖 Bot Simulator: [${lottery.name}] real=${realTicketsCount} bot=${botTicketsCount}/${BOT_TICKET_CAP} — buying ${ticketsToBuy} tickets this tick.`);
 
       let purchased = 0;
       let attempts = 0;
@@ -249,11 +254,11 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 5 seconds for fast ticket buying
+    // Set up periodic task execution every 30 seconds for moderate ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 5000);
-    console.log('🤖 Fictional Bot Player Simulator active (running every 5 seconds)');
+    }, 30000);
+    console.log('🤖 Fictional Bot Player Simulator active (running every 30 seconds — moderate pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });
