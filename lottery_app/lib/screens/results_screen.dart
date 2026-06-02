@@ -92,6 +92,21 @@ class _ResultCard extends StatefulWidget {
 class _ResultCardState extends State<_ResultCard> {
   bool _isExpanded = false;
 
+  String _formatRank1Winner(String? winnerName, LanguageProvider lang) {
+    if (winnerName == null || winnerName.trim().isEmpty || winnerName == 'No Winner' || winnerName == 'कोई विजेता नहीं') {
+      return lang.isHindi ? 'कोई विजेता नहीं' : 'No Winner';
+    }
+    final names = winnerName.split(', ').map((n) => n.trim()).where((n) => n.isNotEmpty).toList();
+    if (names.isEmpty) {
+      return lang.isHindi ? 'कोई विजेता नहीं' : 'No Winner';
+    }
+    if (names.length > 1) {
+      final others = names.length - 1;
+      return lang.isHindi ? '${names[0]} + $others अन्य' : '${names[0]} + $others others';
+    }
+    return names[0];
+  }
+
   int _getPrizeForRank(int rank, List<dynamic>? prizes) {
     if (prizes == null) return 0;
     int targetMatch = 4;
@@ -349,7 +364,7 @@ class _ResultCardState extends State<_ResultCard> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.lottery['rank1WinnerName'] ?? (widget.lang.isHindi ? 'कोई विजेता नहीं' : 'No Winner'),
+                              _formatRank1Winner(widget.lottery['rank1WinnerName'], widget.lang),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 15,

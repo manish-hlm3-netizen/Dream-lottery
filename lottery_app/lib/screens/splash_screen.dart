@@ -148,9 +148,9 @@ class _SplashScreenState extends State<SplashScreen> {
       _nextRoute = '/login';
     }
 
-    // Enforce a minimum play time of 1.5 seconds for the video splash screen
+    // Enforce a minimum play time of 3.5 seconds for the video splash screen
     final elapsed = DateTime.now().difference(startTime);
-    final remainingDelay = const Duration(milliseconds: 1500) - elapsed;
+    final remainingDelay = const Duration(milliseconds: 3500) - elapsed;
     
     if (remainingDelay > Duration.zero) {
       await Future.delayed(remainingDelay);
