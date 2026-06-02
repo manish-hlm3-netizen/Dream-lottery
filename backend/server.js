@@ -66,7 +66,7 @@ app.get('/api/app/download', (req, res) => {
   try {
     if (fs.existsSync(publicDir)) {
       const files = fs.readdirSync(publicDir);
-      const apkFiles = files.filter(f => f.startsWith('app-release-') && f.endsWith('.apk'));
+      const apkFiles = files.filter(f => (f.startsWith('dream-lottery-') || f.startsWith('app-release-')) && f.endsWith('.apk'));
       if (apkFiles.length > 0) {
         // Sort files descending to pick the one with the latest version name
         apkFiles.sort((a, b) => b.localeCompare(a));

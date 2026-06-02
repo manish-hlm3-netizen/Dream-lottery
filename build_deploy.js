@@ -46,7 +46,7 @@ async function run() {
 
     // 3. Define source and destination paths
     const srcApk = path.join(flutterAppDir, 'build/app/outputs/flutter-apk/app-release.apk');
-    const destApkName = `app-release-${appVersion}.apk`;
+    const destApkName = `dream-lottery-${appVersion}.apk`;
     const destApk = path.join(__dirname, 'backend/public', destApkName);
 
     // Ensure public folder exists
@@ -55,11 +55,11 @@ async function run() {
       fs.mkdirSync(publicDir, { recursive: true });
     }
 
-    // Remove any older app-release-*.apk files to keep the directory clean
+    // Remove any older app-release-*.apk or dream-lottery-*.apk files to keep the directory clean
     console.log('🧹 Cleaning older versioned APK files...');
     const files = fs.readdirSync(publicDir);
     for (const file of files) {
-      if (file.startsWith('app-release-') && file.endsWith('.apk') && file !== destApkName) {
+      if ((file.startsWith('app-release-') || file.startsWith('dream-lottery-')) && file.endsWith('.apk') && file !== destApkName) {
         fs.unlinkSync(path.join(publicDir, file));
         console.log(`   Removed: ${file}`);
       }
