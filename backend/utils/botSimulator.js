@@ -183,58 +183,61 @@ const runSimulationTick = async () => {
 
       if (ticketsToBuy === 0) continue;
 
-      console.log(`🤖 Bot Simulator: [${lottery.name}] real=${realTicketsCount} bot=${botTicketsCount}/${BOT_TICKET_CAP} — buying ${ticketsToBuy} tickets this tick.`);
+      console.log(`🤖 Bot Simulator: [${lottery.name}] real=${realTicketsCount} bot=${botTicketsCount}/${BOT_TICKET_CAP} — buying ${ticketsToBuy} tickets (bulk).`);
 
-      let purchased = 0;
-      let attempts = 0;
-      const maxAttempts = ticketsToBuy * 5; // Prevent lockups if bots are saturated
+      const ticketDocs = [];
+      const transactionDocs = [];
+      const userUpdates = [];
 
-      while (purchased < ticketsToBuy && attempts < maxAttempts) {
-        attempts++;
-        
+      for (let i = 0; i < ticketsToBuy; i++) {
         // Pick a random bot
         const bot = bots[Math.floor(Math.random() * bots.length)];
-
-        // Note: Bots do not have a 3-ticket limit per lottery to allow simulating fast bulk volume.
-
         // Generate random unique combinations
         const selectedNumbers = generateWinningNumbers(lottery.pickCount, lottery.maxNumber);
 
-        // Deduct ticket price from bot's virtual balance directly via atomic $inc
-        // This is extremely fast and avoids slow mongoose pre-save validations and bcrypt triggers
-        await User.updateOne(
-          { _id: bot._id },
-          { $inc: { walletBalance: -lottery.ticketPrice } }
-        );
-
-        // Create the ticket
-        const ticket = await Ticket.create({
+        ticketDocs.push({
           userId: bot._id,
           lotteryId: lottery._id,
           selectedNumbers,
           status: 'active'
         });
 
-        // Create a transaction record
-        await Transaction.create({
+        transactionDocs.push({
           userId: bot._id,
           type: 'ticket_purchase',
           amount: lottery.ticketPrice,
           status: 'approved',
-          description: `Ticket for ${lottery.name} - Numbers: ${ticket.selectedNumbers.join(', ')}`
+          description: `Ticket for ${lottery.name} - Numbers: ${selectedNumbers.join(', ')}`
         });
 
-        // Update lottery sold statistics directly
+        userUpdates.push({
+          updateOne: {
+            filter: { _id: bot._id },
+            update: { $inc: { walletBalance: -lottery.ticketPrice } }
+          }
+        });
+      }
+
+      try {
+        // 1. Bulk insert and bulk update balances in parallel
+        await Promise.all([
+          Ticket.insertMany(ticketDocs),
+          Transaction.insertMany(transactionDocs),
+          User.bulkWrite(userUpdates)
+        ]);
+
+        // 2. Update lottery sold statistics in a single query
         await Lottery.updateOne(
           { _id: lottery._id },
           {
-            $inc: { totalTicketsSold: 1, totalRevenue: lottery.ticketPrice },
+            $inc: { totalTicketsSold: ticketsToBuy, totalRevenue: ticketsToBuy * lottery.ticketPrice },
             $set: { status: 'active' }
           }
         );
 
-        purchased++;
-        console.log(`   🎫 Bot [${bot.name}] purchased ticket: [${selectedNumbers.join(', ')}]`);
+        console.log(`   ✅ Successfully processed ${ticketsToBuy} bot ticket purchases in bulk.`);
+      } catch (bulkError) {
+        console.error(`❌ Bot Simulator: Bulk purchase failed for [${lottery.name}]:`, bulkError);
       }
     }
   } catch (error) {
@@ -252,11 +255,11 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 3 seconds for fast ticket buying
+    // Set up periodic task execution every 5 seconds for fast bulk ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 3000);
-    console.log('🤖 Fictional Bot Player Simulator active (running every 3 seconds — fast pace)');
+    }, 5000);
+    console.log('🤖 Fictional Bot Player Simulator active (running every 5 seconds — fast bulk pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });
