@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -16,6 +17,7 @@ class _WalletScreenState extends State<WalletScreen> {
   final ApiService _api = ApiService();
   List<dynamic> _transactions = [];
   bool _loading = true;
+  String? _expandedTxnId;
 
   @override
   void initState() {
@@ -52,6 +54,38 @@ class _WalletScreenState extends State<WalletScreen> {
       case 'winnings': return AppTheme.warningColor;
       default: return AppTheme.textMuted;
     }
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -253,68 +287,150 @@ class _WalletScreenState extends State<WalletScreen> {
                           style: const TextStyle(color: AppTheme.textSecondary)),
                     ],
                   ),
-                )
-              else
+                ),
                 ...List.generate(_transactions.length, (i) {
                   final txn = _transactions[i];
                   final type = txn['type'] ?? '';
-                  final isCredit = type == 'deposit' || type == 'winnings' || type == 'refund';
+                  final isCredit = type == 'deposit' || type == 'winnings' || type == 'refund' || type == 'referral';
+                  final isExpanded = _expandedTxnId == txn['_id'];
+                  
+                  String formattedDate = '';
+                  if (txn['createdAt'] != null) {
+                    final date = DateTime.tryParse(txn['createdAt'])?.toLocal();
+                    if (date != null) {
+                      formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(date);
+                    }
+                  }
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppTheme.bgCard,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.borderColor),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: _getColor(type).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(_getIcon(type), color: _getColor(type), size: 20),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                type.replaceAll('_', ' ').toUpperCase(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _expandedTxnId = isExpanded ? null : txn['_id'];
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: _getColor(type).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(_getIcon(type), color: _getColor(type), size: 20),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                txn['status'] ?? '',
-                                style: TextStyle(
-                                  color: txn['status'] == 'approved'
-                                      ? AppTheme.successColor
-                                      : txn['status'] == 'rejected'
-                                          ? AppTheme.dangerColor
-                                          : AppTheme.warningColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        type.replaceAll('_', ' ').toUpperCase(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: (txn['status'] == 'approved'
+                                                  ? AppTheme.successColor
+                                                  : txn['status'] == 'rejected'
+                                                      ? AppTheme.dangerColor
+                                                      : AppTheme.warningColor).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              (txn['status'] ?? 'pending').toUpperCase(),
+                                              style: TextStyle(
+                                                color: txn['status'] == 'approved'
+                                                    ? AppTheme.successColor
+                                                    : txn['status'] == 'rejected'
+                                                        ? AppTheme.dangerColor
+                                                        : AppTheme.warningColor,
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          if (formattedDate.isNotEmpty)
+                                            Expanded(
+                                              child: Text(
+                                                formattedDate,
+                                                style: const TextStyle(
+                                                  color: AppTheme.textMuted,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${isCredit ? '+' : '-'}₹${txn['amount']}',
+                                      style: TextStyle(
+                                        color: isCredit ? AppTheme.successColor : AppTheme.dangerColor,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                      size: 16,
+                                      color: AppTheme.textMuted,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            if (isExpanded) ...[
+                              const SizedBox(height: 14),
+                              const Divider(color: AppTheme.borderColor, height: 1),
+                              const SizedBox(height: 12),
+                              _buildDetailRow(lang.isHindi ? 'लेनदेन आईडी' : 'Transaction ID', txn['_id'] ?? '-'),
+                              if (txn['description'] != null && txn['description'].toString().isNotEmpty)
+                                _buildDetailRow(lang.isHindi ? 'विवरण' : 'Description', txn['description']),
+                              if (txn['upiTransactionId'] != null && txn['upiTransactionId'].toString().isNotEmpty)
+                                _buildDetailRow(lang.isHindi ? 'UPI संदर्भ संख्या' : 'UPI Ref ID', txn['upiTransactionId']),
+                              if (txn['adminNote'] != null && txn['adminNote'].toString().isNotEmpty)
+                                _buildDetailRow(lang.isHindi ? 'एडमिन नोट' : 'Admin Note', txn['adminNote']),
+                              if (txn['processedAt'] != null)
+                                _buildDetailRow(
+                                  lang.isHindi ? 'संसाधित समय' : 'Processed Time',
+                                  DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.parse(txn['processedAt']).toLocal()),
+                                ),
                             ],
-                          ),
+                          ],
                         ),
-                        Text(
-                          '${isCredit ? '+' : '-'}₹${txn['amount']}',
-                          style: TextStyle(
-                            color: isCredit ? AppTheme.successColor : AppTheme.dangerColor,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 }),
