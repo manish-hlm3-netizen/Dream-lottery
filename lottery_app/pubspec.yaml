@@ -3,7 +3,7 @@ description: A lottery app for Android
 
 publish_to: 'none'
 
-version: 1.4.3+16
+version: 1.4.4+17
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -31,7 +31,8 @@ dependencies:
   cupertino_icons: ^1.0.6
   video_player: ^2.11.1
   share_plus: ^12.0.2
-
+  path_provider: ^2.1.2
+  open_file: ^3.5.11
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 import '../config/api_config.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -222,122 +226,173 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _showUpdateDialog(String version, String downloadUrl) {
+    double downloadProgress = 0.0;
+    String downloadPercentage = '0%';
+    bool isDownloading = false;
+    String statusText = '';
+
     showDialog(
       context: context,
       barrierDismissible: false, // Force update!
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => PopScope(
-          canPop: false, // Disable back button
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: Colors.white,
-            title: const Row(
-              children: [
-                Icon(Icons.system_update_alt, color: AppTheme.primaryColor),
-                SizedBox(width: 10),
-                Text(
-                  'Update Available!',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'A new version (v$version) of Dream Lottery is available.',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Please update the app to continue playing lottery and avoid secure login errors.',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                ),
-                if (_isLaunchingUpdate) ...[
-                  const SizedBox(height: 20),
-                  const Row(
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Opening download link...',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
+        builder: (context, setDialogState) {
+          Future<void> startDownload() async {
+            setDialogState(() {
+              isDownloading = true;
+              downloadProgress = 0.0;
+              downloadPercentage = '0%';
+              statusText = 'Starting download...';
+            });
+
+            try {
+              final dio = Dio();
+              final tempDir = await getTemporaryDirectory();
+              final apkPath = '${tempDir.path}/dream-lottery-update.apk';
+
+              // Delete old update file if it exists to avoid conflicts
+              final file = File(apkPath);
+              if (await file.exists()) {
+                await file.delete();
+              }
+
+              statusText = 'Downloading...';
+              await dio.download(
+                downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download',
+                apkPath,
+                onReceiveProgress: (received, total) {
+                  if (total != -1) {
+                    setDialogState(() {
+                      downloadProgress = received / total;
+                      downloadPercentage = '${(downloadProgress * 100).toInt()}%';
+                    });
+                  }
+                },
+              );
+
+              setDialogState(() {
+                statusText = 'Opening installer...';
+              });
+
+              // Launch native package installer
+              final result = await OpenFile.open(apkPath);
+              debugPrint('Install result message: ${result.message}');
+
+              if (result.type != ResultType.done) {
+                setDialogState(() {
+                  isDownloading = false;
+                  statusText = 'Failed to install: ${result.message}';
+                });
+              }
+            } catch (e) {
+              debugPrint('Error during update download/install: $e');
+              setDialogState(() {
+                isDownloading = false;
+                statusText = 'Download failed. Please try again.';
+              });
+            }
+          }
+
+          return PopScope(
+            canPop: false, // Disable back button
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: Colors.white,
+              title: const Row(
+                children: [
+                  Icon(Icons.system_update_alt, color: AppTheme.primaryColor),
+                  SizedBox(width: 10),
+                  Text(
+                    'Update Available!',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                   ),
                 ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'A new version (v$version) of Dream Lottery is available.',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Please update the app to continue playing lottery and avoid secure login errors.',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                  ),
+                  if (isDownloading) ...[
+                    const SizedBox(height: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              statusText,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              downloadPercentage,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: downloadProgress,
+                            minHeight: 8,
+                            backgroundColor: AppTheme.borderColor,
+                            color: AppTheme.primaryColor, // Red horizontal bar
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (statusText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      statusText,
+                      style: const TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                if (!isDownloading)
+                  ElevatedButton(
+                    onPressed: startDownload,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                    child: const Text(
+                      'Update Now',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                  ),
               ],
             ),
-            actions: [
-              if (!_isLaunchingUpdate)
-                ElevatedButton(
-                  onPressed: () async {
-                    setDialogState(() {
-                      _isLaunchingUpdate = true;
-                    });
-                    
-                    await _launchDownloadUrl(downloadUrl);
-                    
-                    // Reset spinner after a short safety delay to allow retries if launch fails
-                    if (mounted) {
-                      Future.delayed(const Duration(seconds: 5), () {
-                        if (mounted) {
-                          setDialogState(() {
-                            _isLaunchingUpdate = false;
-                          });
-                        }
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  child: const Text(
-                    'Update Now',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
-  }
-
-  Future<void> _launchDownloadUrl(String url) async {
-    // If downloadUrl is empty, fallback to default API server endpoint
-    final targetUrl = url.isNotEmpty 
-        ? url 
-        : 'https://lottery-api-vgk0.onrender.com/api/app/download';
-        
-    final Uri uri = Uri.parse(targetUrl);
-    try {
-      // Bypassing canLaunchUrl and invoking launchUrl directly is the official recommended 
-      // standard by the Flutter team on Android 11+ to solve visibility restrictions completely.
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        debugPrint('Could not launch update URL: $targetUrl');
-      }
-    } catch (e) {
-      debugPrint('Error launching update URL: $e');
-    }
   }
 }
