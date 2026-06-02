@@ -107,6 +107,8 @@ const seedBotPlayers = async () => {
  * Execute periodic simulated bot ticket purchases for active lotteries
  * Matches exact 80% bot tickets to 20% real tickets ratio dynamically.
  */
+const MAX_TICKETS_PER_LOTTERY = 10000;
+
 const runSimulationTick = async () => {
   try {
     const now = new Date();
@@ -144,21 +146,35 @@ const runSimulationTick = async () => {
         }
       });
 
+      const totalTicketsSold = realTicketsCount + botTicketsCount;
+
+      // Don't exceed the 10,000 ticket cap
+      if (totalTicketsSold >= MAX_TICKETS_PER_LOTTERY) {
+        console.log(`🤖 Bot Simulator: Lottery [${lottery.name}] has reached the 10,000 ticket cap. Skipping.`);
+        continue;
+      }
+
       // Target bot count to achieve exactly 80% ratio of bot tickets (N_bot = 4 * N_real)
       const targetBotTickets = realTicketsCount * 4;
       let ticketsToBuy = 0;
 
       if (realTicketsCount > 0) {
         if (botTicketsCount < targetBotTickets) {
-          // Catch up to maintain the 80% bot / 20% real user ticket ratio
-          ticketsToBuy = Math.min(50, targetBotTickets - botTicketsCount);
+          // Catch up fast to maintain the 80% bot / 20% real user ticket ratio
+          ticketsToBuy = Math.min(100, targetBotTickets - botTicketsCount);
+        } else {
+          // Ratio maintained — buy a small organic batch to keep activity alive
+          ticketsToBuy = Math.floor(5 + Math.random() * 15);
         }
       } else {
-        // Baseline organic growth: keep listing active (up to 150 baseline tickets, 85% probability per tick)
-        if (botTicketsCount < 150 && Math.random() < 0.85) {
-          ticketsToBuy = Math.floor(3 + Math.random() * 8); // Buy 3 to 10 tickets randomly
-        }
+        // No real users yet — bots start buying aggressively immediately to populate the lottery
+        // Buy 20 to 60 tickets per tick regardless of any condition
+        ticketsToBuy = Math.floor(20 + Math.random() * 40);
       }
+
+      // Clamp so we don't exceed the 10,000 cap
+      const slotsLeft = MAX_TICKETS_PER_LOTTERY - totalTicketsSold;
+      ticketsToBuy = Math.min(ticketsToBuy, slotsLeft);
 
       if (ticketsToBuy === 0) continue;
 
@@ -233,11 +249,11 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 15 seconds
+    // Set up periodic task execution every 5 seconds for fast ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 15000);
-    console.log('🤖 Fictional Bot Player Simulator active (running every 15 seconds)');
+    }, 5000);
+    console.log('🤖 Fictional Bot Player Simulator active (running every 5 seconds)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });

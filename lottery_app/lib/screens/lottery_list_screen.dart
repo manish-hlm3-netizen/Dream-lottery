@@ -113,9 +113,9 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
                       // Urgency metrics (Left Ticket)
                       final int totalSold = lottery['totalTicketsSold'] ?? 0;
-                      final int maxTickets = 100; // Premium draw limit of 100 tickets
+                      final int maxTickets = 10000; // Total ticket cap per lottery
                       final int ticketsLeft = (maxTickets - totalSold).clamp(0, maxTickets);
-                      final double progress = (ticketsLeft / maxTickets).clamp(0.0, 1.0);
+                      final double progress = (totalSold / maxTickets).clamp(0.0, 1.0);
 
                       final jackpot = (lottery['prizes'] as List?)
                           ?.firstWhere((p) => p['match'] == lottery['pickCount'],
@@ -285,7 +285,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     ),
                                   ),
 
-                                  // Urgency Progress Bar (Left Ticket)
+                                  // Urgency Progress Bar (Left Tickets)
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                                     child: Column(
@@ -294,9 +294,32 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const SizedBox(),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.confirmation_number_outlined,
+                                                  size: 13,
+                                                  color: ticketsLeft < 500
+                                                      ? Colors.red.shade400
+                                                      : AppTheme.textMuted,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  lang.isHindi
+                                                      ? '$ticketsLeft टिकट बचे'
+                                                      : '$ticketsLeft tickets left',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: ticketsLeft < 500
+                                                        ? Colors.red.shade400
+                                                        : AppTheme.textSecondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                             Text(
-                                              '${((1 - progress) * 100).toInt()}% ${lang.translate('filled')}',
+                                              '${(progress * 100).toInt()}% ${lang.translate('filled')}',
                                               style: const TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
@@ -309,10 +332,12 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         ClipRRect(
                                           borderRadius: BorderRadius.circular(6),
                                           child: LinearProgressIndicator(
-                                            value: 1 - progress,
+                                            value: progress,
                                             minHeight: 6,
                                             backgroundColor: AppTheme.borderColor,
-                                            color: cardTheme.primaryColor,
+                                            color: ticketsLeft < 500
+                                                ? Colors.red.shade400
+                                                : cardTheme.primaryColor,
                                           ),
                                         ),
                                       ],
