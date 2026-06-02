@@ -1,0 +1,7 @@
+node_modules/
+.env
+server_output.log
+
+# APK files are too large for git — upload manually to Render disk
+public/app-release.apk
+public/app-release-*.apk

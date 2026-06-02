@@ -52,6 +52,11 @@ const authLimiter = rateLimit({
 // Serve static files from 'public' folder
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+// Serve landing page at root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
 // Public direct APK download endpoint
 app.get('/api/app/download', (req, res) => {
   const fs = require('fs');
@@ -140,6 +145,7 @@ app.use((err, req, res, next) => {
 // ──────────────────────────────────────────
 
 const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0'; // Required for Render
 
 const startServer = async () => {
   // Connect to MongoDB
@@ -166,7 +172,7 @@ const startServer = async () => {
   await startBotSimulator();
 
   // Start Express
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
     console.log(`\n🚀 Lottery API Server running on port ${PORT}`);
     console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     console.log(`🔐 Admin email: ${process.env.ADMIN_EMAIL || 'admin@lottery.com'}\n`);

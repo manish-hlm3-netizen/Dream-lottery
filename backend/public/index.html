@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dream Sports — Dream Lottery</title>
+  <meta name="description" content="Dream Sports is a technology company at the forefront of sports and gaming innovation, transforming how millions of fans experience the game.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-dark: #000000;
+      --bg-light: #ffffff;
+      --bg-gray: #f5f5f5;
+      --primary-red: #E10000;
+      --primary-red-hover: #b30000;
+      --border-color: rgba(26, 26, 26, 0.1);
+      --border-white: rgba(255, 255, 255, 0.1);
+      --text-dark: #131313;
+      --text-muted: rgba(19, 19, 19, 0.7);
+      --text-light: #ffffff;
+      --text-light-muted: rgba(255, 255, 255, 0.54);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    .font-anton {
+      font-family: 'Anton', sans-serif;
+      text-transform: uppercase;
+      font-weight: normal;
+    }
+
+    .app-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+    }
+
+    /* Header styling */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-white);
+      transition: background-color 0.3s;
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      text-decoration: none;
+    }
+
+    .logo-badge-img {
+      height: 48px;
+      width: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+
+    .logo-text {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.8rem;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    nav a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-family: 'Anton', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      transition: color 0.3s;
+      opacity: 0.85;
+    }
+
+    nav a:hover {
+      color: var(--primary-red);
+      opacity: 1;
+    }
+
+    .btn-download-small {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.4rem;
+      background-color: var(--primary-red);
+      border: none;
+      color: white;
+      text-decoration: none;
+      font-family: 'Anton', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .btn-download-small:hover {
+      background-color: var(--primary-red-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Menu Toggle Button for Mobile */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    .hero-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      color: white;
+      text-align: left;
+    }
+
+    .hero-title {
+      font-size: 5rem;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      max-width: 800px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .btn-download-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem 1rem 1rem;
+      background-color: var(--primary-red);
+      border: none;
+      color: white;
+      text-decoration: none;
+      font-family: 'Anton', sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 20px rgba(225, 0, 0, 0.4);
+      transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+      border-radius: 4px;
+    }
+
+    .btn-logo-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .btn-download-large:hover {
+      background-color: var(--primary-red-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(225, 0, 0, 0.6);
+    }
+
+    /* Narrative Section */
+    .narrative-section {
+      padding: 8rem 0;
+      background-color: white;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .narrative-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .narrative-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .narrative-text {
+      font-size: 2.2rem;
+      font-weight: 500;
+      text-align: center;
+      line-height: 1.35;
+      padding: 0 3rem;
+      color: var(--text-dark);
+    }
+
+    /* Section Title */
+    .section-title-container {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-title {
+      font-size: 4.5rem;
+      line-height: 1.1;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* Brands Marquee Slider */
+    .brands-section {
+      padding: 6rem 0;
+      background-color: white;
+      overflow: hidden;
+    }
+
+    .marquee-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 1.5rem 0;
+    }
+
+    .marquee-fade-left, .marquee-fade-right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 15%;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .marquee-fade-left {
+      left: 0;
+      background: linear-gradient(to right, white, rgba(255, 255, 255, 0));
+    }
+
+    .marquee-fade-right {
+      right: 0;
+      background: linear-gradient(to left, white, rgba(255, 255, 255, 0));
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 5rem;
+      width: max-content;
+      animation: scroll-left 40s linear infinite;
+    }
+
+    .brand-logo-item {
+      height: 54px;
+      width: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo-item img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: grayscale(1) contrast(1.2);
+      opacity: 0.7;
+      transition: filter 0.3s, opacity 0.3s;
+    }
+
+    .brand-logo-item img:hover {
+      filter: none;
+      opacity: 1;
+    }
+
+    /* Culture Accordion Section */
+    .culture-section {
+      padding: 8rem 0;
+      background-color: white;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .culture-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .culture-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .culture-item {
+      border-top: 1px solid rgba(26, 26, 26, 0.15);
+      padding: 1.8rem 0;
+      transition: border-color 0.3s;
+    }
+
+    .culture-item:last-child {
+      border-bottom: 1px solid rgba(26, 26, 26, 0.15);
+    }
+
+    .culture-header {
+      width: 100%;
+      background: none;
+      border: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+      cursor: pointer;
+      color: rgba(26, 26, 26, 0.4);
+      transition: color 0.3s;
+    }
+
+    .culture-header h3 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+
+    .culture-header svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.5s ease;
+      fill: var(--primary-red);
+    }
+
+    .culture-item.active .culture-header {
+      color: var(--text-dark);
+    }
+
+    .culture-item.active .culture-header svg {
+      transform: rotate(45deg);
+    }
+
+    .culture-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), opacity 0.3s;
+      opacity: 0;
+    }
+
+    .culture-item.active .culture-content {
+      max-height: 500px;
+      opacity: 1;
+      margin-top: 1.5rem;
+      transition: max-height 0.8s cubic-bezier(1, 0, 1, 0), opacity 0.5s;
+    }
+
+    .culture-content p {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .culture-mobile-img {
+      display: none;
+      width: 100%;
+      height: 250px;
+      margin-top: 1.5rem;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .culture-mobile-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .culture-image-panel {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .culture-image-panel img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .culture-image-panel img.active {
+      opacity: 1;
+    }
+
+    /* Captains Grid Section */
+    .captains-section {
+      padding: 8rem 0;
+      background-color: white;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .captains-layout {
+      display: flex;
+      gap: 2rem;
+      align-items: stretch;
+    }
+
+    .captains-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1.2rem;
+      flex: 1;
+    }
+
+    .captain-card-small {
+      position: relative;
+      aspect-ratio: 0.8;
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0.8;
+      border: 1px solid transparent;
+      transition: opacity 0.3s, transform 0.3s, border-color 0.3s;
+    }
+
+    .captain-card-small:hover {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .captain-card-small.active {
+      opacity: 1;
+      border-color: var(--primary-red);
+    }
+
+    .captain-card-small img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .captain-card-small-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--primary-red) 0%, rgba(225, 0, 0, 0) 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .captain-card-small.active .captain-card-small-overlay {
+      opacity: 0.8;
+    }
+
+    /* Featured Captain Panel */
+    .featured-captain-panel {
+      width: 32%;
+      max-width: 400px;
+      flex-shrink: 0;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 0.68;
+      background-color: #0b0714;
+    }
+
+    .featured-captain-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.3s ease;
+    }
+
+    .featured-captain-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #E10000 0%, rgba(225, 0, 0, 0.4) 60%, rgba(0,0,0,0) 100%);
+      z-index: 1;
+    }
+
+    .featured-captain-details {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: white;
+      z-index: 2;
+    }
+
+    .featured-captain-name {
+      font-size: 2.8rem;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    .featured-captain-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    /* Mobile Captains Slider */
+    .captains-mobile-slider {
+      display: none;
+      width: 100%;
+    }
+
+    .captains-mobile-scroll-container {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding: 1rem 0;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .captains-mobile-scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .captains-mobile-card {
+      scroll-snap-align: start;
+      flex-shrink: 0;
+      width: 140px;
+      aspect-ratio: 0.8;
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .captains-mobile-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Journey Timeline Section */
+    .journey-section {
+      padding: 8rem 0;
+      background-color: white;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .timeline-container {
+      display: flex;
+      gap: 2rem;
+      overflow-x: auto;
+      padding: 2rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-red) rgba(0,0,0,0.05);
+    }
+
+    .timeline-card {
+      flex-shrink: 0;
+      width: 320px;
+      background-color: #fafafa;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .timeline-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(225, 0, 0, 0.3);
+    }
+
+    .timeline-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .timeline-info {
+      padding: 1.5rem;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .timeline-year {
+      font-size: 2rem;
+      color: var(--primary-red);
+      font-weight: 700;
+    }
+
+    .timeline-users {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background-color: rgba(0,0,0,0.05);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+    }
+
+    .timeline-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Investors Section */
+    .investors-section {
+      padding: 8rem 0;
+      background-color: var(--bg-gray);
+    }
+
+    .investors-marquee {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 1rem 0;
+    }
+
+    @keyframes scroll-right {
+      0% { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
+    }
+
+    .investors-track {
+      display: flex;
+      gap: 5rem;
+      width: max-content;
+      animation: scroll-right 40s linear infinite;
+    }
+
+    .investor-logo-item {
+      height: 48px;
+      width: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .investor-logo-item img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: grayscale(1);
+      opacity: 0.5;
+      transition: filter 0.3s, opacity 0.3s;
+    }
+
+    .investor-logo-item img:hover {
+      filter: none;
+      opacity: 0.8;
+    }
+
+    /* Footer styling */
+    footer {
+      background-color: #0b0714;
+      color: white;
+      padding: 6rem 0 3rem;
+      border-top: 1px solid var(--border-white);
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 5rem;
+    }
+
+    .footer-brand h2 {
+      font-size: 2.2rem;
+      line-height: 1.2;
+      margin-bottom: 2rem;
+      font-weight: 500;
+    }
+
+    .footer-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+      color: var(--primary-red);
+      font-size: 1.125rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-btn:hover {
+      color: white;
+    }
+
+    .footer-btn-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .footer-btn-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .footer-col h4 {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.125rem;
+      letter-spacing: 1px;
+      color: var(--text-light-muted);
+      margin-bottom: 2.5rem;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 1.2rem;
+    }
+
+    .footer-col ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: color 0.3s;
+      opacity: 0.8;
+    }
+
+    .footer-col ul li a:hover {
+      color: var(--primary-red);
+      opacity: 1;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--border-white);
+    }
+
+    .footer-logo-small {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+
+    .footer-logo-small img {
+      height: 32px;
+      width: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .footer-logo-small span {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.25rem;
+      color: white;
+    }
+
+    .footer-address {
+      font-size: 0.875rem;
+      color: var(--text-light-muted);
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 1024px) {
+      .hero-title {
+        font-size: 3.5rem;
+      }
+      .section-title {
+        font-size: 3.5rem;
+      }
+      .culture-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      .culture-image-panel {
+        display: none;
+      }
+      .culture-mobile-img {
+        display: block;
+      }
+      .captains-layout {
+        flex-direction: column;
+      }
+      .featured-captain-panel {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 1;
+      }
+      .captains-grid {
+        display: none;
+      }
+      .captains-mobile-slider {
+        display: block;
+      }
+      .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header nav {
+        display: none;
+      }
+      header .btn-download-small {
+        display: none;
+      }
+      .menu-toggle {
+        display: block;
+      }
+      .hero-title {
+        font-size: 2.8rem;
+      }
+      .narrative-text {
+        font-size: 1.5rem;
+        padding: 0 1rem;
+      }
+      .section-title {
+        font-size: 2.8rem;
+      }
+      .footer-content {
+        grid-template-columns: 1fr;
+      }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 2rem;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo-container">
+        <img src="/public/logo_badge.jpg" alt="Dream Lottery Logo" class="logo-badge-img">
+        <span class="logo-text">Dream Sports <span style="color:var(--primary-red)">×</span> Dream Lottery</span>
+      </a>
+      <nav>
+        <a href="#brands">Brands</a>
+        <a href="#culture">Culture</a>
+        <a href="#captains">Captains</a>
+        <a href="#journey">Journey</a>
+        <a href="/api/app/download" class="btn-download-small">
+          <i class="fa-solid fa-download"></i> Download APK
+        </a>
+      </nav>
+      <button class="menu-toggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Video Section -->
+  <section class="hero-section">
+    <video class="hero-video" autoplay loop muted playsinline src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ds-hero-video.mp4"></video>
+    <div class="hero-overlay"></div>
+    <div class="hero-content app-container">
+      <h1 class="hero-title font-anton">Dream Sports <span style="color:var(--primary-red)">×</span> Dream Lottery</h1>
+      <p class="hero-subtitle">At the forefront of sports and lottery innovation. Experience instant UPI withdrawals, a unique dual-wallet layout, and 100% transparent draws.</p>
+      <a href="/api/app/download" class="btn-download-large">
+        <img src="/public/dream_lottery_logo.png" alt="Dream Lottery" class="btn-logo-icon">
+        <span>Download Dream Lottery App</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Narrative Block -->
+  <section class="narrative-section">
+    <div class="app-container narrative-content">
+      <img src="https://www.dreamsports.group/images/union-red.svg" alt="icon" class="narrative-icon md:block hidden">
+      <div class="narrative-text">
+        Dream Sports is a technology company at the forefront of sports innovation, transforming how millions of fans experience the game. Building on this foundation, we are expanding into financial services, empowering millions across India.
+      </div>
+      <img src="https://www.dreamsports.group/images/union-red.svg" alt="icon" class="narrative-icon md:block hidden">
+    </div>
+  </section>
+
+  <!-- Brands Horizontal Marquee -->
+  <section class="brands-section" id="brands">
+    <div class="section-title-container">
+      <h2 class="section-title font-anton">Our Brands</h2>
+    </div>
+    <div class="marquee-container">
+      <div class="marquee-fade-left"></div>
+      <div class="marquee-fade-right"></div>
+      <div class="marquee-track">
+        <!-- Original Marquee Content -->
+        <div class="brand-logo-item">
+          <img src="/public/logo_badge.jpg" alt="Dream Lottery" style="filter: none; opacity: 1; border-radius: 50%;">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dream11-black.webp" alt="Dream11">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/fancode-logo.svg" alt="FanCode">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dsg_26.webp" alt="DreamSetGo">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/image-248.webp" alt="Dream Cricket">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dreamhorizon-logo.png" alt="Dream Horizon">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/dream-money-new-logo-colored.png" alt="Dream Money">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dream-play.webp" alt="Dream Play">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2025/08/DreamSportsFoundation-fab.svg" alt="Dream Sports Foundation">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/white-full-logo.png" alt="DreamStreet">
+        </div>
+
+        <!-- Duplicated for Infinite Loop -->
+        <div class="brand-logo-item">
+          <img src="/public/logo_badge.jpg" alt="Dream Lottery" style="filter: none; opacity: 1; border-radius: 50%;">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dream11-black.webp" alt="Dream11">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/fancode-logo.svg" alt="FanCode">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dsg_26.webp" alt="DreamSetGo">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/image-248.webp" alt="Dream Cricket">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dreamhorizon-logo.png" alt="Dream Horizon">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/dream-money-new-logo-colored.png" alt="Dream Money">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dream-play.webp" alt="Dream Play">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2025/08/DreamSportsFoundation-fab.svg" alt="Dream Sports Foundation">
+        </div>
+        <div class="brand-logo-item">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/white-full-logo.png" alt="DreamStreet">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Culture Section (Interactive Accordion) -->
+  <section class="culture-section" id="culture">
+    <div class="app-container">
+      <div class="section-title-container">
+        <h2 class="section-title font-anton">Our Culture</h2>
+        <p class="section-subtitle">Teamwork makes the dream work</p>
+      </div>
+
+      <div class="culture-grid">
+        <div class="culture-list">
+          <!-- Accordion 1 -->
+          <div class="culture-item active" data-index="0">
+            <button class="culture-header">
+              <h3>Data Driven</h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15"><path d="M9 15H6V9h3v6ZM6 9H0V6h6v3Zm9 0H9V6h6v3ZM9 6H6V0h3v6Z"/></svg>
+            </button>
+            <div class="culture-content">
+              <p>We leverage 90% data and 10% gut to deliver results. We encourage open debate and diverse opinions, respect final decisions, and promote innovation and experimentation.</p>
+              <div class="culture-mobile-img">
+                <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/datadriven_1.webp" alt="Data Driven">
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 2 -->
+          <div class="culture-item" data-index="1">
+            <button class="culture-header">
+              <h3>Ownership</h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15"><path d="M9 15H6V9h3v6ZM6 9H0V6h6v3Zm9 0H9V6h6v3ZM9 6H6V0h3v6Z"/></svg>
+            </button>
+            <div class="culture-content">
+              <p>We are proactive, work as a team, and take pride and responsibility in what we do. We hold ourselves accountable and never shift blame.</p>
+              <div class="culture-mobile-img">
+                <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ownership.webp" alt="Ownership">
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 3 -->
+          <div class="culture-item" data-index="2">
+            <button class="culture-header">
+              <h3>Perseverance</h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15"><path d="M9 15H6V9h3v6ZM6 9H0V6h6v3Zm9 0H9V6h6v3ZM9 6H6V0h3v6Z"/></svg>
+            </button>
+            <div class="culture-content">
+              <p>We are enabled to perform at our best, believing in experimenting boldly, failing hard and learning hard to win the next match. We win as a team and lose as a team.</p>
+              <div class="culture-mobile-img">
+                <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/perseverance.webp" alt="Perseverance">
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 4 -->
+          <div class="culture-item" data-index="3">
+            <button class="culture-header">
+              <h3>User First</h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15"><path d="M9 15H6V9h3v6ZM6 9H0V6h6v3Zm9 0H9V6h6v3ZM9 6H6V0h3v6Z"/></svg>
+            </button>
+            <div class="culture-content">
+              <p>We prioritise our users and strive for the highest level of success. Solving user problems is our top priority, with users at the centre of every decision and experience we create.</p>
+              <div class="culture-mobile-img">
+                <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/user_first.webp" alt="User First">
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 5 -->
+          <div class="culture-item" data-index="4">
+            <button class="culture-header">
+              <h3>Transparency</h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15"><path d="M9 15H6V9h3v6ZM6 9H0V6h6v3Zm9 0H9V6h6v3ZM9 6H6V0h3v6Z"/></svg>
+            </button>
+            <div class="culture-content">
+              <p>We foster an open and honest environment, communicating clearly and proactively to share our strengths and voice our opinions. With a no-cabin policy, we encourage open collaboration and regular huddles.</p>
+              <div class="culture-mobile-img">
+                <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/transparency.webp" alt="Transparency">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Image Panel -->
+        <div class="culture-image-panel">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/datadriven_1.webp" alt="Data Driven" class="active">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ownership.webp" alt="Ownership">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/perseverance.webp" alt="Perseverance">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/user_first.webp" alt="User First">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/transparency.webp" alt="Transparency">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Captains Section (Interactive Grid) -->
+  <section class="captains-section" id="captains">
+    <div class="app-container">
+      <div class="section-title-container">
+        <h2 class="section-title font-anton">Our Captains</h2>
+        <p class="section-subtitle">Meet the leaders steering teams, products, and platforms used by millions.</p>
+      </div>
+
+      <div class="captains-layout">
+        <!-- Captains Grid on Left -->
+        <div class="captains-grid">
+          <div class="captain-card-small active" data-name="Harsh Jain" data-title="CEO & Co-Founder, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/hj_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/hj_26.webp" alt="Harsh Jain">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Bhavit Sheth" data-title="COO & Co-Founder, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/bs_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/bs_26.webp" alt="Bhavit Sheth">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Yannick Colaco" data-title="Co-Founder, FanCode" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/yc.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/yc.webp" alt="Yannick Colaco">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Prasana Krishnan" data-title="Co-Founder, FanCode" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/pk_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/pk_26.webp" alt="Prasana Krishnan">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Monish Shah" data-title="Co-Founder & CEO, DreamSetGo" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/ms_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ms_26.webp" alt="Monish Shah">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Daniel Dsouza" data-title="Co-Founder, DreamSetGo" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/dd.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dd.webp" alt="Daniel Dsouza">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Amit Sharma" data-title="Founder & CEO, Dream Sports AI" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/as_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/as_26.webp" alt="Amit Sharma">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Rahul Mirchandani" data-title="Co-Founder & CEO, DreamStreet" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/rm_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/rm_26.webp" alt="Rahul Mirchandani">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Arpith Kanade" data-title="Head of Studio, Dream Cricket" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/ak_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ak_26.webp" alt="Arpith Kanade">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Vinay Choletti" data-title="Co-Founder & CEO, Dream Money" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/vinay.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/vinay.webp" alt="Vinay Choletti">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Amit Garde" data-title="Founder, Dream Horizon" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/amitG.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/amitG.webp" alt="Amit Garde">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Neel Shah" data-title="CEO, Dream Sports Foundation" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/ns_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ns_26.webp" alt="Neel Shah">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Vikrant Mudaliar" data-title="Chief Marketing Officer, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/vm_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/vm_26.webp" alt="Vikrant Mudaliar">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Deepak Jacob" data-title="President, Corporate Affairs, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/dj_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dj_26.webp" alt="Deepak Jacob">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Priyanka Kodikal" data-title="Chief Design Officer, Dream11" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/priyanka.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/priyanka.webp" alt="Priyanka Kodikal">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Abhishek Ravi" data-title="Chief Information Officer, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/ar_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ar_26.webp" alt="Abhishek Ravi">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Navin Agarwal" data-title="Chief Financial Officer, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/na.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/na.webp" alt="Navin Agarwal">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+          <div class="captain-card-small" data-name="Kevin Freitas" data-title="Chief Human Resources Officer, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/kf_26.webp">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/kf_26.webp" alt="Kevin Freitas">
+            <div class="captain-card-small-overlay"></div>
+          </div>
+        </div>
+
+        <!-- Featured Captain Card on Right -->
+        <div class="featured-captain-panel">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/hj_26.webp" alt="Featured Captain" class="featured-captain-img">
+          <div class="featured-captain-overlay"></div>
+          <div class="featured-captain-details">
+            <h3 class="featured-captain-name font-anton">Harsh Jain</h3>
+            <p class="featured-captain-title">CEO & Co-Founder, Dream Sports</p>
+          </div>
+        </div>
+
+        <!-- Mobile Captains Horizontal Scroll -->
+        <div class="captains-mobile-slider">
+          <div class="captains-mobile-scroll-container">
+            <div class="captains-mobile-card" data-name="Harsh Jain" data-title="CEO & Co-Founder, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/hj_26.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/hj_26.webp" alt="Harsh Jain">
+            </div>
+            <div class="captains-mobile-card" data-name="Bhavit Sheth" data-title="COO & Co-Founder, Dream Sports" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/bs_26.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/bs_26.webp" alt="Bhavit Sheth">
+            </div>
+            <div class="captains-mobile-card" data-name="Yannick Colaco" data-title="Co-Founder, FanCode" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/yc.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/yc.webp" alt="Yannick Colaco">
+            </div>
+            <div class="captains-mobile-card" data-name="Prasana Krishnan" data-title="Co-Founder, FanCode" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/pk_26.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/pk_26.webp" alt="Prasana Krishnan">
+            </div>
+            <div class="captains-mobile-card" data-name="Monish Shah" data-title="Co-Founder & CEO, DreamSetGo" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/ms_26.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/ms_26.webp" alt="Monish Shah">
+            </div>
+            <div class="captains-mobile-card" data-name="Daniel Dsouza" data-title="Co-Founder, DreamSetGo" data-image="https://cms.dreamsports.group/wp-content/uploads/2026/02/dd.webp">
+              <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dd.webp" alt="Daniel Dsouza">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Journey Section (Timeline) -->
+  <section class="journey-section" id="journey">
+    <div class="app-container">
+      <div class="section-title-container">
+        <h2 class="section-title font-anton">Our Journey</h2>
+      </div>
+
+      <div class="timeline-container">
+        <!-- Milestone 1 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2008_js.webp" alt="2008" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2008</span>
+            </div>
+            <p class="timeline-desc">Dream11 founded by Harsh Jain and Bhavit Sheth in Mumbai.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 2 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2010_2015_js.webp" alt="2010-2015" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2010-2015</span>
+              <span class="timeline-users">300K Users</span>
+            </div>
+            <p class="timeline-desc">Series A funding, and a pivotal shift to a freemium model.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 3 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2016_2018_js.webp" alt="2016-2018" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2016-2018</span>
+              <span class="timeline-users">17M Users</span>
+            </div>
+            <p class="timeline-desc">Series D funding, partnerships with NBA & CPL, and Dhoni as ambassador.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 4 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2019_js.webp" alt="2019" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2019</span>
+              <span class="timeline-users">76M Users</span>
+            </div>
+            <p class="timeline-desc">Partnerships with the ICC, BCCI, and IPL.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 5 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2020_js.webp" alt="2020" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2020</span>
+              <span class="timeline-users">100M Users</span>
+            </div>
+            <p class="timeline-desc">Title sponsorship of the IPL, and integration of FanCode and DreamSetGo.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 6 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2021_js.webp" alt="2021" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2021</span>
+              <span class="timeline-users">125M Users</span>
+            </div>
+            <p class="timeline-desc">Incubation of Dream Game Studios and investments in SoStronk, Elevar, and Fittr.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 7 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2022_js.webp" alt="2022" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2022</span>
+              <span class="timeline-users">162M Users</span>
+            </div>
+            <p class="timeline-desc">Strategic investments in Rario and Investro.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 8 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2023_js.webp" alt="2023" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2023</span>
+              <span class="timeline-users">220M Users</span>
+            </div>
+            <p class="timeline-desc">WPL partnership, jersey sponsorship of Indian Cricket Team, and 11M peak users.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 9 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2024_js.webp" alt="2024" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2024</span>
+              <span class="timeline-users">260M Users</span>
+            </div>
+            <p class="timeline-desc">IPL team partnerships (GT, KKR, SRH, PBKS) and 15M concurrent users.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 10 -->
+        <div class="timeline-card">
+          <img src="https://cms.dreamsports.group/wp-content/uploads/2026/04/2025_js.webp" alt="2025-2026" class="timeline-img">
+          <div class="timeline-info">
+            <div class="timeline-header">
+              <span class="timeline-year">2025-2026</span>
+              <span class="timeline-users">300M Users</span>
+            </div>
+            <p class="timeline-desc">Launch of new products: Dream Money, DreamStreet, and the premier **Dream Lottery** platform.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Investors Section (Marquee) -->
+  <section class="investors-section">
+    <div class="app-container">
+      <div class="section-title-container" style="margin-bottom: 2rem;">
+        <h2 class="section-title font-anton" style="font-size: 3rem;">Our Investors</h2>
+        <p class="section-subtitle">Meet our biggest believers who always have our backs.</p>
+      </div>
+
+      <div class="investors-marquee">
+        <div class="marquee-fade-left" style="background: linear-gradient(to right, var(--bg-gray), transparent);"></div>
+        <div class="marquee-fade-right" style="background: linear-gradient(to left, var(--bg-gray), transparent);"></div>
+        <div class="investors-track">
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/kalaari_logo2_1.webp" alt="Kalaari Capital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/thinkinvestments_logo2_2_1.webp" alt="Think Investments">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/steadview_1_1.webp" alt="Steadview">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/alpha_wave.webp" alt="Alpha Wave">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/chryscapital_1.webp" alt="Chryscapital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/footpath_updated_1.webp" alt="Footpath">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/tiger_global_1.webp" alt="Tiger Global">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dst_global_logo_svg_1.webp" alt="DST Global">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/d1_capital_partners_1.webp" alt="D1 Capital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/redbird_capital_partners_1.webp" alt="Redbird Capital">
+          </div>
+
+          <!-- Duplicated for Marquee Loop -->
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/kalaari_logo2_1.webp" alt="Kalaari Capital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/thinkinvestments_logo2_2_1.webp" alt="Think Investments">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/steadview_1_1.webp" alt="Steadview">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/alpha_wave.webp" alt="Alpha Wave">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/chryscapital_1.webp" alt="Chryscapital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/footpath_updated_1.webp" alt="Footpath">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/tiger_global_1.webp" alt="Tiger Global">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/dst_global_logo_svg_1.webp" alt="DST Global">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/d1_capital_partners_1.webp" alt="D1 Capital">
+          </div>
+          <div class="investor-logo-item">
+            <img src="https://cms.dreamsports.group/wp-content/uploads/2026/02/redbird_capital_partners_1.webp" alt="Redbird Capital">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content app-container">
+      <div class="footer-brand">
+        <h2>Want to See How We Think, Play and Win?</h2>
+        <a href="/api/app/download" class="footer-btn">
+          <div class="footer-btn-icon">
+            <img src="/public/dream_lottery_logo.png" alt="Dream Lottery Logo">
+          </div>
+          <span>Download Dream Lottery APK</span>
+        </a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Brands</h4>
+        <ul>
+          <li><a href="/api/app/download">Dream Lottery</a></li>
+          <li><a href="https://www.dream11.com/" target="_blank">Dream11</a></li>
+          <li><a href="https://www.fancode.com/" target="_blank">FanCode</a></li>
+          <li><a href="https://www.dreamsetgo.com/" target="_blank">DreamSetGo</a></li>
+          <li><a href="https://dreamcricket.game/" target="_blank">Dream Cricket</a></li>
+          <li><a href="https://dream.money" target="_blank">Dream Money</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#brands">Our Brands</a></li>
+          <li><a href="#culture">Our Culture</a></li>
+          <li><a href="#captains">Our Captains</a></li>
+          <li><a href="#journey">Our Journey</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Social</h4>
+        <ul>
+          <li><a href="https://www.linkedin.com/company/dreamsports/" target="_blank">LinkedIn</a></li>
+          <li><a href="https://www.instagram.com/dreamsportshq/" target="_blank">Instagram</a></li>
+          <li><a href="https://x.com/DreamSportsHQ" target="_blank">X</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom app-container">
+      <a href="/" class="footer-logo-small">
+        <img src="/public/logo_badge.jpg" alt="Dream Lottery Logo">
+        <span>Dream Sports × Dream Lottery</span>
+      </a>
+      <p class="footer-address">Sporta Technologies Private Limited. 7th Floor, Ascent, Sudam Kalu Ahire Marg, Opposite GSK, Worli, Mumbai Maharashtra 400030</p>
+    </div>
+  </footer>
+
+  <!-- Accordion and Gallery Logic -->
+  <script>
+    // Culture Accordion Logic
+    const cultureItems = document.querySelectorAll('.culture-item');
+    const cultureImages = document.querySelectorAll('.culture-image-panel img');
+
+    cultureItems.forEach((item) => {
+      const header = item.querySelector('.culture-header');
+      header.addEventListener('click', () => {
+        // Deactivate active items
+        document.querySelector('.culture-item.active').classList.remove('active');
+        document.querySelector('.culture-image-panel img.active').classList.remove('active');
+
+        // Activate clicked item
+        item.classList.add('active');
+        const index = item.getAttribute('data-index');
+        cultureImages[index].classList.add('active');
+      });
+    });
+
+    // Captains Gallery Logic
+    const captainCards = document.querySelectorAll('.captain-card-small, .captains-mobile-card');
+    const featuredImg = document.querySelector('.featured-captain-img');
+    const featuredName = document.querySelector('.featured-captain-name');
+    const featuredTitle = document.querySelector('.featured-captain-title');
+
+    captainCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        // Remove active class from other cards
+        document.querySelectorAll('.captain-card-small.active').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked card (if it's small card grid)
+        if (card.classList.contains('captain-card-small')) {
+          card.classList.add('active');
+        }
+
+        // Get details
+        const name = card.getAttribute('data-name');
+        const title = card.getAttribute('data-title');
+        const image = card.getAttribute('data-image');
+
+        // Fade effect transition
+        featuredImg.style.opacity = '0';
+        setTimeout(() => {
+          featuredImg.src = image;
+          featuredName.textContent = name;
+          featuredTitle.textContent = title;
+          featuredImg.style.opacity = '1';
+        }, 150);
+      });
+    });
+
+    // Mobile Hamburger Menu (Stub)
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navMenu = document.querySelector('header nav');
+    menuToggle.addEventListener('click', () => {
+      if (navMenu.style.display === 'flex') {
+        navMenu.style.display = 'none';
+      } else {
+        navMenu.style.display = 'flex';
+        navMenu.style.flexDirection = 'column';
+        navMenu.style.position = 'absolute';
+        navMenu.style.top = '100%';
+        navMenu.style.left = '0';
+        navMenu.style.right = '0';
+        navMenu.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        navMenu.style.padding = '2rem';
+        navMenu.style.gap = '1.5rem';
+      }
+    });
+  </script>
+
+</body>
+</html>
