@@ -347,11 +347,17 @@ exports.getLotteryWinnersAndLost = async (req, res) => {
  */
 exports.getRecentWinners = async (req, res) => {
   try {
-    const winningTickets = await Ticket.find({ status: 'won' })
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const winningTickets = await Ticket.find({
+      status: 'won',
+      updatedAt: { $gte: sevenDaysAgo }
+    })
       .populate('userId', 'name')
       .populate('lotteryId', 'name drawDate')
       .sort({ updatedAt: -1 })
-      .limit(10);
+      .limit(100);
 
     const winners = winningTickets.map(t => ({
       ticketId: t._id,

@@ -294,21 +294,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.confirmation_number_outlined, 
-                                                    size: 14, color: cardTheme.textIconColor),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '$ticketsLeft ${lang.translate('tickets_left')}',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: cardTheme.textIconColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            const SizedBox(),
                                             Text(
                                               '${((1 - progress) * 100).toInt()}% ${lang.translate('filled')}',
                                               style: const TextStyle(
