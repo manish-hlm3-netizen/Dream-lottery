@@ -78,6 +78,12 @@ app.get('/api/app/download', (req, res) => {
   }
 
   const apkPath = path.join(publicDir, targetApk);
+  
+  // Set cache control headers to prevent any caching of the APK file download
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   res.download(apkPath, 'dream-lottery.apk', (err) => {
     if (err) {
       console.error('Download error:', err);

@@ -364,11 +364,15 @@ exports.getAppVersion = async (req, res) => {
       });
     }
 
+    const baseDownloadUrl = settings.appDownloadUrl || 'https://lottery-api-vgk0.onrender.com/api/app/download';
+    const separator = baseDownloadUrl.includes('?') ? '&' : '?';
+    const appDownloadUrl = `${baseDownloadUrl}${separator}v=${settings.appVersion || '1.0.0'}`;
+
     res.json({
       success: true,
       data: {
         appVersion: settings.appVersion || '1.0.0',
-        appDownloadUrl: settings.appDownloadUrl || 'https://lottery-api-vgk0.onrender.com/api/app/download'
+        appDownloadUrl: appDownloadUrl
       }
     });
   } catch (error) {
