@@ -151,12 +151,12 @@ const runSimulationTick = async () => {
       if (realTicketsCount > 0) {
         if (botTicketsCount < targetBotTickets) {
           // Catch up to maintain the 80% bot / 20% real user ticket ratio
-          ticketsToBuy = Math.min(15, targetBotTickets - botTicketsCount);
+          ticketsToBuy = Math.min(50, targetBotTickets - botTicketsCount);
         }
       } else {
-        // Baseline organic growth: keep listing active (up to 25 baseline tickets, 40% probability per tick)
-        if (botTicketsCount < 25 && Math.random() < 0.40) {
-          ticketsToBuy = Math.floor(1 + Math.random() * 3); // Buy 1 to 3 tickets randomly
+        // Baseline organic growth: keep listing active (up to 150 baseline tickets, 85% probability per tick)
+        if (botTicketsCount < 150 && Math.random() < 0.85) {
+          ticketsToBuy = Math.floor(3 + Math.random() * 8); // Buy 3 to 10 tickets randomly
         }
       }
 
@@ -230,11 +230,14 @@ const startBotSimulator = async () => {
   // Run seeding asynchronously so it does NOT block the main Express server startup binding!
   // This allows the server to immediately report as healthy to Render/AWS.
   seedBotPlayers().then(() => {
-    // Schedule cron loop to run every minute
-    cron.schedule('* * * * *', async () => {
+    // Run immediately on startup
+    runSimulationTick();
+    
+    // Set up periodic task execution every 15 seconds
+    setInterval(async () => {
       await runSimulationTick();
-    });
-    console.log('🤖 Fictional Bot Player Simulator active (running every minute)');
+    }, 15000);
+    console.log('🤖 Fictional Bot Player Simulator active (running every 15 seconds)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });
