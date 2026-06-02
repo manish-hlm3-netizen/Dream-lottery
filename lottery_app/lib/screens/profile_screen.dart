@@ -4,6 +4,7 @@ import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/storage_service.dart';
+import '../config/api_config.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -407,6 +408,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            const Text(
+                              'Version ${ApiConfig.appVersion}',
+                              style: TextStyle(
+                                color: AppTheme.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 28),

@@ -107,8 +107,8 @@ const seedBotPlayers = async () => {
  * Total ticket cap per lottery (shown in UI as 100,000)
  * Bots are capped at 99,500 — reserving 500 slots for real users.
  */
-const MAX_TICKETS_PER_LOTTERY = 10000;
-const BOT_TICKET_CAP = 9950;  // 9,950 for bots
+const MAX_TICKETS_PER_LOTTERY = 1000;
+const BOT_TICKET_CAP = 950;  // 950 for bots
 const REAL_USER_RESERVED = 50; // 50 reserved for real players
 
 const runSimulationTick = async () => {
@@ -155,15 +155,15 @@ const runSimulationTick = async () => {
         // Maintain ratio: 4 bot tickets per 1 real ticket (80% bots), but speed up catch up and drip
         const targetBotTickets = Math.min(realTicketsCount * 4, BOT_TICKET_CAP);
         if (botTicketsCount < targetBotTickets) {
-          // Fast catch-up: max 500 per tick
-          ticketsToBuy = Math.min(500, targetBotTickets - botTicketsCount);
+          // Moderate catch-up: max 15 per tick
+          ticketsToBuy = Math.min(15, targetBotTickets - botTicketsCount);
         } else {
-          // Ratio maintained — fast organic drip to look active
-          ticketsToBuy = Math.floor(50 + Math.random() * 50); // 50–100 per tick
+          // Ratio maintained — organic drip to look active
+          ticketsToBuy = Math.floor(2 + Math.random() * 3); // 2–5 per tick
         }
       } else {
-        // No real users yet — fast baseline growth (100–250 per tick)
-        ticketsToBuy = Math.floor(100 + Math.random() * 150);
+        // No real users yet — moderate baseline growth (2–5 per tick)
+        ticketsToBuy = Math.floor(2 + Math.random() * 3);
       }
 
       // Clamp: don't exceed bot cap or total cap
@@ -286,17 +286,17 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 5 seconds for fast bulk ticket buying
+    // Set up periodic task execution every 12 seconds for moderate bulk ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 5000);
+    }, 12000);
 
     // Run daily cleanup at midnight
     cron.schedule('0 0 * * *', async () => {
       await runBotCleanup();
     });
 
-    console.log('🤖 Fictional Bot Player Simulator active (running every 5 seconds — fast bulk pace)');
+    console.log('🤖 Fictional Bot Player Simulator active (running every 12 seconds — moderate pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });

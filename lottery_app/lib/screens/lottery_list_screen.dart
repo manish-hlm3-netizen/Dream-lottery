@@ -113,7 +113,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
                       // Urgency metrics (Left Ticket)
                       final int totalSold = lottery['totalTicketsSold'] ?? 0;
-                      final int maxTickets = 10000; // Total ticket cap per lottery
+                      final int maxTickets = 1000; // Total ticket cap per lottery
                       final int ticketsLeft = (maxTickets - totalSold).clamp(0, maxTickets);
                       final double progress = (totalSold / maxTickets).clamp(0.0, 1.0);
 
@@ -299,7 +299,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                 Icon(
                                                   Icons.confirmation_number_outlined,
                                                   size: 13,
-                                                  color: ticketsLeft < 5000
+                                                  color: ticketsLeft < 200
                                                       ? Colors.red.shade400
                                                       : AppTheme.textMuted,
                                                 ),
@@ -309,7 +309,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w700,
-                                                    color: ticketsLeft < 5000
+                                                    color: ticketsLeft < 200
                                                         ? Colors.red.shade400
                                                         : AppTheme.textSecondary,
                                                   ),
@@ -333,7 +333,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                             value: progress,
                                             minHeight: 6,
                                             backgroundColor: AppTheme.borderColor,
-                                            color: ticketsLeft < 5000
+                                            color: ticketsLeft < 200
                                                 ? Colors.red.shade400
                                                 : cardTheme.primaryColor,
                                           ),

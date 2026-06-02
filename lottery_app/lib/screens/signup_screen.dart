@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
+import '../config/api_config.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -304,6 +305,15 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'Version ${ApiConfig.appVersion}',
+                        style: TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
