@@ -49,10 +49,16 @@ const processAutomaticDraw = async (lottery) => {
       return prizeTier ? prizeTier.amount : 0;
     };
 
+    // Create an O(1) lookup map for shuffled ticket indices to avoid O(N^2) complexity
+    const shuffledIndexMap = new Map();
+    shuffledTickets.forEach((t, index) => {
+      shuffledIndexMap.set(t._id.toString(), index);
+    });
+
     // Determine initial ranks and prize tiers for all tickets in memory
     const ticketResults = [];
     for (const ticket of tickets) {
-      const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
+      const shuffledIndex = shuffledIndexMap.get(ticket._id.toString());
       
       let rank = 0;
       if (shuffledIndex >= 0 && shuffledIndex < 10) {

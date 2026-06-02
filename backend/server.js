@@ -174,8 +174,8 @@ const startServer = async () => {
   // Start scheduled draws
   startScheduler();
 
-  // Start bot player simulator
-  await startBotSimulator();
+  // Start bot player simulator (runs in background, non-blocking)
+  startBotSimulator();
 
   // Start Express
   app.listen(PORT, HOST, () => {
