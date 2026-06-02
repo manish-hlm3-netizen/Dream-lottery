@@ -158,6 +158,7 @@ class _DepositScreenState extends State<DepositScreen> {
         });
       } else {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     } catch (e) {
       setState(() {
         _success = false;
