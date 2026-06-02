@@ -127,23 +127,13 @@ const runSimulationTick = async () => {
     const bots = await User.find({ isBot: true });
     if (bots.length === 0) return;
 
-    // Fast lookup map: botId -> true
-    const botMap = {};
-    bots.forEach(b => { botMap[b._id.toString()] = true; });
+    const botIds = bots.map(b => b._id);
 
     for (const lottery of activeLotteries) {
-      const tickets = await Ticket.find({ lotteryId: lottery._id });
-
-      let realTicketsCount = 0;
-      let botTicketsCount = 0;
-
-      tickets.forEach(t => {
-        if (botMap[t.userId.toString()]) {
-          botTicketsCount++;
-        } else {
-          realTicketsCount++;
-        }
-      });
+      const [botTicketsCount, realTicketsCount] = await Promise.all([
+        Ticket.countDocuments({ lotteryId: lottery._id, userId: { $in: botIds } }),
+        Ticket.countDocuments({ lotteryId: lottery._id, userId: { $nin: botIds } })
+      ]);
 
       const totalTicketsSold = realTicketsCount + botTicketsCount;
 
