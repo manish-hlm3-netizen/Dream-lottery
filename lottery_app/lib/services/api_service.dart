@@ -83,6 +83,17 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.put(ApiConfig.changePassword, data: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+    return response.data;
+  }
+
   // ──────────────────────────────────────
   // Wallet
   // ──────────────────────────────────────

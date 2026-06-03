@@ -32,13 +32,28 @@ const lotterySchema = new mongoose.Schema({
     type: Number,
     default: 49,
     min: [10, 'Max number must be at least 10'],
-    max: [99, 'Max number cannot exceed 99']
+    max: [999, 'Max number cannot exceed 999']
   },
   pickCount: {
     type: Number,
     default: 6,
     min: [1, 'Must pick at least 1 number'],
     max: [10, 'Cannot pick more than 10 numbers']
+  },
+  maxTicketsPerUser: {
+    type: Number,
+    default: 3,
+    min: [1, 'Must allow at least 1 ticket per user']
+  },
+  maxTickets: {
+    type: Number,
+    default: 1000,
+    min: [1, 'Must allow at least 1 ticket in the lottery']
+  },
+  ticketsSoldMultiplier: {
+    type: Number,
+    default: 67,
+    min: [1, 'Multiplier must be at least 1']
   },
   drawDate: {
     type: Date,

@@ -14,6 +14,14 @@ function LotteryDetailContent() {
   const [drawResult, setDrawResult] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Settings state
+  const [settingsForm, setSettingsForm] = useState({
+    maxTicketsPerUser: 3,
+    maxTickets: 1000,
+    ticketsSoldMultiplier: 67
+  });
+  const [updatingSettings, setUpdatingSettings] = useState(false);
+
   // Custom Draw state
   const [showDrawModal, setShowDrawModal] = useState(false);
   const [drawMode, setDrawMode] = useState('random'); // 'random' or 'manual'
@@ -30,6 +38,11 @@ function LotteryDetailContent() {
       if (data.success) {
         setLottery(data.data.lottery);
         setTickets(data.data.tickets);
+        setSettingsForm({
+          maxTicketsPerUser: data.data.lottery.maxTicketsPerUser ?? 3,
+          maxTickets: data.data.lottery.maxTickets ?? 1000,
+          ticketsSoldMultiplier: data.data.lottery.ticketsSoldMultiplier ?? 67
+        });
       }
     } catch (err) {
       console.error('Load lottery error:', err);
@@ -137,6 +150,26 @@ function LotteryDetailContent() {
     }
   };
 
+  const handleSettingsSubmit = async (e) => {
+    e.preventDefault();
+    setUpdatingSettings(true);
+    try {
+      const data = await api.updateLottery(id, {
+        maxTicketsPerUser: Number(settingsForm.maxTicketsPerUser),
+        maxTickets: Number(settingsForm.maxTickets),
+        ticketsSoldMultiplier: Number(settingsForm.ticketsSoldMultiplier)
+      });
+      if (data.success) {
+        showToast('Lottery settings updated successfully!', 'success');
+        loadLottery();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setUpdatingSettings(false);
+    }
+  };
+
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -168,6 +201,17 @@ function LotteryDetailContent() {
         <div>
           <h2>{lottery.name}</h2>
           <p>{lottery.description || `Pick ${lottery.pickCount} numbers from 1-${lottery.maxNumber}`}</p>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+            <span className="badge-status active" style={{ fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
+              Limit/Player: {lottery.maxTicketsPerUser || 3}
+            </span>
+            <span className="badge-status active" style={{ fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
+              Total Cap: {lottery.maxTickets || 1000}
+            </span>
+            <span className="badge-status active" style={{ fontSize: 11, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
+              Multiplier: {lottery.ticketsSoldMultiplier || 67}x (Shown Sold: {(lottery.totalTicketsSold || 0) * (lottery.ticketsSoldMultiplier || 67)})
+            </span>
+          </div>
         </div>
         <div className="btn-group">
           {['upcoming', 'active'].includes(lottery.status) && (
@@ -289,6 +333,57 @@ function LotteryDetailContent() {
           </tbody>
         </table>
       </div>
+
+      {/* Lottery Settings Card (Only editable if status !== completed) */}
+      {lottery.status !== 'completed' && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header">
+            <h3>⚙️ Edit Lottery Settings</h3>
+          </div>
+          <div className="card-body">
+            <form onSubmit={handleSettingsSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, alignItems: 'end' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 11 }}>Max Tickets Per User</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={settingsForm.maxTicketsPerUser}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, maxTicketsPerUser: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 11 }}>Max Total Tickets</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={settingsForm.maxTickets}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, maxTickets: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 11 }}>Tickets Sold Multiplier</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={settingsForm.ticketsSoldMultiplier}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, ticketsSoldMultiplier: e.target.value }))}
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="submit" className="btn btn-primary btn-sm" style={{ height: '42px', width: '100%', justifyContent: 'center' }} disabled={updatingSettings}>
+                  {updatingSettings ? 'Saving...' : '💾 Save Settings'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Tickets */}
       <div className="card">

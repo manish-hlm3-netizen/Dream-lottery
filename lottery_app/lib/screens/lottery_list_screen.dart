@@ -111,11 +111,19 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                       final drawDate = DateTime.tryParse(lottery['drawDate'] ?? '') ?? DateTime.now();
                       final timeLeft = drawDate.difference(DateTime.now());
 
+                      // Unique TKT suffix using the last 6 characters of _id (or fallback)
+                      final String idStr = lottery['_id']?.toString() ?? '';
+                      final String tktId = idStr.length >= 6
+                          ? idStr.substring(idStr.length - 6).toUpperCase()
+                          : 'LOTT';
+
                       // Urgency metrics (Left Ticket)
-                      final int totalSold = lottery['totalTicketsSold'] ?? 0;
-                      final int maxTickets = 1000; // Total ticket cap per lottery
+                      final int multiplier = lottery['ticketsSoldMultiplier'] ?? 67;
+                      final int realMaxTickets = lottery['maxTickets'] ?? 1000;
+                      final int totalSold = (lottery['totalTicketsSold'] ?? 0) * multiplier;
+                      final int maxTickets = realMaxTickets * multiplier;
                       final int ticketsLeft = (maxTickets - totalSold).clamp(0, maxTickets);
-                      final double progress = (totalSold / maxTickets).clamp(0.0, 1.0);
+                      final double progress = maxTickets > 0 ? (totalSold / maxTickets).clamp(0.0, 1.0) : 0.0;
 
                       final jackpot = (lottery['prizes'] as List?)
                           ?.firstWhere((p) => p['match'] == lottery['pickCount'],
@@ -124,7 +132,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                       final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 24),
+                        margin: const EdgeInsets.only(bottom: 16),
                         child: PhysicalShape(
                           clipper: const TicketClipper(),
                           color: AppTheme.bgCard,
@@ -140,7 +148,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                 children: [
                                   // Header with premium gradient, safety pattern, vintage border & corner stars
                                   Container(
-                                    height: 85,
+                                    height: 72,
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       gradient: cardTheme.gradient,
@@ -187,7 +195,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                           child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
@@ -204,7 +212,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                             maxLines: 1,
                                                             overflow: TextOverflow.ellipsis,
                                                             style: const TextStyle(
-                                                              fontSize: 18,
+                                                              fontSize: 16,
                                                               fontWeight: FontWeight.w900,
                                                               color: Colors.white,
                                                               letterSpacing: 0.3,
@@ -228,7 +236,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                 ),
                                               ),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
                                                   borderRadius: BorderRadius.circular(30),
@@ -245,7 +253,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                   style: TextStyle(
                                                     color: cardTheme.primaryColor,
                                                     fontWeight: FontWeight.w900,
-                                                    fontSize: 15,
+                                                    fontSize: 13,
                                                   ),
                                                 ),
                                               ),
@@ -287,7 +295,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
 
                                   // Urgency Progress Bar (Left Tickets)
                                   Padding(
-                                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -299,7 +307,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                 Icon(
                                                   Icons.confirmation_number_outlined,
                                                   size: 13,
-                                                  color: ticketsLeft < 200
+                                                  color: ticketsLeft < (200 * multiplier)
                                                       ? Colors.red.shade400
                                                       : AppTheme.textMuted,
                                                 ),
@@ -309,7 +317,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w700,
-                                                    color: ticketsLeft < 200
+                                                    color: ticketsLeft < (200 * multiplier)
                                                         ? Colors.red.shade400
                                                         : AppTheme.textSecondary,
                                                   ),
@@ -333,7 +341,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                             value: progress,
                                             minHeight: 6,
                                             backgroundColor: AppTheme.borderColor,
-                                            color: ticketsLeft < 200
+                                            color: ticketsLeft < (200 * multiplier)
                                                 ? Colors.red.shade400
                                                 : cardTheme.primaryColor,
                                           ),
@@ -341,7 +349,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 10),
 
                                   // Winners Pricing matching tiers
                                   if (lottery['prizes'] != null && (lottery['prizes'] as List).isNotEmpty) ...[
@@ -351,7 +359,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           const Divider(color: AppTheme.borderColor, height: 1),
-                                          const SizedBox(height: 12),
+                                          const SizedBox(height: 8),
                                           Row(
                                             children: [
                                               Icon(Icons.emoji_events, 
@@ -368,7 +376,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 10),
+                                          const SizedBox(height: 6),
                                           Wrap(
                                             spacing: 8,
                                             runSpacing: 8,
@@ -414,7 +422,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                               );
                                             }).toList(),
                                           ),
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 10),
                                         ],
                                       ),
                                     ),
@@ -425,7 +433,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                     decoration: const BoxDecoration(
                                       color: Color(0xFF0F172A),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
@@ -526,7 +534,7 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                                                     ),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                      'TKT-${lottery['_id'].toString().substring(0, 6).toUpperCase()}',
+                                                      'TKT-$tktId',
                                                       style: TextStyle(
                                                         color: Colors.white.withOpacity(0.5),
                                                         fontSize: 8,

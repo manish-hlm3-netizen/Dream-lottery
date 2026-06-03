@@ -573,7 +573,7 @@ class _LotteryCard extends StatelessWidget {
     final cardTheme = AppTheme.getLotteryTheme(lottery['name']);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: PhysicalShape(
         clipper: const TicketClipper(),
         color: AppTheme.bgCard,
@@ -589,7 +589,7 @@ class _LotteryCard extends StatelessWidget {
               children: [
                 // Header with premium gradient, safety pattern, vintage border & corner stars
                 Container(
-                  height: 85,
+                  height: 72,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: cardTheme.gradient,
@@ -636,7 +636,7 @@ class _LotteryCard extends StatelessWidget {
                         child: Icon(Icons.star, size: 8, color: Colors.white.withOpacity(0.9)),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -653,7 +653,7 @@ class _LotteryCard extends StatelessWidget {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            fontSize: 18,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w900,
                                             color: Colors.white,
                                             letterSpacing: 0.3,
@@ -677,7 +677,7 @@ class _LotteryCard extends StatelessWidget {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(30),
@@ -694,7 +694,7 @@ class _LotteryCard extends StatelessWidget {
                                 style: TextStyle(
                                   color: cardTheme.primaryColor,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 15,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
@@ -736,7 +736,7 @@ class _LotteryCard extends StatelessWidget {
 
                 // Card Body
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -746,7 +746,7 @@ class _LotteryCard extends StatelessWidget {
                           _InfoChip(
                             icon: Icons.confirmation_number_outlined,
                             iconColor: cardTheme.textIconColor,
-                            text: '${lottery['totalTicketsSold'] ?? 0} ${lang.translate('tickets_sold')}',
+                            text: '${(lottery['totalTicketsSold'] ?? 0) * (lottery['ticketsSoldMultiplier'] ?? 67)} ${lang.translate('tickets_sold')}',
                           ),
                           _InfoChip(
                             icon: Icons.timer_outlined,
@@ -759,9 +759,9 @@ class _LotteryCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       const Divider(color: AppTheme.borderColor, height: 1),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

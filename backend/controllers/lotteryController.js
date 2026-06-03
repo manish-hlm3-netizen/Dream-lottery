@@ -98,12 +98,21 @@ exports.buyTicket = async (req, res) => {
       });
     }
 
-    // Check if user already bought 3 tickets for this lottery
-    const ticketCount = await Ticket.countDocuments({ userId: req.user._id, lotteryId });
-    if (ticketCount >= 3) {
+    // Check if total tickets sold has reached maxTickets cap
+    if (lottery.totalTicketsSold >= (lottery.maxTickets || 1000)) {
       return res.status(400).json({
         success: false,
-        message: 'You have already purchased the maximum of 3 tickets allowed for this lottery.'
+        message: 'This lottery has reached its maximum tickets capacity.'
+      });
+    }
+
+    // Check if user already bought maximum tickets for this lottery
+    const ticketCount = await Ticket.countDocuments({ userId: req.user._id, lotteryId });
+    const userLimit = lottery.maxTicketsPerUser || 3;
+    if (ticketCount >= userLimit) {
+      return res.status(400).json({
+        success: false,
+        message: `You have already purchased the maximum of ${userLimit} tickets allowed for this lottery.`
       });
     }
 

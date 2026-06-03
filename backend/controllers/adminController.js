@@ -328,7 +328,7 @@ exports.processWithdrawal = async (req, res) => {
  */
 exports.createLottery = async (req, res) => {
   try {
-    const { name, description, ticketPrice, prizes, maxNumber, pickCount, drawDate, isAutomatic } = req.body;
+    const { name, description, ticketPrice, prizes, maxNumber, pickCount, drawDate, isAutomatic, maxTicketsPerUser, maxTickets, ticketsSoldMultiplier } = req.body;
 
     if (!name || !ticketPrice || !drawDate) {
       return res.status(400).json({
@@ -360,6 +360,9 @@ exports.createLottery = async (req, res) => {
       prizes: prizes || defaultPrizes,
       maxNumber: maxNumber || 49,
       pickCount: pickCount || 6,
+      maxTicketsPerUser: maxTicketsPerUser !== undefined ? maxTicketsPerUser : 3,
+      maxTickets: maxTickets !== undefined ? maxTickets : 1000,
+      ticketsSoldMultiplier: ticketsSoldMultiplier !== undefined ? ticketsSoldMultiplier : 67,
       drawDate: new Date(drawDate),
       isAutomatic: isAutomatic !== undefined ? isAutomatic : true,
       status: 'upcoming',
@@ -420,7 +423,7 @@ exports.updateLottery = async (req, res) => {
       });
     }
 
-    const allowedUpdates = ['name', 'description', 'ticketPrice', 'prizes', 'drawDate', 'isAutomatic', 'status'];
+    const allowedUpdates = ['name', 'description', 'ticketPrice', 'prizes', 'drawDate', 'isAutomatic', 'status', 'maxTicketsPerUser', 'maxTickets', 'ticketsSoldMultiplier'];
     const updates = {};
     for (const key of allowedUpdates) {
       if (req.body[key] !== undefined) {

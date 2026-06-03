@@ -15,6 +15,9 @@ export default function CreateLotteryPage() {
     pickCount: 6,
     drawDate: '',
     isAutomatic: true,
+    maxTicketsPerUser: 3,
+    maxTickets: 1000,
+    ticketsSoldMultiplier: 67,
     prizes: [
       { match: 1, label: '1st Winner', amount: 50000 },
       { match: 2, label: '2nd Winner', amount: 25000 },
@@ -60,7 +63,10 @@ export default function CreateLotteryPage() {
         ...form,
         ticketPrice: Number(form.ticketPrice),
         maxNumber: Number(form.maxNumber),
-        pickCount: Number(form.pickCount)
+        pickCount: Number(form.pickCount),
+        maxTicketsPerUser: Number(form.maxTicketsPerUser),
+        maxTickets: Number(form.maxTickets),
+        ticketsSoldMultiplier: Number(form.ticketsSoldMultiplier)
       });
       if (data.success) {
         router.push('/lotteries');
@@ -141,7 +147,7 @@ export default function CreateLotteryPage() {
                   type="number"
                   className="form-input"
                   min="10"
-                  max="99"
+                  max="999"
                   value={form.maxNumber}
                   onChange={(e) => updateForm('maxNumber', e.target.value)}
                 />
@@ -155,6 +161,42 @@ export default function CreateLotteryPage() {
                   max="10"
                   value={form.pickCount}
                   onChange={(e) => updateForm('pickCount', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Max Tickets Per User *</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={form.maxTicketsPerUser}
+                  onChange={(e) => updateForm('maxTicketsPerUser', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Max Total Tickets *</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={form.maxTickets}
+                  onChange={(e) => updateForm('maxTickets', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Tickets Sold Multiplier *</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={form.ticketsSoldMultiplier}
+                  onChange={(e) => updateForm('ticketsSoldMultiplier', e.target.value)}
+                  required
                 />
               </div>
             </div>

@@ -123,6 +123,14 @@ class LanguageProvider with ChangeNotifier {
       'share_code_started': 'Share your code above to get started!',
       'referred_friends': 'Referred Friends',
       'earnings': 'Earnings',
+      'change_password': 'Change Password',
+      'old_password': 'Current Password',
+      'new_password': 'New Password',
+      'retype_new_password': 'Re-type New Password',
+      'change_password_success': 'Password changed successfully!',
+      'password_mismatch': 'New passwords do not match',
+      'password_too_short': 'Password must be at least 6 characters',
+      'all_fields_required': 'All fields are required',
     },
     'hi': {
       'welcome_back': 'आपका स्वागत है',
@@ -203,6 +211,14 @@ class LanguageProvider with ChangeNotifier {
       'share_code_started': 'शुरू करने के लिए ऊपर अपना कोड साझा करें!',
       'referred_friends': 'आमंत्रित मित्र',
       'earnings': 'कमाई',
+      'change_password': 'पासवर्ड बदलें',
+      'old_password': 'वर्तमान पासवर्ड',
+      'new_password': 'नया पासवर्ड',
+      'retype_new_password': 'नया पासवर्ड दोबारा दर्ज करें',
+      'change_password_success': 'पासवर्ड सफलतापूर्वक बदल दिया गया!',
+      'password_mismatch': 'नए पासवर्ड मेल नहीं खाते',
+      'password_too_short': 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए',
+      'all_fields_required': 'सभी फ़ील्ड आवश्यक हैं',
     }
   };
 

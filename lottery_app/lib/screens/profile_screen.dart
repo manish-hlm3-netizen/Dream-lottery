@@ -366,6 +366,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
 
                             _ProfileMenuItem(
+                              icon: Icons.vpn_key_outlined,
+                              label: lang.isHindi ? 'पासवर्ड बदलें 🔑' : 'Change Password 🔑',
+                              onTap: () => Navigator.pushNamed(context, '/change-password'),
+                            ),
+
+                            _ProfileMenuItem(
                               icon: Icons.chat_bubble_outline,
                               label: '${lang.translate('chat_support')} 💬',
                               onTap: () => Navigator.pushNamed(context, '/support-chat'),

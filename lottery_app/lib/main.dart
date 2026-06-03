@@ -21,6 +21,7 @@ import 'screens/referrals_screen.dart';
 import 'screens/lottery_participants_screen.dart';
 import 'screens/support_chat_screen.dart';
 import 'screens/security_pin_screen.dart';
+import 'screens/change_password_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,7 @@ class LotteryApp extends StatelessWidget {
           '/referrals': (context) => const ReferralsScreen(),
           '/support-chat': (context) => const SupportChatScreen(),
           '/security-pin': (context) => const SecurityPinScreen(),
+          '/change-password': (context) => const ChangePasswordScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/buy-ticket') {

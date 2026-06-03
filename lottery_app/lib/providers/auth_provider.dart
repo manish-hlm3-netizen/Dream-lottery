@@ -129,6 +129,30 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
+  Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final res = await _api.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return res;
+    } catch (e) {
+      _isLoading = false;
+      _error = _extractError(e);
+      notifyListeners();
+      return {'success': false, 'message': _error};
+    }
+  }
+
   Future<void> refreshUser() async {
     try {
       final res = await _api.getMe();
