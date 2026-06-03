@@ -15,6 +15,8 @@ services:
         sync: false
       - key: JWT_EXPIRE
         value: 7d
+      - key: TZ
+        value: Asia/Kolkata
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
