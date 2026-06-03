@@ -282,17 +282,17 @@ const startBotSimulator = async () => {
     // Run immediately on startup
     runSimulationTick();
     
-    // Set up periodic task execution every 12 seconds for moderate bulk ticket buying
+    // Set up periodic task execution every 50 seconds for moderate bulk ticket buying
     setInterval(async () => {
       await runSimulationTick();
-    }, 12000);
+    }, 50000);
 
     // Run daily cleanup at midnight
     cron.schedule('0 0 * * *', async () => {
       await runBotCleanup();
     });
 
-    console.log('🤖 Fictional Bot Player Simulator active (running every 12 seconds — moderate pace)');
+    console.log('🤖 Fictional Bot Player Simulator active (running every 50 seconds — moderate pace)');
   }).catch(err => {
     console.error('❌ Failed to initialize bot simulation pool:', err);
   });
