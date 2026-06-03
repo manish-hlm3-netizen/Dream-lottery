@@ -423,12 +423,18 @@ exports.updateLottery = async (req, res) => {
       });
     }
 
-    const allowedUpdates = ['name', 'description', 'ticketPrice', 'prizes', 'drawDate', 'isAutomatic', 'status', 'maxTicketsPerUser', 'maxTickets', 'ticketsSoldMultiplier'];
+    const allowedUpdates = ['name', 'description', 'ticketPrice', 'prizes', 'drawDate', 'isAutomatic', 'status', 'maxTicketsPerUser', 'maxTickets', 'ticketsSoldMultiplier', 'totalTicketsSold', 'totalRevenue'];
     const updates = {};
     for (const key of allowedUpdates) {
       if (req.body[key] !== undefined) {
         updates[key] = req.body[key];
       }
+    }
+
+    // Automatically recalculate totalRevenue if totalTicketsSold was modified but totalRevenue was not explicitly sent
+    if (req.body.totalTicketsSold !== undefined && req.body.totalRevenue === undefined) {
+      const ticketPrice = req.body.ticketPrice !== undefined ? req.body.ticketPrice : lottery.ticketPrice;
+      updates.totalRevenue = Number(req.body.totalTicketsSold) * ticketPrice;
     }
 
     const updatedLottery = await Lottery.findByIdAndUpdate(

@@ -18,7 +18,8 @@ function LotteryDetailContent() {
   const [settingsForm, setSettingsForm] = useState({
     maxTicketsPerUser: 3,
     maxTickets: 1000,
-    ticketsSoldMultiplier: 67
+    ticketsSoldMultiplier: 67,
+    totalTicketsSold: 0
   });
   const [updatingSettings, setUpdatingSettings] = useState(false);
 
@@ -41,7 +42,8 @@ function LotteryDetailContent() {
         setSettingsForm({
           maxTicketsPerUser: data.data.lottery.maxTicketsPerUser ?? 3,
           maxTickets: data.data.lottery.maxTickets ?? 1000,
-          ticketsSoldMultiplier: data.data.lottery.ticketsSoldMultiplier ?? 67
+          ticketsSoldMultiplier: data.data.lottery.ticketsSoldMultiplier ?? 67,
+          totalTicketsSold: data.data.lottery.totalTicketsSold ?? 0
         });
       }
     } catch (err) {
@@ -157,7 +159,8 @@ function LotteryDetailContent() {
       const data = await api.updateLottery(id, {
         maxTicketsPerUser: Number(settingsForm.maxTicketsPerUser),
         maxTickets: Number(settingsForm.maxTickets),
-        ticketsSoldMultiplier: Number(settingsForm.ticketsSoldMultiplier)
+        ticketsSoldMultiplier: Number(settingsForm.ticketsSoldMultiplier),
+        totalTicketsSold: Number(settingsForm.totalTicketsSold)
       });
       if (data.success) {
         showToast('Lottery settings updated successfully!', 'success');
@@ -372,6 +375,17 @@ function LotteryDetailContent() {
                   min="1"
                   value={settingsForm.ticketsSoldMultiplier}
                   onChange={(e) => setSettingsForm(prev => ({ ...prev, ticketsSoldMultiplier: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 11 }}>Tickets Sold (Manual)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="0"
+                  value={settingsForm.totalTicketsSold}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, totalTicketsSold: e.target.value }))}
                   required
                 />
               </div>
