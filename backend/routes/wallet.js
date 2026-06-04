@@ -32,7 +32,7 @@ router.post('/deposit', [
 // @route   POST /api/wallet/withdraw
 router.post('/withdraw', [
   body('amount')
-    .isFloat({ min: 10 }).withMessage('Minimum withdrawal is ₹10'),
+    .isFloat({ min: 100 }).withMessage('Minimum withdrawal is ₹100'),
   body('method')
     .optional()
     .isIn(['upi', 'bank']).withMessage('Invalid withdrawal method'),

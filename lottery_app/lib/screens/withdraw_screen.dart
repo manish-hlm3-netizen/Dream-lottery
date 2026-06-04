@@ -263,7 +263,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     validator: (val) {
                       if (val == null || val.isEmpty) return lang.isHindi ? 'राशि दर्ज करें' : 'Enter amount';
                       final amount = double.tryParse(val);
-                      if (amount == null || amount < 10) return lang.isHindi ? 'न्यूनतम ₹10' : 'Minimum ₹10';
+                      if (amount == null || amount < 100) return lang.isHindi ? 'न्यूनतम ₹100' : 'Minimum ₹100';
                       return null;
                     },
                   ),
