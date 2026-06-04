@@ -151,6 +151,20 @@ exports.buyTicket = async (req, res) => {
       });
     }
 
+    // Check if user already bought a ticket with these numbers for this lottery
+    const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b);
+    const existingTicket = await Ticket.findOne({
+      userId: req.user._id,
+      lotteryId,
+      selectedNumbers: sortedNumbers
+    });
+    if (existingTicket) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already purchased a ticket with these numbers for this lottery.'
+      });
+    }
+
     // Check wallet balance
     const user = await User.findById(req.user._id);
     const totalBalance = (user.walletBalance || 0) + (user.referralBalance || 0);

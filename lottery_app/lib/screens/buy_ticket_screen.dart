@@ -4,6 +4,7 @@ import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/lottery_provider.dart';
 import '../providers/language_provider.dart';
+import '../services/api_service.dart';
 
 class BuyTicketScreen extends StatefulWidget {
   final Map<String, dynamic> lottery;
@@ -19,6 +20,50 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
   bool _loading = false;
   String? _message;
   bool _success = false;
+  List<dynamic> _myTickets = [];
+  bool _loadingTickets = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTickets();
+  }
+
+  Future<void> _loadTickets() async {
+    if (!mounted) return;
+    setState(() {
+      _loadingTickets = true;
+    });
+    try {
+      final res = await ApiService().getMyTickets(widget.lottery['_id']);
+      if (res['success'] == true && mounted) {
+        setState(() {
+          _myTickets = res['data']['tickets'] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading tickets: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingTickets = false;
+        });
+      }
+    }
+  }
+
+  bool _isAlreadyBought() {
+    if (_selectedNumbers.length != _pickCount) return false;
+    final sortedSelected = _selectedNumbers.toList()..sort();
+    return _myTickets.any((ticket) {
+      final List<dynamic> numbers = ticket['selectedNumbers'] ?? [];
+      if (numbers.length != sortedSelected.length) return false;
+      for (int i = 0; i < numbers.length; i++) {
+        if (numbers[i] != sortedSelected[i]) return false;
+      }
+      return true;
+    });
+  }
 
   int get _pickCount => widget.lottery['pickCount'] ?? 6;
   int get _maxNumber => widget.lottery['maxNumber'] ?? 49;
@@ -52,6 +97,10 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
 
     if (_success && mounted) {
       context.read<AuthProvider>().refreshUser();
+      setState(() {
+        _selectedNumbers.clear();
+      });
+      _loadTickets();
       // Show success and go back
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -198,6 +247,37 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                       ),
                     ),
 
+                  // Duplicate ticket warning
+                  if (_isAlreadyBought())
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.dangerColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.dangerColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: AppTheme.dangerColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              lang.isHindi 
+                                  ? 'आपने पहले ही इस नंबर संयोजन के साथ टिकट खरीद लिया है।' 
+                                  : 'You have already purchased a ticket with this combination.',
+                              style: const TextStyle(
+                                color: AppTheme.dangerColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // Number Grid
                   GridView.builder(
                     shrinkWrap: true,
@@ -275,7 +355,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: _loading || _selectedNumbers.length != _pickCount
+                  onPressed: _loading || _selectedNumbers.length != _pickCount || _isAlreadyBought()
                       ? null
                       : _buyTicket,
                   style: ElevatedButton.styleFrom(
