@@ -55,6 +55,16 @@ class StorageService {
     await _storage.delete(key: _pinKey);
   }
 
+  static const _lastReadAnnouncementIdKey = 'last_read_announcement_id';
+
+  static Future<void> saveLastReadAnnouncementId(String id) async {
+    await _storage.write(key: _lastReadAnnouncementIdKey, value: id);
+  }
+
+  static Future<String?> getLastReadAnnouncementId() async {
+    return await _storage.read(key: _lastReadAnnouncementIdKey);
+  }
+
   static Future<void> clearAll() async {
     // Retain PIN even if clearAll is called during session clear, except if specifically logging out or reset.
     // Wait, to keep PIN active even if user session refreshes, but clear it on complete logout.

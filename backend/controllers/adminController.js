@@ -561,7 +561,7 @@ exports.drawLottery = async (req, res) => {
       if (rank === 1) targetMatch = 1;
       else if (rank === 2) targetMatch = 2;
       else if (rank === 3) targetMatch = 3;
-      
+
       const prizeTier = prizes.find(p => p.match === targetMatch);
       return prizeTier ? prizeTier.amount : 0;
     };
@@ -570,9 +570,9 @@ exports.drawLottery = async (req, res) => {
     const ticketResults = [];
     for (const ticket of tickets) {
       const ticketNumsStr = ticket.selectedNumbers.join(',');
-      
+
       let rank = 0;
-      
+
       // 1. Check if this ticket matches any of the admin's custom rank winning combinations
       for (let r = 1; r <= 10; r++) {
         const customCombo = validatedRankWinningNumbers[r - 1];
@@ -581,7 +581,7 @@ exports.drawLottery = async (req, res) => {
           break;
         }
       }
-      
+
       // 2. If no rank matched yet, fall back to standard raffle rank ONLY if no custom ranks were supplied
       if (rank === 0 && !req.body.rankWinningNumbers) {
         const shuffledIndex = shuffledTickets.findIndex(t => t._id.toString() === ticket._id.toString());
@@ -659,8 +659,8 @@ exports.drawLottery = async (req, res) => {
         }
 
         // Create winnings transaction
-        const splitDesc = splitCount > 1 
-          ? ` (Split among ${splitCount} winners with identical numbers)` 
+        const splitDesc = splitCount > 1
+          ? ` (Split among ${splitCount} winners with identical numbers)`
           : '';
         await Transaction.create({
           userId: ticket.userId,
@@ -1032,7 +1032,7 @@ exports.updateUPISettings = async (req, res) => {
     if (appDownloadUrl !== undefined) {
       settings.appDownloadUrl = appDownloadUrl;
     }
-    
+
     await settings.save();
 
     res.json({

@@ -323,6 +323,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               icon: Icons.campaign_outlined,
                               label: lang.translate('announcements'),
                               onTap: () => Navigator.pushNamed(context, '/announcements'),
+                              trailing: auth.hasNewAnnouncement
+                                  ? Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             _ProfileMenuItem(
                               icon: Icons.card_giftcard_outlined,
@@ -792,11 +802,13 @@ class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   const _ProfileMenuItem({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.trailing,
   });
 
   @override
@@ -825,6 +837,10 @@ class _ProfileMenuItem extends StatelessWidget {
                 ),
               ),
             ),
+            if (trailing != null) ...[
+              trailing!,
+              const SizedBox(width: 8),
+            ],
             const Icon(Icons.chevron_right, color: AppTheme.textMuted),
           ],
         ),

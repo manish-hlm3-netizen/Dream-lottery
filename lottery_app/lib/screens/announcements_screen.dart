@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import '../providers/language_provider.dart';
+import '../providers/auth_provider.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   const AnnouncementsScreen({super.key});
@@ -31,9 +32,14 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     try {
       final response = await ApiService().getAnnouncements();
       if (response['success'] == true) {
+        final List<dynamic> list = response['data'] ?? [];
         setState(() {
-          _announcements = response['data'] ?? [];
+          _announcements = list;
         });
+        if (list.isNotEmpty && mounted) {
+          final latestId = list.first['_id'].toString();
+          context.read<AuthProvider>().markAnnouncementsAsRead(latestId);
+        }
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Failed to load announcements';

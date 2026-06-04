@@ -9,6 +9,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoggedIn = false;
   Map<String, dynamic>? _user;
   String? _error;
+  bool _hasNewAnnouncement = false;
 
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _isLoggedIn;
@@ -18,6 +19,31 @@ class AuthProvider with ChangeNotifier {
   String get userEmail => _user?['email'] ?? '';
   double get walletBalance => (_user?['walletBalance'] ?? 0).toDouble();
   double get referralBalance => (_user?['referralBalance'] ?? 0).toDouble();
+  bool get hasNewAnnouncement => _hasNewAnnouncement;
+
+  Future<void> checkNewAnnouncements() async {
+    try {
+      final res = await _api.getAnnouncements();
+      if (res['success'] == true) {
+        final List<dynamic> announcements = res['data'] ?? [];
+        if (announcements.isNotEmpty) {
+          final latestId = announcements.first['_id'];
+          final lastReadId = await StorageService.getLastReadAnnouncementId();
+          _hasNewAnnouncement = (latestId != lastReadId);
+          notifyListeners();
+        } else {
+          _hasNewAnnouncement = false;
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> markAnnouncementsAsRead(String latestId) async {
+    await StorageService.saveLastReadAnnouncementId(latestId);
+    _hasNewAnnouncement = false;
+    notifyListeners();
+  }
 
   Future<void> checkAuth() async {
     final token = await StorageService.getToken();
@@ -28,6 +54,7 @@ class AuthProvider with ChangeNotifier {
         _user = cachedUser;
         _isLoggedIn = true;
         notifyListeners();
+        checkNewAnnouncements();
       }
 
       try {
@@ -38,6 +65,7 @@ class AuthProvider with ChangeNotifier {
           // Cache fresh user profile data locally
           await StorageService.saveUserData(res['data']);
           notifyListeners();
+          checkNewAnnouncements();
           return;
         }
       } catch (err) {
@@ -161,6 +189,7 @@ class AuthProvider with ChangeNotifier {
         // Cache refreshed user profile data locally
         await StorageService.saveUserData(res['data']);
         notifyListeners();
+        checkNewAnnouncements();
       }
     } catch (_) {}
   }
@@ -192,6 +221,7 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     _isLoggedIn = false;
     _error = null;
+    _hasNewAnnouncement = false;
     notifyListeners();
   }
 
