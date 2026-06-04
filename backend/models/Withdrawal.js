@@ -12,10 +12,20 @@ const withdrawalSchema = new mongoose.Schema({
     required: [true, 'Amount is required'],
     min: [10, 'Minimum withdrawal is ₹10']
   },
+  method: {
+    type: String,
+    enum: ['upi', 'bank'],
+    default: 'upi'
+  },
   upiId: {
     type: String,
-    required: [true, 'UPI ID is required'],
     trim: true
+  },
+  bankDetails: {
+    bankName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    ifscCode: { type: String, trim: true },
+    accountHolderName: { type: String, trim: true }
   },
   status: {
     type: String,

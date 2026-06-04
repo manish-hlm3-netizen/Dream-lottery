@@ -60,16 +60,16 @@ export default function WithdrawalsPage() {
     <>
       <div className="page-header">
         <h2>Withdrawal Requests</h2>
-        <p>Process user withdrawal requests to UPI</p>
+        <p>Process user withdrawal requests</p>
       </div>
 
       <div className="filter-bar">
         <div className="filter-tabs">
           {['pending', 'approved', 'rejected', 'all'].map((f) => (
             <button
-              key={f}
-              className={`filter-tab ${filter === f ? 'active' : ''}`}
-              onClick={() => setFilter(f)}
+               key={f}
+               className={`filter-tab ${filter === f ? 'active' : ''}`}
+               onClick={() => setFilter(f)}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
@@ -91,7 +91,7 @@ export default function WithdrawalsPage() {
               <tr>
                 <th>User</th>
                 <th>Amount</th>
-                <th>UPI ID</th>
+                <th>Payout Details</th>
                 <th>User Balance</th>
                 <th>Status</th>
                 <th>Date</th>
@@ -106,7 +106,22 @@ export default function WithdrawalsPage() {
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{w.userId?.phone}</div>
                   </td>
                   <td className="amount negative">₹{w.amount?.toLocaleString()}</td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{w.upiId}</td>
+                  <td>
+                    {w.method === 'bank' ? (
+                      <div style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                        <span className="badge-method" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', marginRight: '6px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>BANK</span>
+                        <div><strong>Holder:</strong> {w.bankDetails?.accountHolderName}</div>
+                        <div><strong>Bank:</strong> {w.bankDetails?.bankName}</div>
+                        <div><strong>A/C:</strong> {w.bankDetails?.accountNumber}</div>
+                        <div><strong>IFSC:</strong> {w.bankDetails?.ifscCode}</div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                        <span className="badge-method" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', marginRight: '6px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>UPI</span>
+                        <div style={{ fontFamily: 'monospace' }}>{w.upiId || 'N/A'}</div>
+                      </div>
+                    )}
+                  </td>
                   <td className="amount">₹{w.userId?.walletBalance?.toLocaleString()}</td>
                   <td><span className={`badge-status ${w.status}`}>{w.status}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatDate(w.createdAt)}</td>

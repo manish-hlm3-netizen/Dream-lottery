@@ -126,7 +126,7 @@ exports.withdraw = async (req, res) => {
       });
     }
 
-    const { amount, upiId } = req.body;
+    const { amount, method, upiId, bankName, accountNumber, ifscCode, accountHolderName } = req.body;
 
     // Check sufficient balance
     const user = await User.findById(req.user._id);
@@ -154,13 +154,31 @@ exports.withdraw = async (req, res) => {
     user.walletBalance -= amount;
     await user.save();
 
-    // Create withdrawal request
-    const withdrawal = await Withdrawal.create({
+    // Prepare withdrawal payload
+    const withdrawalData = {
       userId: req.user._id,
       amount,
-      upiId,
+      method: method || 'upi',
       status: 'pending'
-    });
+    };
+
+    if (withdrawalData.method === 'upi') {
+      withdrawalData.upiId = upiId;
+    } else {
+      withdrawalData.bankDetails = {
+        bankName,
+        accountNumber,
+        ifscCode,
+        accountHolderName
+      };
+    }
+
+    // Create withdrawal request
+    const withdrawal = await Withdrawal.create(withdrawalData);
+
+    const description = withdrawal.method === 'upi'
+      ? `Withdrawal of ₹${amount} to UPI: ${upiId}`
+      : `Withdrawal of ₹${amount} to Bank: ${bankName} (${accountNumber})`;
 
     // Create transaction record
     await Transaction.create({
@@ -168,13 +186,17 @@ exports.withdraw = async (req, res) => {
       type: 'withdraw',
       amount,
       status: 'pending',
-      description: `Withdrawal of ₹${amount} to UPI: ${upiId}`
+      description
     });
 
     // Send real-time push notification to Admin
+    const notificationMessage = withdrawal.method === 'upi'
+      ? `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
+      : `User ${req.user.name} requested withdrawal of ₹${amount} to Bank Account: ${bankName}, A/C: ${accountNumber}, Holder: ${accountHolderName}, IFSC: ${ifscCode}.`;
+
     sendAdminNotification(
       '💸 New Withdrawal Request',
-      `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
+      notificationMessage
     );
 
     res.status(201).json({
@@ -183,7 +205,9 @@ exports.withdraw = async (req, res) => {
       data: {
         withdrawalId: withdrawal._id,
         amount: withdrawal.amount,
+        method: withdrawal.method,
         upiId: withdrawal.upiId,
+        bankDetails: withdrawal.bankDetails,
         status: withdrawal.status,
         newBalance: user.walletBalance,
         createdAt: withdrawal.createdAt

@@ -125,11 +125,21 @@ class ApiService {
 
   Future<Map<String, dynamic>> withdraw({
     required double amount,
-    required String upiId,
+    required String method,
+    String? upiId,
+    String? bankName,
+    String? accountNumber,
+    String? ifscCode,
+    String? accountHolderName,
   }) async {
     final response = await _dio.post(ApiConfig.walletWithdraw, data: {
       'amount': amount,
-      'upiId': upiId,
+      'method': method,
+      if (upiId != null) 'upiId': upiId,
+      if (bankName != null) 'bankName': bankName,
+      if (accountNumber != null) 'accountNumber': accountNumber,
+      if (ifscCode != null) 'ifscCode': ifscCode,
+      if (accountHolderName != null) 'accountHolderName': accountHolderName,
     });
     return response.data;
   }

@@ -16,6 +16,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _upiIdController = TextEditingController();
+  final _bankNameController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _ifscCodeController = TextEditingController();
+  final _accountHolderNameController = TextEditingController();
+
+  String _selectedMethod = 'upi'; // 'upi' or 'bank'
   bool _loading = false;
   String? _message;
   bool _success = false;
@@ -42,7 +48,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     try {
       final res = await ApiService().withdraw(
         amount: amount,
-        upiId: _upiIdController.text.trim(),
+        method: _selectedMethod,
+        upiId: _selectedMethod == 'upi' ? _upiIdController.text.trim() : null,
+        bankName: _selectedMethod == 'bank' ? _bankNameController.text.trim() : null,
+        accountNumber: _selectedMethod == 'bank' ? _accountNumberController.text.trim() : null,
+        ifscCode: _selectedMethod == 'bank' ? _ifscCodeController.text.trim().toUpperCase() : null,
+        accountHolderName: _selectedMethod == 'bank' ? _accountHolderNameController.text.trim() : null,
       );
 
       setState(() {
@@ -54,6 +65,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         auth.refreshUser();
         _amountController.clear();
         _upiIdController.clear();
+        _bankNameController.clear();
+        _accountNumberController.clear();
+        _ifscCodeController.clear();
+        _accountHolderNameController.clear();
       }
     } catch (e) {
       setState(() {
@@ -69,6 +84,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   void dispose() {
     _amountController.dispose();
     _upiIdController.dispose();
+    _bankNameController.dispose();
+    _accountNumberController.dispose();
+    _ifscCodeController.dispose();
+    _accountHolderNameController.dispose();
     super.dispose();
   }
 
@@ -105,7 +124,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             color: AppTheme.primaryColor),
                       ),
                       const SizedBox(width: 16),
-                       Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(lang.isHindi ? 'निकासी योग्य बैलेंस' : 'Withdrawable Balance',
@@ -124,6 +143,89 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 20),
+
+            // Premium Payout Method Toggle Selector
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppTheme.bgCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedMethod = 'upi'),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedMethod == 'upi'
+                              ? AppTheme.primaryColor.withOpacity(0.15)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.payment,
+                              color: _selectedMethod == 'upi' ? AppTheme.primaryColor : AppTheme.textMuted,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              lang.isHindi ? 'UPI ट्रांसफर' : 'UPI Transfer',
+                              style: TextStyle(
+                                color: _selectedMethod == 'upi' ? AppTheme.primaryColor : AppTheme.textMuted,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedMethod = 'bank'),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedMethod == 'bank'
+                              ? AppTheme.primaryColor.withOpacity(0.15)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.account_balance,
+                              color: _selectedMethod == 'bank' ? AppTheme.primaryColor : AppTheme.textMuted,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              lang.isHindi ? 'बैंक ट्रांसफर' : 'Bank Transfer',
+                              style: TextStyle(
+                                color: _selectedMethod == 'bank' ? AppTheme.primaryColor : AppTheme.textMuted,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -151,7 +253,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                   TextFormField(
+                  TextFormField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
@@ -166,20 +268,98 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _upiIdController,
-                    decoration: InputDecoration(
-                      labelText: lang.isHindi ? 'आपका UPI ID' : 'Your UPI ID',
-                      prefixIcon: const Icon(Icons.payment, color: AppTheme.textMuted),
-                      hintText: lang.isHindi ? 'जैसे, yourname@upi' : 'e.g., yourname@upi',
+                  
+                  // Dynamic forms with clean animation transitions
+                  AnimatedCrossFade(
+                    firstChild: Column(
+                      children: [
+                        TextFormField(
+                          controller: _upiIdController,
+                          decoration: InputDecoration(
+                            labelText: lang.isHindi ? 'आपका UPI ID' : 'Your UPI ID',
+                            prefixIcon: const Icon(Icons.payment, color: AppTheme.textMuted),
+                            hintText: lang.isHindi ? 'जैसे, yourname@upi' : 'e.g., yourname@upi',
+                          ),
+                          validator: (val) {
+                            if (_selectedMethod == 'upi') {
+                              if (val == null || val.isEmpty) return lang.isHindi ? 'अपनी UPI ID दर्ज करें' : 'Enter your UPI ID';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return lang.isHindi ? 'अपनी UPI ID दर्ज करें' : 'Enter your UPI ID';
-                      return null;
-                    },
+                    secondChild: Column(
+                      children: [
+                        TextFormField(
+                          controller: _accountHolderNameController,
+                          decoration: InputDecoration(
+                            labelText: lang.isHindi ? 'खाताधारक का नाम' : 'Account Holder Name',
+                            prefixIcon: const Icon(Icons.person, color: AppTheme.textMuted),
+                          ),
+                          validator: (val) {
+                            if (_selectedMethod == 'bank') {
+                              if (val == null || val.isEmpty) return lang.isHindi ? 'खाताधारक का नाम दर्ज करें' : 'Enter account holder name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _bankNameController,
+                          decoration: InputDecoration(
+                            labelText: lang.isHindi ? 'बैंक का नाम' : 'Bank Name',
+                            prefixIcon: const Icon(Icons.business, color: AppTheme.textMuted),
+                          ),
+                          validator: (val) {
+                            if (_selectedMethod == 'bank') {
+                              if (val == null || val.isEmpty) return lang.isHindi ? 'बैंक का नाम दर्ज करें' : 'Enter bank name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _accountNumberController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: lang.isHindi ? 'खाता संख्या' : 'Account Number',
+                            prefixIcon: const Icon(Icons.numbers, color: AppTheme.textMuted),
+                          ),
+                          validator: (val) {
+                            if (_selectedMethod == 'bank') {
+                              if (val == null || val.isEmpty) return lang.isHindi ? 'खाता संख्या दर्ज करें' : 'Enter account number';
+                              if (val.length < 9) return lang.isHindi ? 'अमान्य खाता संख्या' : 'Invalid account number';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _ifscCodeController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            labelText: lang.isHindi ? 'IFSC कोड' : 'IFSC Code',
+                            prefixIcon: const Icon(Icons.code, color: AppTheme.textMuted),
+                            hintText: 'e.g., SBIN0001234',
+                          ),
+                          validator: (val) {
+                            if (_selectedMethod == 'bank') {
+                              if (val == null || val.isEmpty) return lang.isHindi ? 'IFSC कोड दर्ज करें' : 'Enter IFSC code';
+                              if (val.length != 11) return lang.isHindi ? 'IFSC कोड 11 वर्णों का होना चाहिए' : 'IFSC code must be 11 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                    crossFadeState: _selectedMethod == 'upi'
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    duration: const Duration(milliseconds: 300),
                   ),
                   const SizedBox(height: 32),
-                   SizedBox(
+                  SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
@@ -205,7 +385,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
               ),
             ),
             const SizedBox(height: 16),
-             Text(
+            Text(
               lang.isHindi 
                   ? '⏳ व्यवस्थापक द्वारा अनुरोध संसाधित किए जाने तक राशि आपके वॉलेट से रोकी जाएगी' 
                   : '⏳ Amount will be held from your wallet until admin processes the request',

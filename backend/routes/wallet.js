@@ -33,9 +33,49 @@ router.post('/deposit', [
 router.post('/withdraw', [
   body('amount')
     .isFloat({ min: 10 }).withMessage('Minimum withdrawal is ₹10'),
+  body('method')
+    .optional()
+    .isIn(['upi', 'bank']).withMessage('Invalid withdrawal method'),
   body('upiId')
-    .trim()
-    .notEmpty().withMessage('UPI ID is required')
+    .custom((value, { req }) => {
+      const method = req.body.method || 'upi';
+      if (method === 'upi' && (!value || !value.trim())) {
+        throw new Error('UPI ID is required');
+      }
+      return true;
+    }),
+  body('bankName')
+    .custom((value, { req }) => {
+      const method = req.body.method || 'upi';
+      if (method === 'bank' && (!value || !value.trim())) {
+        throw new Error('Bank name is required');
+      }
+      return true;
+    }),
+  body('accountNumber')
+    .custom((value, { req }) => {
+      const method = req.body.method || 'upi';
+      if (method === 'bank' && (!value || !value.trim())) {
+        throw new Error('Account number is required');
+      }
+      return true;
+    }),
+  body('ifscCode')
+    .custom((value, { req }) => {
+      const method = req.body.method || 'upi';
+      if (method === 'bank' && (!value || !value.trim())) {
+        throw new Error('IFSC code is required');
+      }
+      return true;
+    }),
+  body('accountHolderName')
+    .custom((value, { req }) => {
+      const method = req.body.method || 'upi';
+      if (method === 'bank' && (!value || !value.trim())) {
+        throw new Error('Account holder name is required');
+      }
+      return true;
+    })
 ], walletController.withdraw);
 
 // @route   GET /api/wallet/transactions
