@@ -1,422 +1,473 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../config/app_theme.dart';
 import '../providers/language_provider.dart';
 import '../services/storage_service.dart';
 
+// ─────────────────────────────────────────────────────────────
+// Entry point: call this to show the winner experience
+// ─────────────────────────────────────────────────────────────
+void showRank1WinnerDialog(BuildContext context, Map<String, dynamic> ticket) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.black87,
+    transitionDuration: const Duration(milliseconds: 450),
+    transitionBuilder: (ctx, anim, secondaryAnim, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.80, end: 1.0).animate(
+            CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+          ),
+          child: child,
+        ),
+      );
+    },
+    pageBuilder: (ctx, _, __) => Rank1WinnerDialog(ticket: ticket),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// The dialog widget
+// ─────────────────────────────────────────────────────────────
 class Rank1WinnerDialog extends StatefulWidget {
   final Map<String, dynamic> ticket;
-
-  const Rank1WinnerDialog({
-    super.key,
-    required this.ticket,
-  });
+  const Rank1WinnerDialog({super.key, required this.ticket});
 
   @override
   State<Rank1WinnerDialog> createState() => _Rank1WinnerDialogState();
 }
 
 class _Rank1WinnerDialogState extends State<Rank1WinnerDialog>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  final List<FireworkParticle> _particles = [];
-  final Random _random = Random();
-  late double _screenWidth;
-  late double _screenHeight;
-  bool _initialized = false;
+    with TickerProviderStateMixin {
+  // Separate ticker for particle physics — never interferes with the card animation
+  late final AnimationController _particleTicker;
+
+  final List<_Particle> _particles = [];
+  final Random _rng = Random();
+  OverlayEntry? _overlayEntry;
   int _ticks = 0;
+
+  // For the pulsing crown icon
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _pulseAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 16), // ~60 FPS update interval
-    )..repeat();
 
-    _controller.addListener(_updatePhysics);
+    // Particle ticker at ~60 fps
+    _particleTicker = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 16),
+    )..repeat();
+    _particleTicker.addListener(_tick);
+
+    // Crown pulse
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+
+    // Insert fireworks overlay after first frame so we have a context
+    WidgetsBinding.instance.addPostFrameCallback((_) => _insertOverlay());
+  }
+
+  void _insertOverlay() {
+    if (!mounted) return;
+    _overlayEntry = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _particleTicker,
+            builder: (_, __) => CustomPaint(
+              size: MediaQuery.of(context).size,
+              painter: _FireworksPainter(particles: _particles),
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_updatePhysics);
-    _controller.dispose();
+    _particleTicker.removeListener(_tick);
+    _particleTicker.dispose();
+    _pulseCtrl.dispose();
+    _removeOverlay();
     super.dispose();
   }
 
-  void _initScreenSize(BuildContext context) {
-    if (_initialized) return;
+  // ── Physics tick ────────────────────────────────────────────
+  void _tick() {
+    if (!mounted) return;
     final size = MediaQuery.of(context).size;
-    _screenWidth = size.width;
-    _screenHeight = size.height;
-    _initialized = true;
-
-    // Spawn initial sky shots
-    _spawnSkyShot();
-    _spawnSkyShot();
-  }
-
-  void _spawnSkyShot() {
-    if (!_initialized) return;
-    final startX = _screenWidth * (0.2 + _random.nextDouble() * 0.6);
-    final targetY = _screenHeight * (0.15 + _random.nextDouble() * 0.35);
-    final speedY = -(_screenHeight * 0.012 + _random.nextDouble() * _screenHeight * 0.008);
-
-    _particles.add(
-      FireworkParticle(
-        x: startX,
-        y: _screenHeight,
-        vx: (_random.nextDouble() - 0.5) * 3,
-        vy: speedY,
-        color: _getRandomBrightColor(),
-        size: 4.0 + _random.nextDouble() * 2.0,
-        alpha: 1.0,
-        decay: 0.005,
-        isSkyShot: true,
-        targetY: targetY,
-      ),
-    );
-  }
-
-  void _spawnFirecrackerSparks() {
-    if (!_initialized) return;
-    // Launch crackling sparks from bottom corners upwards/inwards
-    final fromLeft = _random.nextBool();
-    final startX = fromLeft ? 10.0 : _screenWidth - 10.0;
-    final startY = _screenHeight - 80;
-    final vx = (fromLeft ? 1.0 : -1.0) * (5.0 + _random.nextDouble() * 8.0);
-    final vy = -(8.0 + _random.nextDouble() * 12.0);
-
-    _particles.add(
-      FireworkParticle(
-        x: startX,
-        y: startY,
-        vx: vx,
-        vy: vy,
-        // High-frequency bright colors or white for sparks
-        color: _random.nextBool() ? Colors.white : Colors.amberAccent,
-        size: 2.0 + _random.nextDouble() * 2.0,
-        alpha: 1.0,
-        decay: 0.02 + _random.nextDouble() * 0.03, // fade quickly
-        gravity: 0.15,
-        drag: 0.95,
-      ),
-    );
-  }
-
-  void _explode(double x, double y, Color centerColor) {
-    final particleCount = 45 + _random.nextInt(20);
-    final colors = [
-      centerColor,
-      Colors.amber,
-      Colors.orangeAccent,
-      Colors.amberAccent,
-      Colors.yellowAccent,
-      _getRandomBrightColor(),
-    ];
-
-    for (int i = 0; i < particleCount; i++) {
-      final angle = _random.nextDouble() * 2 * pi;
-      final speed = 1.0 + _random.nextDouble() * 6.0;
-      final color = colors[_random.nextInt(colors.length)];
-
-      _particles.add(
-        FireworkParticle(
-          x: x,
-          y: y,
-          vx: cos(angle) * speed,
-          vy: sin(angle) * speed,
-          color: color,
-          size: 2.0 + _random.nextDouble() * 3.0,
-          alpha: 1.0,
-          decay: 0.012 + _random.nextDouble() * 0.012,
-          gravity: 0.07,
-          drag: 0.96,
-        ),
-      );
-    }
-  }
-
-  Color _getRandomBrightColor() {
-    final List<Color> brightColors = [
-      Colors.amberAccent,
-      Colors.orangeAccent,
-      Colors.redAccent,
-      Colors.greenAccent,
-      Colors.cyanAccent,
-      Colors.pinkAccent,
-      Colors.purpleAccent,
-      Colors.yellowAccent,
-    ];
-    return brightColors[_random.nextInt(brightColors.length)];
-  }
-
-  void _updatePhysics() {
-    if (!mounted || !_initialized) return;
-
     _ticks++;
 
-    // Spawning sky shots periodically
-    if (_ticks % 40 == 0 && _particles.where((p) => p.isSkyShot).length < 4) {
-      _spawnSkyShot();
+    // Launch sky shots every 35 ticks (keep max 5 in flight)
+    if (_ticks % 35 == 0) {
+      final skyCount = _particles.where((p) => p.isSkyShot).length;
+      if (skyCount < 5) _spawnSkyShot(size);
     }
 
-    // Spawning firecracker sparks at corners
-    if (_ticks % 3 == 0) {
-      _spawnFirecrackerSparks();
-      _spawnFirecrackerSparks();
+    // Firecracker sparks from bottom corners every 4 ticks
+    if (_ticks % 4 == 0) {
+      _spawnSpark(size, fromLeft: true);
+      _spawnSpark(size, fromLeft: false);
     }
 
-    List<FireworkParticle> nextParticles = [];
-
-    for (var p in _particles) {
+    // Update particles; explode sky shots that reach their apex
+    final next = <_Particle>[];
+    for (final p in _particles) {
       p.update();
-      if (p.isSkyShot && p.hasExploded) {
-        _explode(p.x, p.y, p.color);
-      } else if (p.alpha > 0.01) {
-        nextParticles.add(p);
+      if (p.isSkyShot && p.reachedApex) {
+        _explode(p.x, p.y, p.color, size);
+      } else if (p.alpha > 0.01 && p.x >= -20 && p.x <= size.width + 20) {
+        next.add(p);
       }
     }
-
-    setState(() {
-      _particles.clear();
-      _particles.addAll(nextParticles);
-    });
+    _particles
+      ..clear()
+      ..addAll(next);
+    // No setState — the OverlayEntry repaints through AnimatedBuilder
   }
 
+  void _spawnSkyShot(Size size) {
+    final x = size.width * (0.15 + _rng.nextDouble() * 0.7);
+    final targetY = size.height * (0.08 + _rng.nextDouble() * 0.30);
+    _particles.add(_Particle.skyShot(
+      x: x,
+      y: size.height + 10,
+      targetY: targetY,
+      color: _brightColor(),
+      rng: _rng,
+    ));
+  }
+
+  void _spawnSpark(Size size, {required bool fromLeft}) {
+    final x = fromLeft ? _rng.nextDouble() * 40 : size.width - _rng.nextDouble() * 40;
+    final y = size.height - 60 - _rng.nextDouble() * 60;
+    _particles.add(_Particle.spark(
+      x: x,
+      y: y,
+      vx: (fromLeft ? 1 : -1) * (3 + _rng.nextDouble() * 7),
+      vy: -(6 + _rng.nextDouble() * 10),
+      color: _rng.nextBool() ? Colors.amberAccent : Colors.white,
+      rng: _rng,
+    ));
+  }
+
+  void _explode(double x, double y, Color baseColor, Size size) {
+    final count = 50 + _rng.nextInt(25);
+    for (int i = 0; i < count; i++) {
+      final angle = _rng.nextDouble() * 2 * pi;
+      final speed = 1.5 + _rng.nextDouble() * 6.5;
+      _particles.add(_Particle.explosion(
+        x: x,
+        y: y,
+        vx: cos(angle) * speed,
+        vy: sin(angle) * speed,
+        color: _explosionColor(baseColor),
+        rng: _rng,
+      ));
+    }
+  }
+
+  Color _brightColor() {
+    const palette = [
+      Color(0xFFFFD700), // gold
+      Color(0xFFFF6B35), // orange
+      Color(0xFF00E5FF), // cyan
+      Color(0xFFE040FB), // purple
+      Color(0xFF69FF47), // green
+      Color(0xFFFF4081), // pink
+      Color(0xFFFFEA00), // yellow
+    ];
+    return palette[_rng.nextInt(palette.length)];
+  }
+
+  Color _explosionColor(Color base) {
+    final mix = [base, Colors.white, Colors.amberAccent, _brightColor()];
+    return mix[_rng.nextInt(mix.length)];
+  }
+
+  // ── Build ────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    _initScreenSize(context);
-    final lang = Provider.of<LanguageProvider>(context);
-    
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     final lottery = widget.ticket['lotteryId'] ?? {};
-    final lotteryName = lottery['name'] ?? 'Dream Lottery';
+    final lotteryName = lottery['name'] ?? 'Lottery';
     final prizeWon = widget.ticket['prizeWon'] ?? 0;
-    final ticketId = widget.ticket['_id'] ?? '';
-    final shortTicketId = ticketId.length > 8 
-        ? ticketId.substring(ticketId.length - 8).toUpperCase() 
+    final ticketId = (widget.ticket['_id'] ?? '').toString();
+    final shortId = ticketId.length > 8
+        ? ticketId.substring(ticketId.length - 8).toUpperCase()
         : ticketId.toUpperCase();
-
-    final title = lang.isHindi ? "विजेता! 👑" : "WINNER! 👑";
-    final congratsText = lang.isHindi 
-        ? "बधाई हो! आपने रैंक 1 हासिल किया है।" 
-        : "Congratulations! You have achieved Rank 1.";
-    final lotteryInfo = lang.isHindi 
-        ? "लॉटरी: $lotteryName"
-        : "Lottery: $lotteryName";
-    final ticketLabel = lang.isHindi
-        ? "टिकट आईडी: DL-$shortTicketId"
-        : "Ticket ID: DL-$shortTicketId";
-    final btnText = lang.isHindi ? "अद्भुत!" : "Awesome!";
 
     return PopScope(
       canPop: false,
-      child: Stack(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: _WinnerCard(
+              lang: lang,
+              lotteryName: lotteryName,
+              prizeWon: prizeWon,
+              shortId: shortId,
+              ticketId: ticketId,
+              pulseAnim: _pulseAnim,
+              onClose: () async {
+                _removeOverlay();
+                await StorageService.acknowledgeRank1Win(ticketId);
+                if (context.mounted) Navigator.of(context).pop();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Extracted card so the build method is clean
+// ─────────────────────────────────────────────────────────────
+class _WinnerCard extends StatelessWidget {
+  final LanguageProvider lang;
+  final String lotteryName;
+  final dynamic prizeWon;
+  final String shortId;
+  final String ticketId;
+  final Animation<double> pulseAnim;
+  final VoidCallback onClose;
+
+  const _WinnerCard({
+    required this.lang,
+    required this.lotteryName,
+    required this.prizeWon,
+    required this.shortId,
+    required this.ticketId,
+    required this.pulseAnim,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isHindi = lang.isHindi;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A0A2E), Color(0xFF0D1B2A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+            blurRadius: 40,
+            spreadRadius: 4,
+          ),
+          BoxShadow(
+            color: const Color(0xFFE040FB).withValues(alpha: 0.2),
+            blurRadius: 60,
+            spreadRadius: -5,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. Semi-transparent black background backdrop blur
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.65),
-            ),
-          ),
-
-          // 2. Custom Painter for Fireworks
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(
-                painter: FireworksPainter(particles: _particles),
+          // ── Header banner ──────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 22),
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFF8C00), Color(0xFFFFD700)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Pulsing crown + trophy
+                ScaleTransition(
+                  scale: pulseAnim,
+                  child: const Text('🏆', style: TextStyle(fontSize: 64)),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isHindi ? '🎉 बधाई हो! 🎉' : '🎉 CONGRATULATIONS! 🎉',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1A0A2E),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A0A2E).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isHindi ? '👑 रैंक 1 विजेता 👑' : '👑 RANK 1 WINNER 👑',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1A0A2E),
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // 3. Central Dialog Box (Luxury High Contrast Dark Design)
-          Center(
-            child: Material(
-              color: Colors.transparent,
-              child: ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: _controller,
-                  curve: const Interval(0.0, 0.4, curve: Curves.easeOutBack),
+          // ── Body ───────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: Column(
+              children: [
+                // Prize amount
+                Text(
+                  isHindi ? 'आपकी जीत' : 'You Won',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFFAAAAAA),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
                 ),
-                child: Container(
-                  width: _screenWidth * 0.85,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withOpacity(0.92), // Slate 900
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.amber.withOpacity(0.6),
-                      width: 2.0,
+                const SizedBox(height: 6),
+                ShaderMask(
+                  shaderCallback: (b) => const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFF10B981), Color(0xFFFFD700)],
+                  ).createShader(b),
+                  child: Text(
+                    '₹$prizeWon',
+                    style: const TextStyle(
+                      fontSize: 52,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -1,
+                      height: 1.1,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.amber.withOpacity(0.25),
-                        blurRadius: 35,
-                        spreadRadius: 5,
-                        offset: const Offset(0, 4),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Lottery & ticket info card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _InfoRow(
+                        icon: Icons.casino_rounded,
+                        label: isHindi ? 'लॉटरी' : 'Lottery',
+                        value: lotteryName,
+                        valueColor: const Color(0xFFFFD700),
                       ),
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.15),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, -2),
+                      const SizedBox(height: 10),
+                      _InfoRow(
+                        icon: Icons.confirmation_number_outlined,
+                        label: isHindi ? 'टिकट आईडी' : 'Ticket ID',
+                        value: 'DL-$shortId',
+                        valueColor: const Color(0xFF80CBC4),
+                        mono: true,
                       ),
                     ],
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Golden Trophy/Winner Icon
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.amber.withOpacity(0.1),
-                          border: Border.all(
-                            color: Colors.amber.withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          color: Colors.amber,
-                          size: 64,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
+                ),
 
-                      // WINNER Title
-                      ShaderMask(
-                        shaderCallback: (bounds) => AppTheme.goldGradient.createShader(bounds),
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                const SizedBox(height: 20),
 
-                      // Congratulations Text
-                      Text(
-                        congratsText,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                // Celebration message
+                Text(
+                  isHindi
+                      ? 'आपकी जीत की राशि आपके विनिंग वॉलेट में जमा कर दी गई है।'
+                      : 'Your prize has been credited to your Winning Wallet.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF90A4AE),
+                    height: 1.5,
+                  ),
+                ),
 
-                      // Ticket Details Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              lotteryInfo,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.amberAccent,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              ticketLabel,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white60,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
 
-                      // Winning Amount Display
-                      Text(
-                        lang.isHindi ? "जीती गई राशि:" : "Prize Amount:",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white38,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '₹$prizeWon',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF10B981), // Emerald Green
-                          letterSpacing: 0.5,
-                          shadows: [
-                            Shadow(
-                              color: Color(0x3310B981),
-                              blurRadius: 15,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Action Button
-                      GestureDetector(
-                        onTap: () async {
-                          // Acknowledge the win locally
-                          await StorageService.acknowledgeRank1Win(ticketId);
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.goldGradient,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.amber.withOpacity(0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              btnText,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+          // ── Close button ───────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: GestureDetector(
+              onTap: onClose,
+              child: Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    isHindi ? '🎊  शानदार!  🎊' : '🎊  Claim Your Victory!  🎊',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1A0A2E),
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -428,21 +479,67 @@ class _Rank1WinnerDialogState extends State<Rank1WinnerDialog>
   }
 }
 
-// Particle class for physics updates
-class FireworkParticle {
-  double x, y;
-  double vx, vy;
-  Color color;
-  double size;
-  double alpha;
-  double decay;
-  bool isSkyShot;
-  double? targetY;
-  bool hasExploded = false;
-  double gravity;
-  double drag;
+// ─────────────────────────────────────────────────────────────
+// Small reusable info row inside the details card
+// ─────────────────────────────────────────────────────────────
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color valueColor;
+  final bool mono;
 
-  FireworkParticle({
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    this.mono = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white38, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF90A4AE),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: valueColor,
+              fontWeight: FontWeight.w800,
+              fontFamily: mono ? 'monospace' : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Particle model
+// ─────────────────────────────────────────────────────────────
+class _Particle {
+  double x, y, vx, vy;
+  Color color;
+  double size, alpha, decay, gravity, drag;
+  bool isSkyShot;
+  double targetY;
+  bool reachedApex = false;
+
+  _Particle({
     required this.x,
     required this.y,
     required this.vx,
@@ -451,24 +548,76 @@ class FireworkParticle {
     required this.size,
     required this.alpha,
     required this.decay,
+    required this.gravity,
+    required this.drag,
     this.isSkyShot = false,
-    this.targetY,
-    this.gravity = 0.08,
-    this.drag = 0.98,
+    this.targetY = 0,
   });
+
+  factory _Particle.skyShot({
+    required double x,
+    required double y,
+    required double targetY,
+    required Color color,
+    required Random rng,
+  }) {
+    return _Particle(
+      x: x, y: y,
+      vx: (rng.nextDouble() - 0.5) * 2.5,
+      vy: -(12 + rng.nextDouble() * 6),
+      color: color,
+      size: 4 + rng.nextDouble() * 2,
+      alpha: 1, decay: 0,
+      gravity: 0, drag: 0.99,
+      isSkyShot: true,
+      targetY: targetY,
+    );
+  }
+
+  factory _Particle.spark({
+    required double x,
+    required double y,
+    required double vx,
+    required double vy,
+    required Color color,
+    required Random rng,
+  }) {
+    return _Particle(
+      x: x, y: y, vx: vx, vy: vy,
+      color: color,
+      size: 2 + rng.nextDouble() * 2,
+      alpha: 1,
+      decay: 0.025 + rng.nextDouble() * 0.02,
+      gravity: 0.18, drag: 0.94,
+    );
+  }
+
+  factory _Particle.explosion({
+    required double x,
+    required double y,
+    required double vx,
+    required double vy,
+    required Color color,
+    required Random rng,
+  }) {
+    return _Particle(
+      x: x, y: y, vx: vx, vy: vy,
+      color: color,
+      size: 2.5 + rng.nextDouble() * 3,
+      alpha: 1,
+      decay: 0.010 + rng.nextDouble() * 0.012,
+      gravity: 0.06, drag: 0.965,
+    );
+  }
 
   void update() {
     if (isSkyShot) {
       x += vx;
       y += vy;
-      // decelerate upwards slightly as they reach peak
-      vy *= 0.985;
-      vx *= 0.985;
-      if (targetY != null && y <= targetY!) {
-        hasExploded = true;
-      }
+      vx *= drag;
+      vy *= 0.988; // gradual deceleration upward
+      if (y <= targetY) reachedApex = true;
     } else {
-      // standard explosion or crackler spark
       x += vx;
       y += vy;
       vy += gravity;
@@ -480,39 +629,45 @@ class FireworkParticle {
   }
 }
 
-// Painter to draw the particles on canvas
-class FireworksPainter extends CustomPainter {
-  final List<FireworkParticle> particles;
-
-  const FireworksPainter({required this.particles});
+// ─────────────────────────────────────────────────────────────
+// Custom painter — renders all particles on a full-screen canvas
+// ─────────────────────────────────────────────────────────────
+class _FireworksPainter extends CustomPainter {
+  final List<_Particle> particles;
+  const _FireworksPainter({required this.particles});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paintObj = Paint()..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
-    for (var p in particles) {
-      paintObj.color = p.color.withOpacity(p.alpha);
-      
+    for (final p in particles) {
+      if (p.alpha <= 0) continue;
+      paint.color = p.color.withValues(alpha: p.alpha.clamp(0, 1));
+
       if (p.isSkyShot) {
-        // Draw trailing rocket
-        final trailPaint = Paint()
-          ..shader = LinearGradient(
-            colors: [p.color.withOpacity(0.0), p.color],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ).createShader(Rect.fromLTWH(p.x - 2, p.y, 4, 25))
-          ..style = PaintingStyle.fill;
-
-        canvas.drawRect(Rect.fromLTWH(p.x - 1.5, p.y, 3, 20), trailPaint);
-        // Head spark
-        canvas.drawCircle(Offset(p.x, p.y), p.size, paintObj);
+        // Draw glowing trail then bright head
+        final trailRect = Rect.fromLTWH(p.x - 1.5, p.y, 3, 22);
+        paint.shader = LinearGradient(
+          colors: [
+            p.color.withValues(alpha: 0),
+            p.color.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+        ).createShader(trailRect);
+        canvas.drawRect(trailRect, paint);
+        paint.shader = null;
+        paint.color = Colors.white.withValues(alpha: 0.95);
+        canvas.drawCircle(Offset(p.x, p.y), p.size, paint);
       } else {
-        // Exploded sparks
-        canvas.drawCircle(Offset(p.x, p.y), p.size, paintObj);
+        // Circular spark with soft glow
+        paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+        canvas.drawCircle(Offset(p.x, p.y), p.size, paint);
+        paint.maskFilter = null;
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant FireworksPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _FireworksPainter old) => true;
 }

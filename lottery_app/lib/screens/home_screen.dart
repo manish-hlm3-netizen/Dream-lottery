@@ -111,11 +111,7 @@ class _HomeTabState extends State<_HomeTab> {
             final ticketId = ticket['_id'];
             if (ticketId != null && !acknowledged.contains(ticketId)) {
               if (mounted) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => Rank1WinnerDialog(ticket: ticket),
-                );
+                showRank1WinnerDialog(context, ticket);
                 break;
               }
             }
