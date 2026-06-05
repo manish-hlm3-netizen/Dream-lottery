@@ -973,14 +973,14 @@ class _WinningWithdrawFormScreenState
 
     final auth = context.read<AuthProvider>();
     final lang = Provider.of<LanguageProvider>(context, listen: false);
-    final amount = double.parse(_amountController.text);
+    final amount = auth.winningBalance;
 
-    if (amount > auth.winningBalance) {
+    if (amount < 100) {
       setState(() {
         _success = false;
         _message = lang.isHindi
-            ? 'अपर्याप्त जीत बैलेंस। उपलब्ध: ₹${auth.winningBalance.toStringAsFixed(0)}'
-            : 'Insufficient winning balance. Available: ₹${auth.winningBalance.toStringAsFixed(0)}';
+            ? 'न्यूनतम निकासी राशि ₹100 है।'
+            : 'Minimum withdrawal amount is ₹100.';
       });
       return;
     }
@@ -1051,6 +1051,7 @@ class _WinningWithdrawFormScreenState
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(lang.isHindi ? 'जीत राशि निकासी' : 'Withdraw Winnings'),
@@ -1190,22 +1191,35 @@ class _WinningWithdrawFormScreenState
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: lang.isHindi ? 'राशि (₹)' : 'Amount (₹)',
-                      prefixIcon: const Icon(Icons.currency_rupee,
-                          color: AppTheme.textMuted),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bgCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.borderColor),
                     ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty)
-                        return lang.isHindi ? 'राशि दर्ज करें' : 'Enter amount';
-                      final amt = double.tryParse(val);
-                      if (amt == null || amt < 100)
-                        return lang.isHindi ? 'न्यूनतम ₹100' : 'Minimum ₹100';
-                      return null;
-                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          lang.isHindi ? 'निकासी राशि' : 'Withdrawal Amount',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          '₹${auth.winningBalance.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   AnimatedCrossFade(

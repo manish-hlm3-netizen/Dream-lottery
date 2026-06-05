@@ -4,9 +4,10 @@ const Settings = require('../models/Settings');
 
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI)
   .then(async () => {
+    const version = process.argv[2] || '1.4.13';
     const s = await Settings.findOneAndUpdate(
       { key: 'upi_settings' },
-      { appVersion: '1.4.12' },
+      { appVersion: version },
       { new: true, upsert: false }
     );
     if (s) {

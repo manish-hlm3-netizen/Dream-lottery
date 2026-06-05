@@ -118,119 +118,86 @@ class _WalletScreenState extends State<WalletScreen> {
                   final totalBalance = auth.walletBalance + auth.referralBalance + auth.winningBalance;
                   return Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── TOTAL BALANCE (top, prominent) ──
-                        Text(
-                          lang.isHindi ? 'कुल बैलेंस' : 'TOTAL BALANCE',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '₹${totalBalance.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 42,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          lang.isHindi ? 'जमा + रेफरल + जीत' : 'Deposit + Referral + Winnings',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.55),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Divider(color: Colors.white.withOpacity(0.2), height: 1),
-                        const SizedBox(height: 14),
-
-                        // ── THREE BALANCE ROWS ──
-                        // 1. Deposit Balance
-                        _BalanceRow(
-                          icon: Icons.account_balance_wallet_rounded,
-                          iconColor: Colors.lightBlueAccent,
-                          label: lang.isHindi ? 'डिपॉजिट बैलेंस' : 'Deposit Balance',
-                          sublabel: lang.isHindi ? 'निकासी योग्य' : 'Withdrawable',
-                          amount: '₹${auth.walletBalance.toStringAsFixed(0)}',
-                          amountColor: Colors.white,
-                        ),
-                        const SizedBox(height: 10),
-                        // 2. Referral Balance
-                        _BalanceRow(
-                          icon: Icons.people_alt_rounded,
-                          iconColor: const Color(0xFF80FF80),
-                          label: lang.isHindi ? 'रेफरल बैलेंस' : 'Referral Balance',
-                          sublabel: lang.isHindi ? 'टिकट के लिए' : 'Tickets Only',
-                          amount: '₹${auth.referralBalance.toStringAsFixed(0)}',
-                          amountColor: const Color(0xFF80FF80),
-                        ),
-                        const SizedBox(height: 10),
-                        // 3. Winning Balance
-                        _BalanceRow(
-                          icon: Icons.emoji_events_rounded,
-                          iconColor: const Color(0xFFFFD700),
-                          label: lang.isHindi ? 'जीत का बैलेंस' : 'Winning Balance',
-                          sublabel: lang.isHindi ? 'लॉटरी पुरस्कार' : 'Lottery Prizes',
-                          amount: '₹${auth.winningBalance.toStringAsFixed(0)}',
-                          amountColor: const Color(0xFFFFD700),
-                        ),
-                        const SizedBox(height: 18),
-                        Divider(color: Colors.white.withOpacity(0.2), height: 1),
-                        const SizedBox(height: 14),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () => Navigator.pushNamed(context, '/deposit')
-                                    .then((_) => _loadTransactions()),
-                                icon: const Icon(Icons.add, size: 16),
-                                label: Text(lang.translate('deposit')),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(0.2),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-                                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lang.isHindi ? 'कुल बैलेंस' : 'TOTAL BALANCE',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.0,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '₹${totalBalance.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () => Navigator.pushNamed(context, '/withdraw')
-                                    .then((_) => _loadTransactions()),
-                                icon: const Icon(Icons.arrow_upward, size: 16),
-                                label: Text(lang.translate('withdraw')),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(0.2),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-                                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            Row(
+                              children: [
+                                _CompactActionButton(
+                                  icon: Icons.add,
+                                  label: lang.translate('deposit'),
+                                  onPressed: () => Navigator.pushNamed(context, '/deposit')
+                                      .then((_) => _loadTransactions()),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                _CompactActionButton(
+                                  icon: Icons.arrow_upward,
+                                  label: lang.translate('withdraw'),
+                                  onPressed: () => Navigator.pushNamed(context, '/withdraw')
+                                      .then((_) => _loadTransactions()),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(color: Colors.white.withOpacity(0.15), height: 1),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _CompactBalanceItem(
+                              label: lang.isHindi ? 'जमा' : 'Deposit',
+                              amount: '₹${auth.walletBalance.toStringAsFixed(0)}',
+                              color: Colors.white,
+                            ),
+                            _CompactBalanceItem(
+                              label: lang.isHindi ? 'रेफरल' : 'Referral',
+                              amount: '₹${auth.referralBalance.toStringAsFixed(0)}',
+                              color: const Color(0xFF80FF80),
+                            ),
+                            _CompactBalanceItem(
+                              label: lang.isHindi ? 'जीत' : 'Winnings',
+                              amount: '₹${auth.winningBalance.toStringAsFixed(0)}',
+                              color: const Color(0xFFFFD700),
                             ),
                           ],
                         ),
@@ -507,6 +474,75 @@ class _BalanceRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CompactActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _CompactActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 12),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white.withOpacity(0.18),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _CompactBalanceItem extends StatelessWidget {
+  final String label;
+  final String amount;
+  final Color color;
+
+  const _CompactBalanceItem({
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          amount,
+          style: TextStyle(
+            color: color,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
     );
   }
 }
