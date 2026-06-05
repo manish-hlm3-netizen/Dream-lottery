@@ -3,7 +3,7 @@ description: A lottery app for Android
 
 publish_to: 'none'
 
-version: 1.4.17+30
+version: 1.4.18+31
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

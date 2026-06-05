@@ -444,6 +444,7 @@ exports.getRecentWinners = async (req, res) => {
       prizeWon: t.prizeWon,
       selectedNumbers: t.selectedNumbers,
       matchedNumbers: t.matchedNumbers,
+      rank: t.rank || 0,
     }));
 
     res.json({

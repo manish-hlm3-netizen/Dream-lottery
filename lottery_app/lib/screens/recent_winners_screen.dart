@@ -160,6 +160,7 @@ class _RecentWinnersScreenState extends State<RecentWinnersScreen> {
     final selected = w['selectedNumbers'] as List<dynamic>? ?? [];
     final matched = w['matchedNumbers'] as List<dynamic>? ?? [];
     final theme = AppTheme.getLotteryTheme(lotteryName);
+    final rank = w['rank'] ?? 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -204,16 +205,28 @@ class _RecentWinnersScreenState extends State<RecentWinnersScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                              color: AppTheme.textPrimary,
-                            ),
+                          Row(
+                            children: [
+                              if (rank > 0) ...[
+                                Text(
+                                  rank == 1 ? '👑 ' : rank == 2 ? '🥈 ' : rank == 3 ? '🥉 ' : '🏆 ',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
-                            lang.isHindi ? 'भाग्यशाली विजेता' : 'Lucky Winner',
+                            rank > 0
+                                ? (lang.isHindi ? 'रैंक $rank विजेता' : 'Rank $rank Winner')
+                                : (lang.isHindi ? 'भाग्यशाली विजेता' : 'Lucky Winner'),
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -284,7 +297,13 @@ class _RecentWinnersScreenState extends State<RecentWinnersScreen> {
                           border: Border.all(color: AppTheme.successColor.withOpacity(0.2)),
                         ),
                         child: Text(
-                          lang.isHindi ? 'जैकपॉट! 🎉' : 'JACKPOT! 🎉',
+                          rank == 1
+                              ? (lang.isHindi ? 'जैकपॉट! 🎉' : 'JACKPOT! 🎉')
+                              : rank == 2
+                                  ? (lang.isHindi ? 'दूसरा पुरस्कार! 🥈' : '2ND PRIZE! 🥈')
+                                  : rank == 3
+                                      ? (lang.isHindi ? 'तीसरा पुरस्कार! 🥉' : '3RD PRIZE! 🥉')
+                                      : (lang.isHindi ? 'विजेता! 🏆' : 'WINNER! 🏆'),
                           style: const TextStyle(
                             color: AppTheme.successColor,
                             fontWeight: FontWeight.w900,
