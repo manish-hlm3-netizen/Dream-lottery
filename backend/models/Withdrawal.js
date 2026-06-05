@@ -54,6 +54,14 @@ const withdrawalSchema = new mongoose.Schema({
   netAmount: {
     type: Number,
     default: 0
+  },
+  cessAmount: {
+    type: Number,
+    default: 0
+  },
+  cessTransactionId: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

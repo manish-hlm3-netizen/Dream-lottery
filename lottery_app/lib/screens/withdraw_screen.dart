@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -956,17 +960,83 @@ class _WinningWithdrawFormScreen extends StatefulWidget {
 class _WinningWithdrawFormScreenState
     extends State<_WinningWithdrawFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
   final _upiIdController = TextEditingController();
   final _bankNameController = TextEditingController();
   final _accountNumberController = TextEditingController();
   final _ifscCodeController = TextEditingController();
   final _accountHolderNameController = TextEditingController();
+  final _cessTxnController = TextEditingController();
 
   String _selectedMethod = 'upi';
   bool _loading = false;
   String? _message;
   bool _success = false;
+
+  // Dynamic UPI settings for Cess payment
+  String _upiId = 'lottery@upi';
+  Uint8List? _qrBytes;
+  bool _fetchingSettings = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUPISettings();
+    _upiIdController.addListener(_onFieldChanged);
+    _bankNameController.addListener(_onFieldChanged);
+    _accountNumberController.addListener(_onFieldChanged);
+    _ifscCodeController.addListener(_onFieldChanged);
+    _accountHolderNameController.addListener(_onFieldChanged);
+    _cessTxnController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    setState(() {});
+  }
+
+  Future<void> _loadUPISettings() async {
+    try {
+      final res = await ApiService().getUPISettings();
+      if (res['success'] == true && res['data'] != null) {
+        setState(() {
+          _upiId = res['data']['upiId'] ?? 'lottery@upi';
+          final String? qr = res['data']['qrCodeUrl'];
+          if (qr != null && qr.startsWith('data:image')) {
+            final base64String = qr.split(',').last;
+            _qrBytes = base64Decode(base64String);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Load UPI Settings error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _fetchingSettings = false);
+      }
+    }
+  }
+
+  bool _isStep1Valid() {
+    if (_selectedMethod == 'upi') {
+      return _upiIdController.text.trim().isNotEmpty;
+    } else {
+      return _bankNameController.text.trim().isNotEmpty &&
+          _accountNumberController.text.trim().length >= 9 &&
+          _ifscCodeController.text.trim().length == 11 &&
+          _accountHolderNameController.text.trim().isNotEmpty;
+    }
+  }
+
+  int get _currentStep {
+    if (!_isStep1Valid()) return 1;
+    final txnId = _cessTxnController.text.trim();
+    if (txnId.isEmpty || txnId.length < 5) return 2;
+    return 3;
+  }
+
+  bool _isStepUnlocked(int stepNum) {
+    if (stepNum == 1) return true;
+    return _isStep1Valid();
+  }
 
   Future<void> _handleWithdraw() async {
     if (!_formKey.currentState!.validate()) return;
@@ -1006,6 +1076,7 @@ class _WinningWithdrawFormScreenState
         accountHolderName: _selectedMethod == 'bank'
             ? _accountHolderNameController.text.trim()
             : null,
+        cessTransactionId: _cessTxnController.text.trim(),
       );
 
       setState(() {
@@ -1016,12 +1087,12 @@ class _WinningWithdrawFormScreenState
 
       if (_success) {
         auth.refreshUser();
-        _amountController.clear();
         _upiIdController.clear();
         _bankNameController.clear();
         _accountNumberController.clear();
         _ifscCodeController.clear();
         _accountHolderNameController.clear();
+        _cessTxnController.clear();
       }
     } catch (_) {
       final lang2 = Provider.of<LanguageProvider>(context, listen: false);
@@ -1036,14 +1107,450 @@ class _WinningWithdrawFormScreenState
     setState(() => _loading = false);
   }
 
+  Future<void> _launchUPIApp(double cessAmount) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final Uri uri = Uri.parse(
+        'upi://pay?pa=$_upiId&pn=Lottery%20Cess&am=${cessAmount.toStringAsFixed(2)}&cu=INR&tn=4%25%20Cess%20Winnings%20Withdrawal');
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        setState(() {
+          _message = lang.isHindi
+              ? 'कृपया भुगतान के बाद UTR/ट्रांजैक्शन ID कॉपी करें और सबमिट करने के लिए नीचे पेस्ट करें!'
+              : 'Please copy the UTR/Transaction ID after payment and paste it below to submit!';
+          _success = true;
+        });
+      } else {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      setState(() {
+        _success = false;
+        _message = lang.isHindi
+            ? 'UPI भुगतान शुरू करने में विफल। कृपया पुन: प्रयास करें।'
+            : 'Failed to initiate UPI payment. Please try again.';
+      });
+    }
+  }
+
+  void _copyToClipboard(String text, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.successColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showZoomedQR(BuildContext context) {
+    if (_qrBytes == null) return;
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    Provider.of<LanguageProvider>(context, listen: false).isHindi
+                        ? 'स्कैन करके सेस भुगतान करें'
+                        : 'Scan to Pay Cess',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppTheme.borderColor),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(
+                    _qrBytes!,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _upiId,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: Color(0xFFD97706),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepCircle(int stepNum) {
+    final step = _currentStep;
+    final isCompleted = stepNum < step;
+    final isActive = stepNum == step;
+
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: isCompleted
+            ? AppTheme.successGradient
+            : (isActive ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]) : null),
+        color: !isCompleted && !isActive ? Colors.white : null,
+        border: !isCompleted && !isActive ? Border.all(color: AppTheme.borderColor, width: 2) : null,
+        boxShadow: isCompleted || isActive
+            ? [
+                BoxShadow(
+                  color: (isCompleted ? AppTheme.successColor : const Color(0xFFD97706)).withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              ]
+            : [],
+      ),
+      child: Center(
+        child: isCompleted
+            ? const Icon(Icons.check, color: Colors.white, size: 16)
+            : Text(
+                stepNum.toString(),
+                style: TextStyle(
+                  color: isActive ? Colors.white : AppTheme.textSecondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildStep({
+    required int stepNum,
+    required String title,
+    required String subtitle,
+    required Widget content,
+  }) {
+    final step = _currentStep;
+    final isActive = stepNum == step;
+    final isCompleted = stepNum < step;
+    final isUnlocked = _isStepUnlocked(stepNum);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left timeline indicator
+          Column(
+            children: [
+              _buildStepCircle(stepNum),
+              if (stepNum < 3)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    color: isCompleted ? AppTheme.successColor : AppTheme.borderColor,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Right content card block
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: isUnlocked ? AppTheme.textPrimary : AppTheme.textMuted,
+                      ),
+                    ),
+                    if (isCompleted) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          Provider.of<LanguageProvider>(context, listen: false).isHindi ? 'पूर्ण' : 'Done',
+                          style: const TextStyle(
+                            color: AppTheme.successColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isUnlocked ? AppTheme.textSecondary : AppTheme.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Opacity(
+                  opacity: isUnlocked ? 1.0 : 0.45,
+                  child: AbsorbPointer(
+                    absorbing: !isUnlocked,
+                    child: Card(
+                      elevation: isActive ? 4 : 0,
+                      shadowColor: const Color(0xFFD97706).withOpacity(0.06),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isActive
+                              ? const Color(0xFFD97706).withOpacity(0.2)
+                              : AppTheme.borderColor,
+                          width: isActive ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: content,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationCard(LanguageProvider lang, double winBal, double tds, double netPayable, double cessAmount) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD97706).withOpacity(0.2),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -24,
+            bottom: -24,
+            child: Opacity(
+              opacity: 0.12,
+              child: const Icon(
+                Icons.emoji_events_rounded,
+                size: 130,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_outlined,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    (lang.isHindi ? 'जीत निकासी गणना' : 'Winnings Withdrawal Summary').toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _buildCalculationRow(lang.isHindi ? 'जीत बैलेंस' : 'Winning Balance', '₹${winBal.toStringAsFixed(2)}'),
+              const Divider(color: Colors.white24, height: 16),
+              _buildCalculationRow(
+                lang.isHindi ? 'TDS कटौती (30%)' : 'TDS Deduction (30%)',
+                tds > 0 ? '- ₹${tds.toStringAsFixed(2)}' : (lang.isHindi ? 'लागू नहीं' : 'Not Applicable'),
+              ),
+              const Divider(color: Colors.white24, height: 16),
+              _buildCalculationRow(
+                lang.isHindi ? 'निकासी देय राशि (TDS के बाद)' : 'Net Withdrawal Payout',
+                '₹${netPayable.toStringAsFixed(2)}',
+                bold: true,
+              ),
+              const Divider(color: Colors.white38, height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lang.isHindi ? 'सेस राशि (4%):' : 'Cess Amount (4%):',
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            lang.isHindi ? '*निकासी अनुरोध से पहले भुगतान आवश्यक' : '*Must be paid before withdrawal',
+                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 9),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '₹${cessAmount.toStringAsFixed(2)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow(String label, String value, {bool bold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: bold ? Colors.white : Colors.white70,
+            fontSize: bold ? 13 : 12,
+            fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: bold ? 15 : 13,
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAlertBox() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: _success
+            ? AppTheme.successColor.withOpacity(0.08)
+            : AppTheme.dangerColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (_success ? AppTheme.successColor : AppTheme.dangerColor).withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _success ? Icons.check_circle_outline : Icons.error_outline,
+            color: _success ? AppTheme.successColor : AppTheme.dangerColor,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _message!,
+              style: TextStyle(
+                color: _success ? AppTheme.successColor : AppTheme.dangerColor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
-    _amountController.dispose();
+    _upiIdController.removeListener(_onFieldChanged);
+    _bankNameController.removeListener(_onFieldChanged);
+    _accountNumberController.removeListener(_onFieldChanged);
+    _ifscCodeController.removeListener(_onFieldChanged);
+    _accountHolderNameController.removeListener(_onFieldChanged);
+    _cessTxnController.removeListener(_onFieldChanged);
+
     _upiIdController.dispose();
     _bankNameController.dispose();
     _accountNumberController.dispose();
     _ifscCodeController.dispose();
     _accountHolderNameController.dispose();
+    _cessTxnController.dispose();
     super.dispose();
   }
 
@@ -1051,340 +1558,420 @@ class _WinningWithdrawFormScreenState
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
+    final double winBal = auth.winningBalance;
+    final double tds = winBal > 10000 ? winBal * 0.30 : 0.0;
+    final double netPayable = winBal - tds;
+    final double cessAmount = winBal * 0.04;
+
     return Scaffold(
+      backgroundColor: AppTheme.bgPrimary,
       appBar: AppBar(
         title: Text(lang.isHindi ? 'जीत राशि निकासी' : 'Withdraw Winnings'),
-        backgroundColor: const Color(0xFFD97706),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Winning balance + TDS reminder
-            Consumer<AuthProvider>(
-              builder: (context, auth, _) {
-                final tds = auth.winningBalance > 10000
-                    ? auth.winningBalance * 0.30
-                    : 0.0;
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            lang.isHindi ? 'जीत बैलेंस' : 'Winning Balance',
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
-                                fontSize: 12),
-                          ),
-                          Text(
-                            '₹${auth.winningBalance.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900),
-                          ),
-                        ],
-                      ),
-                      if (tds > 0) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _fetchingSettings
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFD97706)),
+            )
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Premium Calculation Header Card
+                  _buildCalculationCard(lang, winBal, tds, netPayable, cessAmount),
+                  const SizedBox(height: 24),
+
+                  // Notification alert box
+                  if (_message != null) _buildAlertBox(),
+
+                  // Interactive Vertical Stepper Form
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Step 1: Choose Payout Method & Details
+                        _buildStep(
+                          stepNum: 1,
+                          title: lang.isHindi ? '1. भुगतान विवरण दर्ज करें' : '1. Enter Payout Details',
+                          subtitle: lang.isHindi ? 'UPI या बैंक ट्रांसफर विवरण चुनें' : 'Choose UPI or bank transfer details',
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                lang.isHindi
-                                    ? '⚠️ TDS (30%) काटा जाएगा'
-                                    : '⚠️ TDS (30%) will be deducted',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 11),
+                              // Method toggle inside step
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.bgCard,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: AppTheme.borderColor),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _MethodTab(
+                                      icon: Icons.payment,
+                                      label: lang.isHindi ? 'UPI ट्रांसफर' : 'UPI Transfer',
+                                      selected: _selectedMethod == 'upi',
+                                      onTap: () => setState(() => _selectedMethod = 'upi'),
+                                      activeColor: const Color(0xFFD97706),
+                                    ),
+                                    _MethodTab(
+                                      icon: Icons.account_balance,
+                                      label: lang.isHindi ? 'बैंक ट्रांसफर' : 'Bank Transfer',
+                                      selected: _selectedMethod == 'bank',
+                                      onTap: () => setState(() => _selectedMethod = 'bank'),
+                                      activeColor: const Color(0xFFD97706),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                '- ₹${tds.toStringAsFixed(0)}',
-                                style: const TextStyle(
+                              const SizedBox(height: 16),
+                              AnimatedCrossFade(
+                                firstChild: Column(
+                                  children: [
+                                    TextFormField(
+                                      controller: _upiIdController,
+                                      decoration: InputDecoration(
+                                        labelText: lang.isHindi ? 'आपका UPI ID' : 'Your UPI ID',
+                                        prefixIcon: const Icon(Icons.payment, color: AppTheme.textMuted),
+                                        hintText: 'e.g., yourname@upi',
+                                      ),
+                                      validator: (val) {
+                                        if (_selectedMethod == 'upi' && (val == null || val.isEmpty)) {
+                                          return lang.isHindi ? 'UPI ID दर्ज करें' : 'Enter UPI ID';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                secondChild: Column(
+                                  children: [
+                                    TextFormField(
+                                      controller: _accountHolderNameController,
+                                      decoration: InputDecoration(
+                                        labelText: lang.isHindi ? 'खाताधारक का नाम' : 'Account Holder Name',
+                                        prefixIcon: const Icon(Icons.person, color: AppTheme.textMuted),
+                                      ),
+                                      validator: (val) {
+                                        if (_selectedMethod == 'bank' && (val == null || val.isEmpty)) {
+                                          return lang.isHindi ? 'नाम दर्ज करें' : 'Enter name';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _bankNameController,
+                                      decoration: InputDecoration(
+                                        labelText: lang.isHindi ? 'बैंक का नाम' : 'Bank Name',
+                                        prefixIcon: const Icon(Icons.business, color: AppTheme.textMuted),
+                                      ),
+                                      validator: (val) {
+                                        if (_selectedMethod == 'bank' && (val == null || val.isEmpty)) {
+                                          return lang.isHindi ? 'बैंक नाम दर्ज करें' : 'Enter bank name';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _accountNumberController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        labelText: lang.isHindi ? 'खाता संख्या' : 'Account Number',
+                                        prefixIcon: const Icon(Icons.numbers, color: AppTheme.textMuted),
+                                      ),
+                                      validator: (val) {
+                                        if (_selectedMethod == 'bank') {
+                                          if (val == null || val.isEmpty) {
+                                            return lang.isHindi ? 'खाता संख्या दर्ज करें' : 'Enter account number';
+                                          }
+                                          if (val.length < 9) {
+                                            return lang.isHindi ? 'अमान्य खाता संख्या' : 'Invalid account number';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _ifscCodeController,
+                                      textCapitalization: TextCapitalization.characters,
+                                      decoration: InputDecoration(
+                                        labelText: lang.isHindi ? 'IFSC कोड' : 'IFSC Code',
+                                        prefixIcon: const Icon(Icons.code, color: AppTheme.textMuted),
+                                        hintText: 'e.g., SBIN0001234',
+                                      ),
+                                      validator: (val) {
+                                        if (_selectedMethod == 'bank') {
+                                          if (val == null || val.isEmpty) {
+                                            return lang.isHindi ? 'IFSC कोड दर्ज करें' : 'Enter IFSC code';
+                                          }
+                                          if (val.length != 11) {
+                                            return lang.isHindi ? 'IFSC 11 वर्णों का होना चाहिए' : 'IFSC must be 11 characters';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                crossFadeState: _selectedMethod == 'upi'
+                                    ? CrossFadeState.showFirst
+                                    : CrossFadeState.showSecond,
+                                duration: const Duration(milliseconds: 300),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Step 2: Pay 4% Cess
+                        _buildStep(
+                          stepNum: 2,
+                          title: lang.isHindi ? '2. 4% सेस भुगतान करें' : '2. Pay 4% Cess Amount',
+                          subtitle: lang.isHindi
+                              ? '₹${cessAmount.toStringAsFixed(2)} का सेस एडमिन UPI/QR पर भेजें'
+                              : 'Transfer ₹${cessAmount.toStringAsFixed(2)} cess to Admin UPI/QR',
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Scan QR box if loaded
+                              if (_qrBytes != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: AppTheme.borderColor),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => _showZoomedQR(context),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Image.memory(
+                                                _qrBytes!,
+                                                width: 130,
+                                                height: 130,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black.withOpacity(0.75),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.zoom_in, color: Colors.white, size: 10),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      lang.isHindi ? 'बड़ा करें' : 'Tap to Zoom',
+                                                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        lang.isHindi
+                                          ? '4% सेस राशि ₹${cessAmount.toStringAsFixed(2)} के लिए QR कोड स्कैन करें'
+                                          : 'Scan this QR code to pay 4% cess of ₹${cessAmount.toStringAsFixed(2)}',
+                                        style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary, fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+
+                              // Display UPI ID with copy row
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.bgPrimary,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppTheme.borderColor),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lang.isHindi ? 'एडमिन UPI ID (सेस भुगतान के लिए)' : 'ADMIN UPI ID (FOR CESS)',
+                                            style: const TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _upiId,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy_rounded, color: Color(0xFFD97706), size: 20),
+                                      onPressed: () {
+                                        Clipboard.setData(ClipboardData(text: _upiId));
+                                        _copyToClipboard(_upiId, lang.isHindi ? 'UPI ID कॉपी हो गई!' : 'UPI ID Copied!');
+                                      },
+                                      constraints: const BoxConstraints(),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Launch UPI App direct trigger button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _launchUPIApp(cessAmount),
+                                  icon: const Icon(Icons.flash_on, color: Colors.white, size: 16),
+                                  label: Text(
+                                    lang.isHindi ? '⚡ UPI ऐप से सेस भुगतान करें' : '⚡ Pay Cess with UPI App',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black87,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Step 3: Cess Reference Transaction ID & Submit
+                        _buildStep(
+                          stepNum: 3,
+                          title: lang.isHindi ? '3. सेस ट्रांजैक्शन ID दर्ज करें' : '3. Reference ID & Submit',
+                          subtitle: lang.isHindi ? 'सेस भुगतान रसीद से 12 अंकों की ID दर्ज करें' : 'Enter 12-digit cess payment ref ID',
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: _cessTxnController,
+                                decoration: InputDecoration(
+                                  labelText: lang.isHindi ? 'सेस UPI ट्रांजैक्शन / UTR ID' : 'Cess UPI Transaction / UTR ID',
+                                  prefixIcon: const Icon(Icons.receipt_long, color: AppTheme.textMuted),
+                                  hintText: lang.isHindi ? '12 अंकों की txn ID यहां पेस्ट करें' : 'Paste 12-digit txn ID here',
+                                ),
+                                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) {
+                                    return lang.isHindi ? 'सेस UPI ट्रांजैक्शन ID दर्ज करें' : 'Enter Cess UPI transaction ID';
+                                  }
+                                  if (val.length < 5) {
+                                    return lang.isHindi ? 'अमान्य ट्रांजैक्शन ID' : 'Invalid transaction ID';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.info_outline, size: 12, color: AppTheme.textMuted),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      lang.isHindi
+                                          ? 'GPay में UTR नंबर या PhonePe/Paytm में UPI Ref No. पेस्ट करें।'
+                                          : 'Locate 12-digit UTR/Ref No. in payment details screen.',
+                                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Submission Trigger
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: _loading ? null : _handleWithdraw,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD97706),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    shadowColor: const Color(0xFFD97706).withOpacity(0.3),
+                                  ),
+                                  child: _loading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          lang.isHindi ? 'निकासी अनुरोध सबमिट करें' : 'Submit Withdrawal Request',
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                        ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // Method toggle
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppTheme.bgCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.borderColor),
-              ),
-              child: Row(
-                children: [
-                  _MethodTab(
-                    icon: Icons.payment,
-                    label: lang.isHindi ? 'UPI ट्रांसफर' : 'UPI Transfer',
-                    selected: _selectedMethod == 'upi',
-                    onTap: () => setState(() => _selectedMethod = 'upi'),
-                    activeColor: const Color(0xFFD97706),
-                  ),
-                  _MethodTab(
-                    icon: Icons.account_balance,
-                    label: lang.isHindi ? 'बैंक ट्रांसफर' : 'Bank Transfer',
-                    selected: _selectedMethod == 'bank',
-                    onTap: () => setState(() => _selectedMethod = 'bank'),
-                    activeColor: const Color(0xFFD97706),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            if (_message != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: _success
-                      ? AppTheme.successColor.withOpacity(0.1)
-                      : AppTheme.dangerColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _message!,
-                  style: TextStyle(
-                      color: _success
-                          ? AppTheme.successColor
-                          : AppTheme.dangerColor,
-                      fontSize: 13),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.bgCard,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.borderColor),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          lang.isHindi ? 'निकासी राशि' : 'Withdrawal Amount',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        Builder(
-                          builder: (context) {
-                            final double winBal = auth.winningBalance;
-                            final double tds = winBal > 10000 ? winBal * 0.30 : 0.0;
-                            final double netPayable = winBal - tds;
-                            return Text(
-                              '₹${netPayable.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFFD97706),
-                              ),
-                            );
-                          }
-                        ),
-                      ],
+                  ),
+
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      lang.isHindi
+                          ? '⏳ एडमिन सत्यापन और TDS कटौती के बाद शेष राशि ट्रांसफर की जाएगी'
+                          : '⏳ Net amount will be processed after admin verifies cess payment & TDS',
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  AnimatedCrossFade(
-                    firstChild: Column(
-                      children: [
-                        TextFormField(
-                          controller: _upiIdController,
-                          decoration: InputDecoration(
-                            labelText:
-                                lang.isHindi ? 'आपका UPI ID' : 'Your UPI ID',
-                            prefixIcon: const Icon(Icons.payment,
-                                color: AppTheme.textMuted),
-                            hintText: 'e.g., yourname@upi',
-                          ),
-                          validator: (val) {
-                            if (_selectedMethod == 'upi' &&
-                                (val == null || val.isEmpty))
-                              return lang.isHindi
-                                  ? 'UPI ID दर्ज करें'
-                                  : 'Enter UPI ID';
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                    secondChild: Column(
-                      children: [
-                        TextFormField(
-                          controller: _accountHolderNameController,
-                          decoration: InputDecoration(
-                            labelText: lang.isHindi
-                                ? 'खाताधारक का नाम'
-                                : 'Account Holder Name',
-                            prefixIcon: const Icon(Icons.person,
-                                color: AppTheme.textMuted),
-                          ),
-                          validator: (val) {
-                            if (_selectedMethod == 'bank' &&
-                                (val == null || val.isEmpty))
-                              return lang.isHindi
-                                  ? 'नाम दर्ज करें'
-                                  : 'Enter name';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _bankNameController,
-                          decoration: InputDecoration(
-                            labelText:
-                                lang.isHindi ? 'बैंक का नाम' : 'Bank Name',
-                            prefixIcon: const Icon(Icons.business,
-                                color: AppTheme.textMuted),
-                          ),
-                          validator: (val) {
-                            if (_selectedMethod == 'bank' &&
-                                (val == null || val.isEmpty))
-                              return lang.isHindi
-                                  ? 'बैंक नाम दर्ज करें'
-                                  : 'Enter bank name';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _accountNumberController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText:
-                                lang.isHindi ? 'खाता संख्या' : 'Account Number',
-                            prefixIcon: const Icon(Icons.numbers,
-                                color: AppTheme.textMuted),
-                          ),
-                          validator: (val) {
-                            if (_selectedMethod == 'bank') {
-                              if (val == null || val.isEmpty)
-                                return lang.isHindi
-                                    ? 'खाता संख्या दर्ज करें'
-                                    : 'Enter account number';
-                              if (val.length < 9)
-                                return lang.isHindi
-                                    ? 'अमान्य खाता संख्या'
-                                    : 'Invalid account number';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _ifscCodeController,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: InputDecoration(
-                            labelText:
-                                lang.isHindi ? 'IFSC कोड' : 'IFSC Code',
-                            prefixIcon: const Icon(Icons.code,
-                                color: AppTheme.textMuted),
-                            hintText: 'e.g., SBIN0001234',
-                          ),
-                          validator: (val) {
-                            if (_selectedMethod == 'bank') {
-                              if (val == null || val.isEmpty)
-                                return lang.isHindi
-                                    ? 'IFSC कोड दर्ज करें'
-                                    : 'Enter IFSC code';
-                              if (val.length != 11)
-                                return lang.isHindi
-                                    ? 'IFSC 11 वर्णों का होना चाहिए'
-                                    : 'IFSC must be 11 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                    crossFadeState: _selectedMethod == 'upi'
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                    duration: const Duration(milliseconds: 300),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _handleWithdraw,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD97706),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: _loading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : Text(
-                              lang.isHindi
-                                  ? 'निकासी अनुरोध सबमिट करें'
-                                  : 'Submit Withdrawal Request',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              lang.isHindi
-                  ? '⏳ एडमिन TDS काटकर शेष राशि आपके खाते में ट्रांसफर करेगा'
-                  : '⏳ Admin will deduct TDS and transfer the net amount to your account',
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

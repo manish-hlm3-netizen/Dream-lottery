@@ -126,8 +126,18 @@ exports.withdraw = async (req, res) => {
         errors: errors.array()
       });
     }
-    const { amount, method, upiId, bankName, accountNumber, ifscCode, accountHolderName, isWinnings } = req.body;
+
+    const { amount, method, upiId, bankName, accountNumber, ifscCode, accountHolderName, isWinnings, cessTransactionId } = req.body;
     const isWinningsBool = isWinnings === true || isWinnings === 'true';
+
+    if (isWinningsBool) {
+      if (!cessTransactionId || !cessTransactionId.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: '4% Health and Education Cess payment transaction ID is required for winnings withdrawals.'
+        });
+      }
+    }
 
     // Check sufficient balance
     const user = await User.findById(req.user._id);
@@ -162,10 +172,12 @@ exports.withdraw = async (req, res) => {
 
     // Deduct immediately (hold the amount)
     let tdsAmount = 0;
+    let cessAmount = 0;
     let netAmount = amount;
     if (isWinningsBool) {
       user.winningBalance = (user.winningBalance || 0) - amount;
       tdsAmount = amount > 10000 ? amount * 0.30 : 0.0;
+      cessAmount = amount * 0.04;
       netAmount = amount - tdsAmount;
     } else {
       user.walletBalance -= amount;
@@ -178,6 +190,8 @@ exports.withdraw = async (req, res) => {
       amount, // this is the gross amount
       isWinnings: isWinningsBool,
       tdsAmount,
+      cessAmount,
+      cessTransactionId: isWinningsBool ? cessTransactionId.trim() : undefined,
       netAmount,
       method: method || 'upi',
       status: 'pending'
@@ -198,7 +212,7 @@ exports.withdraw = async (req, res) => {
     const withdrawal = await Withdrawal.create(withdrawalData);
 
     const description = isWinningsBool
-      ? `Winning withdrawal of ₹${netAmount.toFixed(2)} (TDS ₹${tdsAmount.toFixed(2)} deducted from gross ₹${amount.toFixed(2)})`
+      ? `Winning withdrawal of ₹${netAmount.toFixed(2)} (TDS ₹${tdsAmount.toFixed(2)} and Cess ₹${cessAmount.toFixed(2)} [Txn: ${cessTransactionId}] calculated on gross ₹${amount.toFixed(2)})`
       : (withdrawal.method === 'upi'
         ? `Withdrawal of ₹${amount} to UPI: ${upiId}`
         : `Withdrawal of ₹${amount} to Bank: ${bankName} (${accountNumber})`);
@@ -214,7 +228,7 @@ exports.withdraw = async (req, res) => {
 
     // Send real-time push notification to Admin
     const notificationMessage = isWinningsBool
-      ? `User ${req.user.name} requested winnings withdrawal. Net payout: ₹${netAmount.toFixed(2)} (Gross: ₹${amount.toFixed(2)}, TDS: ₹${tdsAmount.toFixed(2)}) to ${withdrawal.method === 'upi' ? `UPI: ${upiId}` : `Bank: ${bankName}, A/C: ${accountNumber}`}`
+      ? `User ${req.user.name} requested winnings withdrawal. Net payout: ₹${netAmount.toFixed(2)} (Gross: ₹${amount.toFixed(2)}, TDS: ₹${tdsAmount.toFixed(2)}, Cess: ₹${cessAmount.toFixed(2)}, Cess Txn ID: ${cessTransactionId}) to ${withdrawal.method === 'upi' ? `UPI: ${upiId}` : `Bank: ${bankName}, A/C: ${accountNumber}`}`
       : (withdrawal.method === 'upi'
         ? `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
         : `User ${req.user.name} requested withdrawal of ₹${amount} to Bank Account: ${bankName}, A/C: ${accountNumber}, Holder: ${accountHolderName}, IFSC: ${ifscCode}.`);

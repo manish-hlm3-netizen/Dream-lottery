@@ -108,9 +108,14 @@ export default function WithdrawalsPage() {
                   <td className="amount negative">
                     <div>₹{(w.isWinnings ? w.netAmount : w.amount)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     {w.isWinnings && (
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Net (Gross: ₹{w.amount?.toLocaleString('en-IN')}, TDS: ₹{w.tdsAmount?.toLocaleString('en-IN')})
-                      </div>
+                      <>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          Net (Gross: ₹{w.amount?.toLocaleString('en-IN')}, TDS: ₹{w.tdsAmount?.toLocaleString('en-IN')})
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#d97706', fontWeight: 'bold', marginTop: '2px' }}>
+                          Cess Paid: ₹{w.cessAmount?.toLocaleString('en-IN')} (Txn: {w.cessTransactionId})
+                        </div>
+                      </>
                     )}
                   </td>
                   <td>
