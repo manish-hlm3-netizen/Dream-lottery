@@ -132,6 +132,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Top row: Deposit Balance | Referral Balance
                         Row(
                           children: [
                             // Deposit Balance (Withdrawable)
@@ -213,7 +214,62 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 16),
+                        // Horizontal divider
+                        Divider(color: Colors.white.withOpacity(0.2), height: 1),
+                        const SizedBox(height: 14),
+                        // Winning Balance row (full width, highlighted)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFFD700).withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.emoji_events, color: Color(0xFFFFD700), size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      lang.isHindi ? 'जीत का बैलेंस' : 'WINNING BALANCE',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD700),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      lang.isHindi ? 'लॉटरी जीत से अर्जित' : 'Earned from lottery prizes',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.55),
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '₹${auth.winningBalance.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Color(0xFFFFD700),
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(

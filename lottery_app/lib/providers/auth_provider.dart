@@ -19,6 +19,7 @@ class AuthProvider with ChangeNotifier {
   String get userEmail => _user?['email'] ?? '';
   double get walletBalance => (_user?['walletBalance'] ?? 0).toDouble();
   double get referralBalance => (_user?['referralBalance'] ?? 0).toDouble();
+  double get winningBalance => (_user?['winningBalance'] ?? 0).toDouble();
   bool get hasNewAnnouncement => _hasNewAnnouncement;
 
   Future<void> checkNewAnnouncements() async {

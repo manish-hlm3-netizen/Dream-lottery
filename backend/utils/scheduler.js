@@ -143,7 +143,7 @@ const processAutomaticDraw = async (lottery) => {
         bulkUserUpdates.push({
           updateOne: {
             filter: { _id: ticket.userId },
-            update: { $inc: { walletBalance: prizeWon } }
+            update: { $inc: { winningBalance: prizeWon } }
           }
         });
 

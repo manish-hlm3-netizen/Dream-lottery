@@ -654,7 +654,7 @@ exports.drawLottery = async (req, res) => {
         // Credit winnings to user's wallet
         const user = await User.findById(ticket.userId);
         if (user) {
-          user.walletBalance += prizeWon;
+          user.winningBalance += prizeWon;
           await user.save();
         }
 

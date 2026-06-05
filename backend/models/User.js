@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Referral balance cannot be negative']
   },
+  winningBalance: {
+    type: Number,
+    default: 0,
+    min: [0, 'Winning balance cannot be negative']
+  },
   isActive: {
     type: Boolean,
     default: true
