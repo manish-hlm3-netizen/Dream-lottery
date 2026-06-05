@@ -99,11 +99,26 @@ async function run() {
             referralBalance += tx.amount;
           } else if (tx.type === 'ticket_purchase') {
             let remaining = tx.amount;
+            // 1. Referral balance first
             if (referralBalance >= remaining) {
               referralBalance -= remaining;
+              remaining = 0;
             } else {
               remaining -= referralBalance;
               referralBalance = 0;
+            }
+            // 2. Winning balance second
+            if (remaining > 0) {
+              if (winningBalance >= remaining) {
+                winningBalance -= remaining;
+                remaining = 0;
+              } else {
+                remaining -= winningBalance;
+                winningBalance = 0;
+              }
+            }
+            // 3. Deposit balance (walletBalance) third
+            if (remaining > 0) {
               walletBalance -= remaining;
             }
           }

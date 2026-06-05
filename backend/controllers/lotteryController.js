@@ -167,7 +167,11 @@ exports.buyTicket = async (req, res) => {
 
     // Check wallet balance
     const user = await User.findById(req.user._id);
-    const totalBalance = (user.walletBalance || 0) + (user.referralBalance || 0);
+    const refBal = user.referralBalance || 0;
+    const winBal = user.winningBalance || 0;
+    const depBal = user.walletBalance || 0;
+    const totalBalance = refBal + winBal + depBal;
+
     if (totalBalance < lottery.ticketPrice) {
       return res.status(400).json({
         success: false,
@@ -175,15 +179,35 @@ exports.buyTicket = async (req, res) => {
       });
     }
 
-    // Deduct from wallet: referral balance first, then deposit balance
+    // Deduct from wallet: referral balance first, then winning balance, then deposit balance
     let remainingToPay = lottery.ticketPrice;
+    
+    // 1. Referral balance first
     if ((user.referralBalance || 0) >= remainingToPay) {
-      user.referralBalance -= remainingToPay;
+      user.referralBalance = (user.referralBalance || 0) - remainingToPay;
+      remainingToPay = 0;
     } else {
       remainingToPay -= (user.referralBalance || 0);
       user.referralBalance = 0;
-      user.walletBalance -= remainingToPay;
     }
+
+    // 2. Winning balance second
+    if (remainingToPay > 0) {
+      if ((user.winningBalance || 0) >= remainingToPay) {
+        user.winningBalance = (user.winningBalance || 0) - remainingToPay;
+        remainingToPay = 0;
+      } else {
+        remainingToPay -= (user.winningBalance || 0);
+        user.winningBalance = 0;
+      }
+    }
+
+    // 3. Deposit balance (walletBalance) third
+    if (remainingToPay > 0) {
+      user.walletBalance = (user.walletBalance || 0) - remainingToPay;
+      remainingToPay = 0;
+    }
+
     await user.save();
 
     // Create ticket

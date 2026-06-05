@@ -231,7 +231,7 @@ class _HomeTabState extends State<_HomeTab> {
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                '₹${(auth.walletBalance + auth.referralBalance).toStringAsFixed(0)}',
+                                '₹${(auth.walletBalance + auth.referralBalance + auth.winningBalance).toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 26,
