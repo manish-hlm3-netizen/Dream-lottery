@@ -284,16 +284,18 @@ exports.processWithdrawal = async (req, res) => {
 
     if (action === 'approve') {
       withdrawal.status = 'approved';
-      // Amount was already deducted when user submitted the request
     } else {
-      // Refund the amount back to user's wallet
+      // Refund the amount back to user's wallet or winning balance
       const user = await User.findById(withdrawal.userId);
-      user.walletBalance += withdrawal.amount;
+      if (withdrawal.isWinnings) {
+        user.winningBalance = (user.winningBalance || 0) + withdrawal.amount;
+      } else {
+        user.walletBalance += withdrawal.amount;
+      }
       await user.save();
 
       withdrawal.status = 'rejected';
     }
-
     withdrawal.adminNote = adminNote || '';
     withdrawal.processedBy = req.user._id;
     withdrawal.processedAt = new Date();

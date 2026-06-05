@@ -126,16 +126,25 @@ exports.withdraw = async (req, res) => {
         errors: errors.array()
       });
     }
-
-    const { amount, method, upiId, bankName, accountNumber, ifscCode, accountHolderName } = req.body;
+    const { amount, method, upiId, bankName, accountNumber, ifscCode, accountHolderName, isWinnings } = req.body;
+    const isWinningsBool = isWinnings === true || isWinnings === 'true';
 
     // Check sufficient balance
     const user = await User.findById(req.user._id);
-    if (user.walletBalance < amount) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient balance. Current balance: ₹${user.walletBalance}`
-      });
+    if (isWinningsBool) {
+      if ((user.winningBalance || 0) < amount) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient winning balance. Current winnings: ₹${user.winningBalance || 0}`
+        });
+      }
+    } else {
+      if (user.walletBalance < amount) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient balance. Current balance: ₹${user.walletBalance}`
+        });
+      }
     }
 
     // Check for existing pending withdrawal
@@ -151,14 +160,25 @@ exports.withdraw = async (req, res) => {
       });
     }
 
-    // Deduct from wallet immediately (hold the amount)
-    user.walletBalance -= amount;
+    // Deduct immediately (hold the amount)
+    let tdsAmount = 0;
+    let netAmount = amount;
+    if (isWinningsBool) {
+      user.winningBalance = (user.winningBalance || 0) - amount;
+      tdsAmount = amount > 10000 ? amount * 0.30 : 0.0;
+      netAmount = amount - tdsAmount;
+    } else {
+      user.walletBalance -= amount;
+    }
     await user.save();
 
     // Prepare withdrawal payload
     const withdrawalData = {
       userId: req.user._id,
-      amount,
+      amount, // this is the gross amount
+      isWinnings: isWinningsBool,
+      tdsAmount,
+      netAmount,
       method: method || 'upi',
       status: 'pending'
     };
@@ -177,23 +197,27 @@ exports.withdraw = async (req, res) => {
     // Create withdrawal request
     const withdrawal = await Withdrawal.create(withdrawalData);
 
-    const description = withdrawal.method === 'upi'
-      ? `Withdrawal of ₹${amount} to UPI: ${upiId}`
-      : `Withdrawal of ₹${amount} to Bank: ${bankName} (${accountNumber})`;
+    const description = isWinningsBool
+      ? `Winning withdrawal of ₹${netAmount.toFixed(2)} (TDS ₹${tdsAmount.toFixed(2)} deducted from gross ₹${amount.toFixed(2)})`
+      : (withdrawal.method === 'upi'
+        ? `Withdrawal of ₹${amount} to UPI: ${upiId}`
+        : `Withdrawal of ₹${amount} to Bank: ${bankName} (${accountNumber})`);
 
     // Create transaction record
     await Transaction.create({
       userId: req.user._id,
       type: 'withdraw',
-      amount,
+      amount: isWinningsBool ? netAmount : amount, // Show the net amount in the transaction log
       status: 'pending',
       description
     });
 
     // Send real-time push notification to Admin
-    const notificationMessage = withdrawal.method === 'upi'
-      ? `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
-      : `User ${req.user.name} requested withdrawal of ₹${amount} to Bank Account: ${bankName}, A/C: ${accountNumber}, Holder: ${accountHolderName}, IFSC: ${ifscCode}.`;
+    const notificationMessage = isWinningsBool
+      ? `User ${req.user.name} requested winnings withdrawal. Net payout: ₹${netAmount.toFixed(2)} (Gross: ₹${amount.toFixed(2)}, TDS: ₹${tdsAmount.toFixed(2)}) to ${withdrawal.method === 'upi' ? `UPI: ${upiId}` : `Bank: ${bankName}, A/C: ${accountNumber}`}`
+      : (withdrawal.method === 'upi'
+        ? `User ${req.user.name} requested withdrawal of ₹${amount} to UPI: ${upiId}.`
+        : `User ${req.user.name} requested withdrawal of ₹${amount} to Bank Account: ${bankName}, A/C: ${accountNumber}, Holder: ${accountHolderName}, IFSC: ${ifscCode}.`);
 
     sendAdminNotification(
       '💸 New Withdrawal Request',
@@ -210,7 +234,7 @@ exports.withdraw = async (req, res) => {
         upiId: withdrawal.upiId,
         bankDetails: withdrawal.bankDetails,
         status: withdrawal.status,
-        newBalance: user.walletBalance,
+        newBalance: isWinningsBool ? user.winningBalance : user.walletBalance,
         createdAt: withdrawal.createdAt
       }
     });

@@ -42,6 +42,18 @@ const withdrawalSchema = new mongoose.Schema({
   },
   processedAt: {
     type: Date
+  },
+  isWinnings: {
+    type: Boolean,
+    default: false
+  },
+  tdsAmount: {
+    type: Number,
+    default: 0
+  },
+  netAmount: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
