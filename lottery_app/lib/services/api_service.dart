@@ -131,6 +131,7 @@ class ApiService {
     String? accountNumber,
     String? ifscCode,
     String? accountHolderName,
+    bool? isWinnings,
   }) async {
     final response = await _dio.post(ApiConfig.walletWithdraw, data: {
       'amount': amount,
@@ -140,6 +141,7 @@ class ApiService {
       if (accountNumber != null) 'accountNumber': accountNumber,
       if (ifscCode != null) 'ifscCode': ifscCode,
       if (accountHolderName != null) 'accountHolderName': accountHolderName,
+      if (isWinnings != null) 'isWinnings': isWinnings,
     });
     return response.data;
   }

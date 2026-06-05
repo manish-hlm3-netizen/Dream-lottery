@@ -989,12 +989,11 @@ class _WinningWithdrawFormScreenState
       _loading = true;
       _message = null;
     });
-
     try {
-      // Winning withdrawal uses same API but admin handles TDS
       final res = await ApiService().withdraw(
         amount: amount,
         method: _selectedMethod,
+        isWinnings: true,
         upiId: _selectedMethod == 'upi' ? _upiIdController.text.trim() : null,
         bankName:
             _selectedMethod == 'bank' ? _bankNameController.text.trim() : null,
@@ -1210,13 +1209,20 @@ class _WinningWithdrawFormScreenState
                             color: AppTheme.textSecondary,
                           ),
                         ),
-                        Text(
-                          '₹${auth.winningBalance.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFD97706),
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final double winBal = auth.winningBalance;
+                            final double tds = winBal > 10000 ? winBal * 0.30 : 0.0;
+                            final double netPayable = winBal - tds;
+                            return Text(
+                              '₹${netPayable.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFD97706),
+                              ),
+                            );
+                          }
                         ),
                       ],
                     ),
