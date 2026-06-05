@@ -105,9 +105,34 @@ class _WalletScreenState extends State<WalletScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!canPop) ...[
-              Text(
-                lang.translate('wallet'),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    lang.translate('wallet'),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                  ),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: AppTheme.borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/logo.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
             ],
@@ -393,7 +418,27 @@ class _WalletScreenState extends State<WalletScreen> {
 
       if (canPop) {
         return Scaffold(
-          appBar: AppBar(title: Text(lang.translate('wallet'))),
+          appBar: AppBar(
+            title: Text(lang.translate('wallet')),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    border: Border.all(color: AppTheme.borderColor),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/logo.png'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           body: SafeArea(child: content),
         );
       }

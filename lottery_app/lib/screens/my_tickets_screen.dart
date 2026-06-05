@@ -52,9 +52,34 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!canPop) ...[
-                const Text(
-                  'My Tickets 🎫',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'My Tickets 🎫',
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                    ),
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: AppTheme.borderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        image: const DecorationImage(
+                          image: AssetImage('assets/images/logo.png'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
               ],
@@ -150,9 +175,9 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
                             color: AppTheme.bgCard,
                             border: Border.all(
                               color: status == 'won'
-                                  ? AppTheme.successColor.withOpacity(0.4)
-                                  : AppTheme.borderColor,
-                              width: status == 'won' ? 1.5 : 1,
+                                  ? AppTheme.successColor.withOpacity(0.7)
+                                  : AppTheme.textMuted.withOpacity(0.5),
+                              width: status == 'won' ? 3.0 : 2.0,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
@@ -455,7 +480,27 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
 
     if (canPop) {
       return Scaffold(
-        appBar: AppBar(title: const Text('My Tickets 🎫')),
+        appBar: AppBar(
+          title: const Text('My Tickets 🎫'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: Border.all(color: AppTheme.borderColor),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/logo.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         body: SafeArea(child: content),
       );
     }

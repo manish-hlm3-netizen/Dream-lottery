@@ -65,17 +65,43 @@ class _LotteryListScreenState extends State<LotteryListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        lang.translate('lotteries'),
-                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lang.translate('lotteries'),
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            lang.translate('pick_numbers_luck'),
+                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(color: AppTheme.borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/logo.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    lang.translate('pick_numbers_luck'),
-                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 24),
 
