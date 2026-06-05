@@ -38,6 +38,21 @@ async function run() {
     const appVersion = versionMatch[1];
     console.log(`💡 Detected App Version: ${appVersion}`);
 
+    // Update api_config.dart automatically to prevent update loops
+    console.log('📝 Synchronizing api_config.dart appVersion...');
+    const apiConfigPath = path.join(__dirname, 'lottery_app/lib/config/api_config.dart');
+    if (fs.existsSync(apiConfigPath)) {
+      let apiConfigContent = fs.readFileSync(apiConfigPath, 'utf8');
+      apiConfigContent = apiConfigContent.replace(
+        /static const String appVersion = '[^']+';/,
+        `static const String appVersion = '${appVersion}';`
+      );
+      fs.writeFileSync(apiConfigPath, apiConfigContent, 'utf8');
+      console.log('✅ api_config.dart synchronized successfully.');
+    } else {
+      console.log('⚠️ api_config.dart not found, skipping sync.');
+    }
+
     // 2. Build the Flutter APK release bundle
     console.log('🔨 Compiling Flutter release APK...');
     const flutterAppDir = path.join(__dirname, 'lottery_app');
