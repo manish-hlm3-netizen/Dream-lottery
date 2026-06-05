@@ -65,6 +65,27 @@ class StorageService {
     return await _storage.read(key: _lastReadAnnouncementIdKey);
   }
 
+  static const _acknowledgedRank1WinsKey = 'acknowledged_rank1_wins';
+
+  static Future<List<String>> getAcknowledgedRank1Wins() async {
+    final val = await _storage.read(key: _acknowledgedRank1WinsKey);
+    if (val != null && val.isNotEmpty) {
+      try {
+        final List<dynamic> decoded = jsonDecode(val);
+        return decoded.map((e) => e.toString()).toList();
+      } catch (_) {}
+    }
+    return [];
+  }
+
+  static Future<void> acknowledgeRank1Win(String ticketId) async {
+    final list = await getAcknowledgedRank1Wins();
+    if (!list.contains(ticketId)) {
+      list.add(ticketId);
+      await _storage.write(key: _acknowledgedRank1WinsKey, value: jsonEncode(list));
+    }
+  }
+
   static Future<void> clearAll() async {
     // Retain PIN even if clearAll is called during session clear, except if specifically logging out or reset.
     // Wait, to keep PIN active even if user session refreshes, but clear it on complete logout.
@@ -76,6 +97,7 @@ class StorageService {
         await _storage.delete(key: _tokenKey);
         await _storage.delete(key: _userKey);
         await _storage.delete(key: _pinKey);
+        await _storage.delete(key: _acknowledgedRank1WinsKey);
       } catch (_) {}
     }
   }
