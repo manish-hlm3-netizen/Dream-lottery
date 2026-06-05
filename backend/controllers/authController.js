@@ -107,6 +107,7 @@ exports.register = async (req, res) => {
           role: user.role,
           walletBalance: user.walletBalance,
           referralBalance: user.referralBalance || 0,
+          winningBalance: user.winningBalance || 0,
           referralCode: user.referralCode
         }
       }
@@ -184,7 +185,8 @@ exports.login = async (req, res) => {
           phone: user.phone,
           role: user.role,
           walletBalance: user.walletBalance,
-          referralBalance: user.referralBalance || 0
+          referralBalance: user.referralBalance || 0,
+          winningBalance: user.winningBalance || 0
         }
       }
     });
@@ -215,6 +217,7 @@ exports.getMe = async (req, res) => {
         role: user.role,
         walletBalance: user.walletBalance,
         referralBalance: user.referralBalance || 0,
+        winningBalance: user.winningBalance || 0,
         createdAt: user.createdAt
       }
     });
@@ -255,7 +258,8 @@ exports.updateProfile = async (req, res) => {
         phone: user.phone,
         role: user.role,
         walletBalance: user.walletBalance,
-        referralBalance: user.referralBalance || 0
+        referralBalance: user.referralBalance || 0,
+        winningBalance: user.winningBalance || 0
       }
     });
   } catch (error) {

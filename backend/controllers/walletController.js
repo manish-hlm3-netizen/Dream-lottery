@@ -36,7 +36,8 @@ exports.getBalance = async (req, res) => {
       success: true,
       data: {
         balance: user.walletBalance,
-        referralBalance: user.referralBalance || 0
+        referralBalance: user.referralBalance || 0,
+        winningBalance: user.winningBalance || 0
       }
     });
   } catch (error) {
