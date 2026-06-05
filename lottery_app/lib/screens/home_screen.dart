@@ -5,9 +5,8 @@ import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/lottery_provider.dart';
 import '../providers/language_provider.dart';
-import '../services/api_service.dart';
-import '../services/storage_service.dart';
-import '../widgets/rank1_winner_dialog.dart';
+
+
 import 'wallet_screen.dart';
 import 'lottery_list_screen.dart';
 import 'my_tickets_screen.dart';
@@ -95,33 +94,7 @@ class _HomeTabState extends State<_HomeTab> {
   late ScrollController _winnerScrollController;
   Timer? _winnerScrollTimer;
 
-  Future<void> _checkRank1Wins() async {
-    if (!mounted) return;
-    try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      if (!auth.isLoggedIn) return;
 
-      final res = await ApiService().getAllMyTickets(status: 'won');
-      if (res['success'] == true && res['data'] != null) {
-        final List<dynamic> tickets = res['data']['tickets'] ?? [];
-        final rank1Wins = tickets.where((t) => t['status'] == 'won' && t['rank'] == 1).toList();
-        if (rank1Wins.isNotEmpty) {
-          final acknowledged = await StorageService.getAcknowledgedRank1Wins();
-          for (var ticket in rank1Wins) {
-            final ticketId = ticket['_id'];
-            if (ticketId != null && !acknowledged.contains(ticketId)) {
-              if (mounted) {
-                showRank1WinnerDialog(context, ticket);
-                break;
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking Rank 1 wins: $e');
-    }
-  }
 
   @override
   void initState() {
@@ -132,7 +105,6 @@ class _HomeTabState extends State<_HomeTab> {
       context.read<LotteryProvider>().loadRecentWinners();
       await context.read<AuthProvider>().refreshUser();
       _startAutoScroll();
-      _checkRank1Wins();
     });
   }
 
@@ -170,7 +142,6 @@ class _HomeTabState extends State<_HomeTab> {
           await context.read<LotteryProvider>().loadActiveLotteries();
           await context.read<LotteryProvider>().loadRecentWinners();
           await context.read<AuthProvider>().refreshUser();
-          _checkRank1Wins();
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
