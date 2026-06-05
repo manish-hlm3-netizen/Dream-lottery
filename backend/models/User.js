@@ -76,13 +76,23 @@ const userSchema = new mongoose.Schema({
   referredUsersCount: {
     type: Number,
     default: 0
+  },
+  uid: {
+    type: Number,
+    unique: true
   }
 }, {
   timestamps: true
 });
 
-// Hash password and generate referral code before saving
+// Hash password, generate referral code, and generate uid before saving
 userSchema.pre('save', async function(next) {
+  // Generate uid if not present
+  if (!this.uid) {
+    const lastUser = await mongoose.model('User').findOne({}, { uid: 1 }, { sort: { uid: -1 } });
+    this.uid = lastUser && lastUser.uid ? lastUser.uid + 1 : 10001;
+  }
+
   // Generate referral code if not present
   if (!this.referralCode) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

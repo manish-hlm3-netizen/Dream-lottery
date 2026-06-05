@@ -101,6 +101,7 @@ exports.register = async (req, res) => {
         token,
         user: {
           id: user._id,
+          uid: user.uid,
           name: user.name,
           email: user.email,
           phone: user.phone,
@@ -180,6 +181,7 @@ exports.login = async (req, res) => {
         token,
         user: {
           id: user._id,
+          uid: user.uid,
           name: user.name,
           email: user.email,
           phone: user.phone,
@@ -211,6 +213,7 @@ exports.getMe = async (req, res) => {
       success: true,
       data: {
         id: user._id,
+        uid: user.uid,
         name: user.name,
         email: user.email,
         phone: user.phone,
@@ -253,6 +256,7 @@ exports.updateProfile = async (req, res) => {
       message: 'Profile updated successfully',
       data: {
         id: user._id,
+        uid: user.uid,
         name: user.name,
         email: user.email,
         phone: user.phone,

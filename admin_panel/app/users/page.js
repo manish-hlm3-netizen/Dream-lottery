@@ -222,7 +222,10 @@ export default function UsersPage() {
             <tbody>
               {users.map((user) => (
                 <tr key={user._id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>{user._id}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '14px', marginBottom: '2px' }}>{user.uid ? `DL${user.uid}` : 'N/A'}</div>
+                    <div style={{ fontSize: '10px', opacity: 0.5 }}>{user._id}</div>
+                  </td>
                   <td style={{ fontWeight: 500 }}>
                     <div>{user.name}</div>
                     {user.referredUsersCount > 0 && (

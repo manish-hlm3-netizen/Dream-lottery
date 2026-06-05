@@ -160,6 +160,24 @@ const startServer = async () => {
 
   // Seed admin user if not exists
   const User = require('./models/User');
+  
+  // Backfill uids for existing users who do not have one
+  try {
+    const usersWithoutUid = await User.find({ uid: { $exists: false } });
+    if (usersWithoutUid.length > 0) {
+      console.log(`Setting unique IDs for ${usersWithoutUid.length} users...`);
+      let lastUser = await User.findOne({ uid: { $exists: true } }, { uid: 1 }, { sort: { uid: -1 } });
+      let nextUid = lastUser && lastUser.uid ? lastUser.uid + 1 : 10001;
+      for (const u of usersWithoutUid) {
+        u.uid = nextUid++;
+        await u.save();
+      }
+      console.log('Unique IDs set successfully.');
+    }
+  } catch (err) {
+    console.error('Error backfilling uids:', err);
+  }
+
   const adminExists = await User.findOne({ role: 'admin' });
   if (!adminExists) {
     await User.create({

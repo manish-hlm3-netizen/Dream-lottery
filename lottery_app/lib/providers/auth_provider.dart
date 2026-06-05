@@ -17,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   String? get error => _error;
   String get userName => _user?['name'] ?? '';
   String get userEmail => _user?['email'] ?? '';
+  String get uid => (_user?['uid'] ?? '').toString();
   double get walletBalance => (_user?['walletBalance'] ?? 0).toDouble();
   double get referralBalance => (_user?['referralBalance'] ?? 0).toDouble();
   double get winningBalance => (_user?['winningBalance'] ?? 0).toDouble();

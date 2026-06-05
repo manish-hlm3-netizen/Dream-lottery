@@ -253,6 +253,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
+                                  if (auth.uid.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15), width: 0.5),
+                                          ),
+                                          child: Text(
+                                            'DL${auth.uid}',
+                                            style: const TextStyle(
+                                              color: AppTheme.primaryColor,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -278,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '₹${(auth.walletBalance + auth.referralBalance).toStringAsFixed(0)}',
+                                    '₹${(auth.walletBalance + auth.referralBalance + auth.winningBalance).toStringAsFixed(0)}',
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
@@ -565,20 +590,22 @@ class _HowToPlaySection extends StatelessWidget {
             title: isHindi ? 'पैसे कैसे निकालें?' : 'How to Withdraw Winnings?',
             steps: isHindi
                 ? [
-                    '1. वॉलेट टैब पर जाएं',
-                    '2. "निकासी करें" बटन दबाएं',
-                    '3. निकासी राशि और UPI ID दर्ज करें',
-                    '4. सबमिट करें — एडमिन प्रोसेस करेगा',
-                    '5. न्यूनतम निकासी राशि: ₹100',
-                    '6. सामान्यतः 24-48 घंटों में क्रेडिट होता है',
+                    '1. वॉलेट टैब में "निकासी करें" पर जाएं',
+                    '2. "जीत की राशि निकालें" (Withdraw Winnings) चुनें',
+                    '3. स्क्रीन पर दिख रहे UPI/QR पर 4% सेस (Cess) भुगतान करें',
+                    '4. सेस भुगतान की 12-अंकीय UTR/Ref ID कॉपी करें',
+                    '5. भुगतान विवरण और UTR ID दर्ज करके अनुरोध सबमिट करें',
+                    '6. ₹10,000 से अधिक की जीत पर 30% TDS कटेगा (कम पर 0%)',
+                    '7. सामान्यतः 24-48 घंटों में बैंक/UPI में जमा होता है',
                   ]
                 : [
-                    '1. Go to the Wallet tab',
-                    '2. Tap the "Withdraw" button',
-                    '3. Enter amount and your UPI ID',
-                    '4. Submit — Admin processes your request',
-                    '5. Minimum withdrawal amount: ₹100',
-                    '6. Usually credited within 24-48 hours',
+                    '1. Go to Wallet tab & tap "Withdraw"',
+                    '2. Choose "Withdraw Winning Amount"',
+                    '3. Pay 4% Cess amount to Admin UPI/QR shown',
+                    '4. Copy the 12-digit UTR/Ref ID of Cess payment',
+                    '5. Enter payout details & Cess Ref ID, then submit',
+                    '6. 30% TDS deducted for winnings exceeding ₹10,000',
+                    '7. Usually credited to bank/UPI within 24-48 hours',
                   ],
           ),
 
