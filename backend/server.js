@@ -161,21 +161,33 @@ const startServer = async () => {
   // Seed admin user if not exists
   const User = require('./models/User');
   
-  // Backfill uids for existing users who do not have one
+  // Backfill and migrate uids to unique random 6-digit numbers
   try {
-    const usersWithoutUid = await User.find({ uid: { $exists: false } });
-    if (usersWithoutUid.length > 0) {
-      console.log(`Setting unique IDs for ${usersWithoutUid.length} users...`);
-      let lastUser = await User.findOne({ uid: { $exists: true } }, { uid: 1 }, { sort: { uid: -1 } });
-      let nextUid = lastUser && lastUser.uid ? lastUser.uid + 1 : 10001;
-      for (const u of usersWithoutUid) {
-        u.uid = nextUid++;
+    const oldOrMissingUsers = await User.find({
+      $or: [
+        { uid: { $exists: false } },
+        { uid: { $lt: 100000 } }
+      ]
+    });
+    if (oldOrMissingUsers.length > 0) {
+      console.log(`Migrating/setting unique random IDs for ${oldOrMissingUsers.length} users...`);
+      for (const u of oldOrMissingUsers) {
+        let unique = false;
+        let randomId;
+        while (!unique) {
+          randomId = Math.floor(100000 + Math.random() * 900000);
+          const existing = await User.findOne({ uid: randomId });
+          if (!existing) {
+            unique = true;
+          }
+        }
+        u.uid = randomId;
         await u.save();
       }
-      console.log('Unique IDs set successfully.');
+      console.log('Unique random IDs migrated successfully.');
     }
   } catch (err) {
-    console.error('Error backfilling uids:', err);
+    console.error('Error migrating uids to random:', err);
   }
 
   const adminExists = await User.findOne({ role: 'admin' });

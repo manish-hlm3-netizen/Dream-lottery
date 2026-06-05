@@ -89,8 +89,17 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('save', async function(next) {
   // Generate uid if not present
   if (!this.uid) {
-    const lastUser = await mongoose.model('User').findOne({}, { uid: 1 }, { sort: { uid: -1 } });
-    this.uid = lastUser && lastUser.uid ? lastUser.uid + 1 : 10001;
+    let unique = false;
+    let attempts = 0;
+    while (!unique && attempts < 50) {
+      const randomId = Math.floor(100000 + Math.random() * 900000);
+      const existing = await mongoose.model('User').findOne({ uid: randomId });
+      if (!existing) {
+        this.uid = randomId;
+        unique = true;
+      }
+      attempts++;
+    }
   }
 
   // Generate referral code if not present
