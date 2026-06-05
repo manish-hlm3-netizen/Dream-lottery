@@ -12,6 +12,8 @@ export default function UsersPage() {
   // Edit states
   const [selectedUserForWallet, setSelectedUserForWallet] = useState(null);
   const [walletBalanceInput, setWalletBalanceInput] = useState('');
+  const [selectedUserForWinning, setSelectedUserForWinning] = useState(null);
+  const [winningBalanceInput, setWinningBalanceInput] = useState('');
   const [selectedUserForPassword, setSelectedUserForPassword] = useState(null);
   const [passwordInput, setPasswordInput] = useState('');
 
@@ -87,6 +89,31 @@ export default function UsersPage() {
   const openWalletModal = (user) => {
     setSelectedUserForWallet(user);
     setWalletBalanceInput(user.walletBalance.toString());
+  };
+
+  const openWinningModal = (user) => {
+    setSelectedUserForWinning(user);
+    setWinningBalanceInput((user.winningBalance || 0).toString());
+  };
+
+  const handleUpdateWinningWallet = async (e) => {
+    e.preventDefault();
+    if (!selectedUserForWinning) return;
+    try {
+      const balance = parseFloat(winningBalanceInput);
+      if (isNaN(balance) || balance < 0) {
+        showToast('Please enter a valid positive number', 'error');
+        return;
+      }
+      const data = await api.updateUserWinningWallet(selectedUserForWinning._id, balance);
+      if (data.success) {
+        showToast(data.message, 'success');
+        setSelectedUserForWinning(null);
+        loadUsers();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   const openPasswordModal = (user) => {
@@ -186,6 +213,7 @@ export default function UsersPage() {
                 <th>Email / Phone</th>
                 <th>Plain Password</th>
                 <th>Wallet Balance</th>
+                <th>Winning Balance</th>
                 <th>Status</th>
                 <th>Joined</th>
                 <th>Actions</th>
@@ -232,6 +260,19 @@ export default function UsersPage() {
                         style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.08)' }} 
                         onClick={() => openWalletModal(user)}
                         title="Edit Wallet Balance"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  </td>
+                  <td className="amount positive" style={{ color: '#10B981' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>₹{(user.winningBalance || 0).toLocaleString()}</span>
+                      <button 
+                        className="btn btn-sm" 
+                        style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.08)' }} 
+                        onClick={() => openWinningModal(user)}
+                        title="Edit Winning Balance"
                       >
                         ✏️
                       </button>
@@ -291,6 +332,37 @@ export default function UsersPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'end', gap: '12px' }}>
                 <button type="button" className="btn btn-sm" style={{ background: '#888' }} onClick={() => setSelectedUserForWallet(null)}>Cancel</button>
+                <button type="submit" className="btn btn-sm btn-primary">Save Balance</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Winning Wallet Edit Modal */}
+      {selectedUserForWinning && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', padding: '24px', position: 'relative' }}>
+            <h3>Edit Winning Balance</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+              Updating winning balance for <strong>{selectedUserForWinning.name}</strong>
+            </p>
+            <form onSubmit={handleUpdateWinningWallet}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Winning Balance (₹)</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff' }}
+                  value={winningBalanceInput}
+                  onChange={(e) => setWinningBalanceInput(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'end', gap: '12px' }}>
+                <button type="button" className="btn btn-sm" style={{ background: '#888' }} onClick={() => setSelectedUserForWinning(null)}>Cancel</button>
                 <button type="submit" className="btn btn-sm btn-primary">Save Balance</button>
               </div>
             </form>

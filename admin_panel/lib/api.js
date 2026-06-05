@@ -164,6 +164,13 @@ class ApiClient {
     });
   }
 
+  async updateUserWinningWallet(userId, winningBalance) {
+    return this.request(`/admin/users/${userId}/wallet`, {
+      method: 'PUT',
+      body: JSON.stringify({ winningBalance })
+    });
+  }
+
   async changeUserPassword(userId, password) {
     return this.request(`/admin/users/${userId}/password`, {
       method: 'PUT',

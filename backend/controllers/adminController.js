@@ -764,11 +764,11 @@ exports.getLotteryDetail = async (req, res) => {
  */
 exports.updateUserWallet = async (req, res) => {
   try {
-    const { balance, referralBalance } = req.body;
-    if (balance === undefined && referralBalance === undefined) {
+    const { balance, winningBalance, referralBalance } = req.body;
+    if (balance === undefined && winningBalance === undefined && referralBalance === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a wallet balance or referral balance to update'
+        message: 'Please provide a wallet balance, winning balance, or referral balance to update'
       });
     }
 
@@ -795,6 +795,24 @@ exports.updateUserWallet = async (req, res) => {
         amount: Math.abs(balance - oldBalance),
         status: 'approved',
         description: `Manual wallet adjustment by Admin from ₹${oldBalance} to ₹${balance}`
+      });
+    }
+
+    if (winningBalance !== undefined) {
+      if (isNaN(winningBalance) || winningBalance < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid winning balance (minimum 0)'
+        });
+      }
+      const oldWinning = user.winningBalance || 0;
+      user.winningBalance = winningBalance;
+      await Transaction.create({
+        userId: user._id,
+        type: 'winnings',
+        amount: Math.abs(winningBalance - oldWinning),
+        status: 'approved',
+        description: `Manual winning balance adjustment by Admin from ₹${oldWinning} to ₹${winningBalance}`
       });
     }
 
