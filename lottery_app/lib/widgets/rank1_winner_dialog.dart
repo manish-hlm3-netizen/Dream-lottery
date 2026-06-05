@@ -5,201 +5,214 @@ import '../providers/language_provider.dart';
 import '../services/storage_service.dart';
 
 // ─────────────────────────────────────────────────────────────
-// Entry point: call this to show the winner experience
+// Public API — call this from home_screen.dart
 // ─────────────────────────────────────────────────────────────
 void showRank1WinnerDialog(BuildContext context, Map<String, dynamic> ticket) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black87,
-    transitionDuration: const Duration(milliseconds: 450),
-    transitionBuilder: (ctx, anim, secondaryAnim, child) {
-      return FadeTransition(
-        opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.80, end: 1.0).animate(
-            CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-          ),
-          child: child,
-        ),
-      );
-    },
-    pageBuilder: (ctx, _, __) => Rank1WinnerDialog(ticket: ticket),
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (_) => _Rank1Celebration(
+      ticket: ticket,
+      onDismiss: () {
+        entry.remove();
+      },
+    ),
   );
+  Overlay.of(context).insert(entry);
 }
 
 // ─────────────────────────────────────────────────────────────
-// The dialog widget
+// Full-screen celebration overlay — NO card, just fireworks
 // ─────────────────────────────────────────────────────────────
-class Rank1WinnerDialog extends StatefulWidget {
+class _Rank1Celebration extends StatefulWidget {
   final Map<String, dynamic> ticket;
-  const Rank1WinnerDialog({super.key, required this.ticket});
+  final VoidCallback onDismiss;
+
+  const _Rank1Celebration({
+    required this.ticket,
+    required this.onDismiss,
+  });
 
   @override
-  State<Rank1WinnerDialog> createState() => _Rank1WinnerDialogState();
+  State<_Rank1Celebration> createState() => _Rank1CelebrationState();
 }
 
-class _Rank1WinnerDialogState extends State<Rank1WinnerDialog>
+class _Rank1CelebrationState extends State<_Rank1Celebration>
     with TickerProviderStateMixin {
-  // Separate ticker for particle physics — never interferes with the card animation
-  late final AnimationController _particleTicker;
+  // Particle physics ticker (~60 fps)
+  late final AnimationController _ticker;
 
-  final List<_Particle> _particles = [];
+  // Text fade-in
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  // Pulsing glow on the prize text
+  late final AnimationController _glowCtrl;
+  late final Animation<double> _glowAnim;
+
+  final List<_FWParticle> _particles = [];
   final Random _rng = Random();
-  OverlayEntry? _overlayEntry;
   int _ticks = 0;
-
-  // For the pulsing crown icon
-  late final AnimationController _pulseCtrl;
-  late final Animation<double> _pulseAnim;
+  bool _dismissing = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Particle ticker at ~60 fps
-    _particleTicker = AnimationController(
+    _ticker = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 16),
     )..repeat();
-    _particleTicker.addListener(_tick);
+    _ticker.addListener(_tick);
 
-    // Crown pulse
-    _pulseCtrl = AnimationController(
+    _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _fadeCtrl.forward();
+
+    _glowCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    _glowAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
     );
 
-    // Insert fireworks overlay after first frame so we have a context
-    WidgetsBinding.instance.addPostFrameCallback((_) => _insertOverlay());
-  }
-
-  void _insertOverlay() {
-    if (!mounted) return;
-    _overlayEntry = OverlayEntry(
-      builder: (_) => IgnorePointer(
-        child: RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _particleTicker,
-            builder: (_, __) => CustomPaint(
-              size: MediaQuery.of(context).size,
-              painter: _FireworksPainter(particles: _particles),
-            ),
-          ),
-        ),
-      ),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+    // Immediate burst of fireworks at the very start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final size = MediaQuery.of(context).size;
+      for (int i = 0; i < 6; i++) {
+        _launchSkyShot(size);
+      }
+    });
   }
 
   @override
   void dispose() {
-    _particleTicker.removeListener(_tick);
-    _particleTicker.dispose();
-    _pulseCtrl.dispose();
-    _removeOverlay();
+    _ticker.removeListener(_tick);
+    _ticker.dispose();
+    _fadeCtrl.dispose();
+    _glowCtrl.dispose();
     super.dispose();
   }
 
-  // ── Physics tick ────────────────────────────────────────────
+  // ── Physics ──────────────────────────────────────────────────
   void _tick() {
     if (!mounted) return;
     final size = MediaQuery.of(context).size;
     _ticks++;
 
-    // Launch sky shots every 35 ticks (keep max 5 in flight)
-    if (_ticks % 35 == 0) {
-      final skyCount = _particles.where((p) => p.isSkyShot).length;
-      if (skyCount < 5) _spawnSkyShot(size);
+    // New sky shot every 28 ticks (keep ≤ 6 in flight)
+    if (_ticks % 28 == 0) {
+      final inFlight = _particles.where((p) => p.isSkyShot).length;
+      if (inFlight < 6) _launchSkyShot(size);
     }
 
-    // Firecracker sparks from bottom corners every 4 ticks
-    if (_ticks % 4 == 0) {
-      _spawnSpark(size, fromLeft: true);
-      _spawnSpark(size, fromLeft: false);
+    // Continuous ground sparks at bottom edge every 2 ticks
+    if (_ticks % 2 == 0) {
+      _spawnGroundSpark(size);
     }
 
-    // Update particles; explode sky shots that reach their apex
-    final next = <_Particle>[];
+    final next = <_FWParticle>[];
     for (final p in _particles) {
       p.update();
       if (p.isSkyShot && p.reachedApex) {
-        _explode(p.x, p.y, p.color, size);
-      } else if (p.alpha > 0.01 && p.x >= -20 && p.x <= size.width + 20) {
+        _burst(p.x, p.y, p.color, size);
+      } else if (p.alpha > 0.01) {
         next.add(p);
       }
     }
     _particles
       ..clear()
       ..addAll(next);
-    // No setState — the OverlayEntry repaints through AnimatedBuilder
+    // Overlay repaints via RepaintBoundary + ticker listener
+    if (mounted) setState(() {});
   }
 
-  void _spawnSkyShot(Size size) {
-    final x = size.width * (0.15 + _rng.nextDouble() * 0.7);
-    final targetY = size.height * (0.08 + _rng.nextDouble() * 0.30);
-    _particles.add(_Particle.skyShot(
+  void _launchSkyShot(Size size) {
+    final x = size.width * (0.1 + _rng.nextDouble() * 0.8);
+    final targetY = size.height * (0.05 + _rng.nextDouble() * 0.40);
+    _particles.add(_FWParticle.skyShot(
       x: x,
-      y: size.height + 10,
+      startY: size.height + 10,
       targetY: targetY,
-      color: _brightColor(),
+      color: _randomVibrantColor(),
       rng: _rng,
     ));
   }
 
-  void _spawnSpark(Size size, {required bool fromLeft}) {
-    final x = fromLeft ? _rng.nextDouble() * 40 : size.width - _rng.nextDouble() * 40;
-    final y = size.height - 60 - _rng.nextDouble() * 60;
-    _particles.add(_Particle.spark(
+  void _spawnGroundSpark(Size size) {
+    // Random point along the bottom quarter of the screen
+    final x = _rng.nextDouble() * size.width;
+    final y = size.height * (0.75 + _rng.nextDouble() * 0.25);
+    final angle = -pi / 2 + (_rng.nextDouble() - 0.5) * pi * 0.8;
+    final speed = 3.0 + _rng.nextDouble() * 6.0;
+    _particles.add(_FWParticle.spark(
       x: x,
       y: y,
-      vx: (fromLeft ? 1 : -1) * (3 + _rng.nextDouble() * 7),
-      vy: -(6 + _rng.nextDouble() * 10),
+      vx: cos(angle) * speed,
+      vy: sin(angle) * speed,
       color: _rng.nextBool() ? Colors.amberAccent : Colors.white,
       rng: _rng,
     ));
   }
 
-  void _explode(double x, double y, Color baseColor, Size size) {
-    final count = 50 + _rng.nextInt(25);
+  void _burst(double x, double y, Color center, Size size) {
+    final count = 60 + _rng.nextInt(30);
     for (int i = 0; i < count; i++) {
       final angle = _rng.nextDouble() * 2 * pi;
-      final speed = 1.5 + _rng.nextDouble() * 6.5;
-      _particles.add(_Particle.explosion(
+      final speed = 1.0 + _rng.nextDouble() * 8.0;
+      _particles.add(_FWParticle.explosion(
         x: x,
         y: y,
         vx: cos(angle) * speed,
         vy: sin(angle) * speed,
-        color: _explosionColor(baseColor),
+        color: _mixColor(center),
         rng: _rng,
+      ));
+    }
+    // Add a ring of bright white sparks for the initial flash
+    for (int i = 0; i < 16; i++) {
+      final angle = (i / 16) * 2 * pi;
+      _particles.add(_FWParticle.explosion(
+        x: x,
+        y: y,
+        vx: cos(angle) * 9,
+        vy: sin(angle) * 9,
+        color: Colors.white,
+        rng: _rng,
+        fastDecay: true,
       ));
     }
   }
 
-  Color _brightColor() {
-    const palette = [
+  Color _randomVibrantColor() {
+    const colors = [
       Color(0xFFFFD700), // gold
-      Color(0xFFFF6B35), // orange
+      Color(0xFFFF3D71), // pink-red
       Color(0xFF00E5FF), // cyan
+      Color(0xFF69FF47), // lime green
       Color(0xFFE040FB), // purple
-      Color(0xFF69FF47), // green
-      Color(0xFFFF4081), // pink
+      Color(0xFFFF6D00), // deep orange
       Color(0xFFFFEA00), // yellow
+      Color(0xFF40C4FF), // light blue
     ];
-    return palette[_rng.nextInt(palette.length)];
+    return colors[_rng.nextInt(colors.length)];
   }
 
-  Color _explosionColor(Color base) {
-    final mix = [base, Colors.white, Colors.amberAccent, _brightColor()];
-    return mix[_rng.nextInt(mix.length)];
+  Color _mixColor(Color base) {
+    final options = [base, Colors.white, Colors.amberAccent, _randomVibrantColor()];
+    return options[_rng.nextInt(options.length)];
+  }
+
+  // ── Dismiss ──────────────────────────────────────────────────
+  Future<void> _dismiss() async {
+    if (_dismissing) return;
+    _dismissing = true;
+    final ticketId = (widget.ticket['_id'] ?? '').toString();
+    await StorageService.acknowledgeRank1Win(ticketId);
+    _fadeCtrl.reverse().whenComplete(widget.onDismiss);
   }
 
   // ── Build ────────────────────────────────────────────────────
@@ -207,323 +220,139 @@ class _Rank1WinnerDialogState extends State<Rank1WinnerDialog>
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     final lottery = widget.ticket['lotteryId'] ?? {};
-    final lotteryName = lottery['name'] ?? 'Lottery';
+    final lotteryName = (lottery['name'] ?? 'Lottery').toString();
     final prizeWon = widget.ticket['prizeWon'] ?? 0;
-    final ticketId = (widget.ticket['_id'] ?? '').toString();
-    final shortId = ticketId.length > 8
-        ? ticketId.substring(ticketId.length - 8).toUpperCase()
-        : ticketId.toUpperCase();
+    final size = MediaQuery.of(context).size;
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: _WinnerCard(
-              lang: lang,
-              lotteryName: lotteryName,
-              prizeWon: prizeWon,
-              shortId: shortId,
-              ticketId: ticketId,
-              pulseAnim: _pulseAnim,
-              onClose: () async {
-                _removeOverlay();
-                await StorageService.acknowledgeRank1Win(ticketId);
-                if (context.mounted) Navigator.of(context).pop();
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: GestureDetector(
+        onTap: _dismiss,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox.expand(
+          child: Stack(
+            children: [
+              // ── 1. Dark background ─────────────────────────
+              Container(color: Colors.black.withValues(alpha: 0.88)),
 
-// ─────────────────────────────────────────────────────────────
-// Extracted card so the build method is clean
-// ─────────────────────────────────────────────────────────────
-class _WinnerCard extends StatelessWidget {
-  final LanguageProvider lang;
-  final String lotteryName;
-  final dynamic prizeWon;
-  final String shortId;
-  final String ticketId;
-  final Animation<double> pulseAnim;
-  final VoidCallback onClose;
-
-  const _WinnerCard({
-    required this.lang,
-    required this.lotteryName,
-    required this.prizeWon,
-    required this.shortId,
-    required this.ticketId,
-    required this.pulseAnim,
-    required this.onClose,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isHindi = lang.isHindi;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A0A2E), Color(0xFF0D1B2A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(
-          color: const Color(0xFFFFD700).withValues(alpha: 0.7),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-            blurRadius: 40,
-            spreadRadius: 4,
-          ),
-          BoxShadow(
-            color: const Color(0xFFE040FB).withValues(alpha: 0.2),
-            blurRadius: 60,
-            spreadRadius: -5,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Header banner ──────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 22),
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFF8C00), Color(0xFFFFD700)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              // ── 2. Fireworks particle canvas ───────────────
+              CustomPaint(
+                size: size,
+                painter: _FireworksPainter(particles: _particles),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Pulsing crown + trophy
-                ScaleTransition(
-                  scale: pulseAnim,
-                  child: const Text('🏆', style: TextStyle(fontSize: 64)),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isHindi ? '🎉 बधाई हो! 🎉' : '🎉 CONGRATULATIONS! 🎉',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1A0A2E),
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A0A2E).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isHindi ? '👑 रैंक 1 विजेता 👑' : '👑 RANK 1 WINNER 👑',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A0A2E),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          // ── Body ───────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            child: Column(
-              children: [
-                // Prize amount
-                Text(
-                  isHindi ? 'आपकी जीत' : 'You Won',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFAAAAAA),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                ShaderMask(
-                  shaderCallback: (b) => const LinearGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFF10B981), Color(0xFFFFD700)],
-                  ).createShader(b),
-                  child: Text(
-                    '₹$prizeWon',
-                    style: const TextStyle(
-                      fontSize: 52,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -1,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
+              // ── 3. Centered winner text (NO card) ──────────
+              Positioned.fill(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Trophy emoji — large and prominent
+                    const Text('🏆', style: TextStyle(fontSize: 80)),
+                    const SizedBox(height: 16),
 
-                const SizedBox(height: 20),
-
-                // Lottery & ticket info card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _InfoRow(
-                        icon: Icons.casino_rounded,
-                        label: isHindi ? 'लॉटरी' : 'Lottery',
-                        value: lotteryName,
-                        valueColor: const Color(0xFFFFD700),
+                    // Glowing WINNER text
+                    AnimatedBuilder(
+                      animation: _glowAnim,
+                      builder: (_, __) => Text(
+                        lang.isHindi ? 'विजेता!' : 'WINNER!',
+                        style: TextStyle(
+                          fontSize: 52,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 4,
+                          shadows: [
+                            Shadow(
+                              color: const Color(0xFFFFD700)
+                                  .withValues(alpha: _glowAnim.value),
+                              blurRadius: 30 * _glowAnim.value,
+                            ),
+                            Shadow(
+                              color: const Color(0xFFFF6D00)
+                                  .withValues(alpha: _glowAnim.value * 0.6),
+                              blurRadius: 60 * _glowAnim.value,
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      _InfoRow(
-                        icon: Icons.confirmation_number_outlined,
-                        label: isHindi ? 'टिकट आईडी' : 'Ticket ID',
-                        value: 'DL-$shortId',
-                        valueColor: const Color(0xFF80CBC4),
-                        mono: true,
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Rank 1 badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                            color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                            width: 1.5),
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.12),
                       ),
-                    ],
-                  ),
-                ),
+                      child: Text(
+                        lang.isHindi ? '👑 रैंक 1' : '👑 RANK 1',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFFFD700),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
-                const SizedBox(height: 20),
+                    // Lottery name
+                    Text(
+                      lotteryName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.85),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
 
-                // Celebration message
-                Text(
-                  isHindi
-                      ? 'आपकी जीत की राशि आपके विनिंग वॉलेट में जमा कर दी गई है।'
-                      : 'Your prize has been credited to your Winning Wallet.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF90A4AE),
-                    height: 1.5,
-                  ),
-                ),
+                    // Prize amount — large glowing green
+                    AnimatedBuilder(
+                      animation: _glowAnim,
+                      builder: (_, __) => Text(
+                        '₹$prizeWon',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF00E676),
+                          letterSpacing: -0.5,
+                          shadows: [
+                            Shadow(
+                              color: const Color(0xFF00E676)
+                                  .withValues(alpha: _glowAnim.value * 0.8),
+                              blurRadius: 25 * _glowAnim.value,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+                    const SizedBox(height: 48),
 
-          // ── Close button ───────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: GestureDetector(
-              onTap: onClose,
-              child: Container(
-                width: double.infinity,
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                    // Tap to dismiss hint
+                    Text(
+                      lang.isHindi
+                          ? 'जारी रखने के लिए टैप करें'
+                          : 'Tap anywhere to continue',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.45),
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    isHindi ? '🎊  शानदार!  🎊' : '🎊  Claim Your Victory!  🎊',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1A0A2E),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Small reusable info row inside the details card
-// ─────────────────────────────────────────────────────────────
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color valueColor;
-  final bool mono;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.valueColor,
-    this.mono = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white38, size: 16),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF90A4AE),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              color: valueColor,
-              fontWeight: FontWeight.w800,
-              fontFamily: mono ? 'monospace' : null,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -531,7 +360,7 @@ class _InfoRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Particle model
 // ─────────────────────────────────────────────────────────────
-class _Particle {
+class _FWParticle {
   double x, y, vx, vy;
   Color color;
   double size, alpha, decay, gravity, drag;
@@ -539,7 +368,7 @@ class _Particle {
   double targetY;
   bool reachedApex = false;
 
-  _Particle({
+  _FWParticle({
     required this.x,
     required this.y,
     required this.vx,
@@ -554,68 +383,71 @@ class _Particle {
     this.targetY = 0,
   });
 
-  factory _Particle.skyShot({
+  factory _FWParticle.skyShot({
     required double x,
-    required double y,
+    required double startY,
     required double targetY,
     required Color color,
     required Random rng,
-  }) {
-    return _Particle(
-      x: x, y: y,
-      vx: (rng.nextDouble() - 0.5) * 2.5,
-      vy: -(12 + rng.nextDouble() * 6),
-      color: color,
-      size: 4 + rng.nextDouble() * 2,
-      alpha: 1, decay: 0,
-      gravity: 0, drag: 0.99,
-      isSkyShot: true,
-      targetY: targetY,
-    );
-  }
+  }) =>
+      _FWParticle(
+        x: x,
+        y: startY,
+        vx: (rng.nextDouble() - 0.5) * 2.0,
+        vy: -(13 + rng.nextDouble() * 7),
+        color: color,
+        size: 4.5 + rng.nextDouble() * 2,
+        alpha: 1,
+        decay: 0,
+        gravity: 0,
+        drag: 0.992,
+        isSkyShot: true,
+        targetY: targetY,
+      );
 
-  factory _Particle.spark({
+  factory _FWParticle.spark({
     required double x,
     required double y,
     required double vx,
     required double vy,
     required Color color,
     required Random rng,
-  }) {
-    return _Particle(
-      x: x, y: y, vx: vx, vy: vy,
-      color: color,
-      size: 2 + rng.nextDouble() * 2,
-      alpha: 1,
-      decay: 0.025 + rng.nextDouble() * 0.02,
-      gravity: 0.18, drag: 0.94,
-    );
-  }
+  }) =>
+      _FWParticle(
+        x: x, y: y, vx: vx, vy: vy,
+        color: color,
+        size: 2 + rng.nextDouble() * 2,
+        alpha: 1,
+        decay: 0.028 + rng.nextDouble() * 0.022,
+        gravity: 0.20,
+        drag: 0.93,
+      );
 
-  factory _Particle.explosion({
+  factory _FWParticle.explosion({
     required double x,
     required double y,
     required double vx,
     required double vy,
     required Color color,
     required Random rng,
-  }) {
-    return _Particle(
-      x: x, y: y, vx: vx, vy: vy,
-      color: color,
-      size: 2.5 + rng.nextDouble() * 3,
-      alpha: 1,
-      decay: 0.010 + rng.nextDouble() * 0.012,
-      gravity: 0.06, drag: 0.965,
-    );
-  }
+    bool fastDecay = false,
+  }) =>
+      _FWParticle(
+        x: x, y: y, vx: vx, vy: vy,
+        color: color,
+        size: fastDecay ? 3 : 2.5 + rng.nextDouble() * 3.5,
+        alpha: 1,
+        decay: fastDecay ? 0.06 : 0.009 + rng.nextDouble() * 0.011,
+        gravity: fastDecay ? 0.05 : 0.055,
+        drag: fastDecay ? 0.92 : 0.970,
+      );
 
   void update() {
     if (isSkyShot) {
       x += vx;
       y += vy;
       vx *= drag;
-      vy *= 0.988; // gradual deceleration upward
+      vy *= 0.990;
       if (y <= targetY) reachedApex = true;
     } else {
       x += vx;
@@ -630,10 +462,10 @@ class _Particle {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Custom painter — renders all particles on a full-screen canvas
+// Custom painter
 // ─────────────────────────────────────────────────────────────
 class _FireworksPainter extends CustomPainter {
-  final List<_Particle> particles;
+  final List<_FWParticle> particles;
   const _FireworksPainter({required this.particles});
 
   @override
@@ -642,28 +474,40 @@ class _FireworksPainter extends CustomPainter {
 
     for (final p in particles) {
       if (p.alpha <= 0) continue;
-      paint.color = p.color.withValues(alpha: p.alpha.clamp(0, 1));
+      final a = p.alpha.clamp(0.0, 1.0);
 
       if (p.isSkyShot) {
-        // Draw glowing trail then bright head
-        final trailRect = Rect.fromLTWH(p.x - 1.5, p.y, 3, 22);
+        // Glowing trail (gradient rect going downward)
+        final trailTop = Offset(p.x, p.y);
+        final trailBottom = Offset(p.x, p.y + 28);
         paint.shader = LinearGradient(
           colors: [
+            p.color.withValues(alpha: a * 0.9),
             p.color.withValues(alpha: 0),
-            p.color.withValues(alpha: 0.8),
           ],
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-        ).createShader(trailRect);
-        canvas.drawRect(trailRect, paint);
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromPoints(trailTop, trailBottom));
+        canvas.drawRect(
+          Rect.fromCenter(center: Offset(p.x, p.y + 14), width: 3, height: 28),
+          paint,
+        );
         paint.shader = null;
-        paint.color = Colors.white.withValues(alpha: 0.95);
-        canvas.drawCircle(Offset(p.x, p.y), p.size, paint);
-      } else {
-        // Circular spark with soft glow
-        paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+
+        // Bright head
+        paint.color = Colors.white.withValues(alpha: a);
+        paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
         canvas.drawCircle(Offset(p.x, p.y), p.size, paint);
         paint.maskFilter = null;
+      } else {
+        // Glowing spark
+        paint.color = p.color.withValues(alpha: a);
+        paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8);
+        canvas.drawCircle(Offset(p.x, p.y), p.size, paint);
+        paint.maskFilter = null;
+        // Bright core
+        paint.color = Colors.white.withValues(alpha: a * 0.6);
+        canvas.drawCircle(Offset(p.x, p.y), p.size * 0.35, paint);
       }
     }
   }
