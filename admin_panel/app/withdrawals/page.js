@@ -134,7 +134,10 @@ export default function WithdrawalsPage() {
                       </div>
                     )}
                   </td>
-                  <td className="amount">₹{w.userId?.walletBalance?.toLocaleString()}</td>
+                  <td className="amount" style={{ fontSize: '13px', textAlign: 'left', minWidth: '130px' }}>
+                    <div>Dep: ₹{w.userId?.walletBalance?.toLocaleString() || '0'}</div>
+                    <div style={{ color: '#10B981', marginTop: '2px' }}>Win: ₹{(w.userId?.winningBalance || 0).toLocaleString()}</div>
+                  </td>
                   <td><span className={`badge-status ${w.status}`}>{w.status}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{formatDate(w.createdAt)}</td>
                   {filter === 'pending' && (

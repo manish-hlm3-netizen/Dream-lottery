@@ -155,7 +155,7 @@ exports.getDeposits = async (req, res) => {
     if (status !== 'all') filter.status = status;
 
     const deposits = await Transaction.find(filter)
-      .populate('userId', 'name email phone walletBalance')
+      .populate('userId', 'name email phone walletBalance winningBalance')
       .sort({ createdAt: -1 });
 
     res.json({
@@ -238,7 +238,7 @@ exports.getWithdrawals = async (req, res) => {
     if (status !== 'all') filter.status = status;
 
     const withdrawals = await Withdrawal.find(filter)
-      .populate('userId', 'name email phone walletBalance')
+      .populate('userId', 'name email phone walletBalance winningBalance')
       .sort({ createdAt: -1 });
 
     res.json({
