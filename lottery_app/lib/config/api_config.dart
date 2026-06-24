@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'https://lottery-api-vgk0.onrender.com/api';
+  static const String baseUrl = 'https://dream-lottery.onrender.com/api';
 
   // Current client app version
   static const String appVersion = '1.4.25';

@@ -1009,7 +1009,7 @@ exports.getUPISettings = async (req, res) => {
         upiId: 'pay@upi',
         qrCodeUrl: '',
         appVersion: '1.0.0',
-        appDownloadUrl: 'https://lottery-api-vgk0.onrender.com/api/app/download'
+        appDownloadUrl: 'https://dream-lottery.onrender.com/api/app/download'
       });
     }
     res.json({

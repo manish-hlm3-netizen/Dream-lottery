@@ -199,7 +199,7 @@ export default function SettingsPage() {
                     color: '#fff',
                     fontSize: '15px'
                   }}
-                  placeholder="e.g. https://lottery-api-vgk0.onrender.com/api/app/download"
+                  placeholder="e.g. https://dream-lottery.onrender.com/api/app/download"
                   value={appDownloadUrl}
                   onChange={(e) => setAppDownloadUrl(e.target.value)}
                 />

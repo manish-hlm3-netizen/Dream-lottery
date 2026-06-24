@@ -98,7 +98,7 @@ async function run() {
       }
 
       settings.appVersion = appVersion;
-      settings.appDownloadUrl = 'https://lottery-api-vgk0.onrender.com/api/app/download';
+      settings.appDownloadUrl = 'https://dream-lottery.onrender.com/api/app/download';
       await settings.save();
       console.log(`🚀 Successfully updated database OTA version to: ${appVersion}`);
       await mongoose.disconnect();

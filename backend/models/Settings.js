@@ -25,7 +25,7 @@ const settingsSchema = new mongoose.Schema({
   appDownloadUrl: {
     type: String,
     required: false,
-    default: 'https://lottery-api-vgk0.onrender.com/api/app/download'
+    default: 'https://dream-lottery.onrender.com/api/app/download'
   }
 }, {
   timestamps: true

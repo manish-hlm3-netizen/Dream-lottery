@@ -316,7 +316,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
               statusText = 'Downloading...';
               await dio.download(
-                downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download',
+                downloadUrl.isNotEmpty ? downloadUrl : 'https://dream-lottery.onrender.com/api/app/download',
                 apkPath,
                 onReceiveProgress: (received, total) {
                   if (total != -1) {
@@ -343,7 +343,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 });
                 
                 // Fallback to browser download if local installation fails
-                final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download');
+                final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://dream-lottery.onrender.com/api/app/download');
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
@@ -356,7 +356,7 @@ class _SplashScreenState extends State<SplashScreen> {
               });
               
               // Fallback to browser download on error
-              final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://lottery-api-vgk0.onrender.com/api/app/download');
+              final uri = Uri.parse(downloadUrl.isNotEmpty ? downloadUrl : 'https://dream-lottery.onrender.com/api/app/download');
               try {
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);

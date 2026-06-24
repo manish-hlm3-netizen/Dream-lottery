@@ -368,11 +368,11 @@ exports.getAppVersion = async (req, res) => {
         upiId: 'pay@upi',
         qrCodeUrl: '',
         appVersion: '1.0.0',
-        appDownloadUrl: 'https://lottery-api-vgk0.onrender.com/api/app/download'
+        appDownloadUrl: 'https://dream-lottery.onrender.com/api/app/download'
       });
     }
 
-    const baseDownloadUrl = settings.appDownloadUrl || 'https://lottery-api-vgk0.onrender.com/api/app/download';
+    const baseDownloadUrl = settings.appDownloadUrl || 'https://dream-lottery.onrender.com/api/app/download';
     const separator = baseDownloadUrl.includes('?') ? '&' : '?';
     const appDownloadUrl = `${baseDownloadUrl}${separator}v=${settings.appVersion || '1.0.0'}`;
 
