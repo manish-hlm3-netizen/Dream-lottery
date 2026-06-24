@@ -1,5 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "npm install --prefix admin_panel && npm run build --prefix admin_panel && mv admin_panel/out out",
-  "outputDirectory": "out"
-}
