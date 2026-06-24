@@ -1,7 +1,7 @@
-module.paths.push('d:/test2/backend/node_modules');
+const path = require('path');
+module.paths.push(path.join(__dirname, 'backend/node_modules'));
 
 const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -56,7 +56,36 @@ async function run() {
     // 2. Build the Flutter APK release bundle
     console.log('🔨 Compiling Flutter release APK...');
     const flutterAppDir = path.join(__dirname, 'lottery_app');
-    execSync('flutter build apk --release', { cwd: flutterAppDir, stdio: 'inherit' });
+    let buildCommand = 'flutter build apk --release';
+    try {
+      execSync('where flutter', { stdio: 'ignore' });
+    } catch (e) {
+      console.log('⚠️ flutter command not found in PATH, trying to locate Shorebird cache...');
+      try {
+        const os = require('os');
+        const userHome = os.homedir();
+        const shorebirdFlutterDir = path.join(userHome, '.shorebird/bin/cache/flutter');
+        if (fs.existsSync(shorebirdFlutterDir)) {
+          const revisions = fs.readdirSync(shorebirdFlutterDir);
+          let foundPath = null;
+          for (const rev of revisions) {
+            const candidate = path.join(shorebirdFlutterDir, rev, 'bin/flutter.bat');
+            if (fs.existsSync(candidate)) {
+              foundPath = candidate;
+              break;
+            }
+          }
+          if (foundPath) {
+            console.log(`✅ Found Shorebird-managed Flutter at: ${foundPath}`);
+            buildCommand = `"${foundPath}" build apk --release`;
+          }
+        }
+      } catch (err) {
+        console.log('⚠️ Could not locate Shorebird-managed Flutter, defaulting to flutter...');
+      }
+    }
+    console.log(`Running build command: ${buildCommand}`);
+    execSync(buildCommand, { cwd: flutterAppDir, stdio: 'inherit' });
     console.log('✅ Flutter release APK compiled successfully.');
 
     // 3. Define source and destination paths
