@@ -21,7 +21,13 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const data = await api.getUsers(1, search, activeTab === 'bot' ? 'true' : 'false');
-      if (data.success) setUsers(data.data.users);
+      if (data.success) {
+        // Arrange users in order: newly first
+        const sorted = [...data.data.users].sort((a, b) => {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        });
+        setUsers(sorted);
+      }
     } catch (err) {
       console.error('Load users error:', err);
     } finally {
